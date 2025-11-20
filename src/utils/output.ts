@@ -36,7 +36,7 @@ export async function writeOutput(
  * Write JSON data to a file
  */
 export async function writeJson(filePath: string, data: unknown): Promise<void> {
-  const content = JSON.stringify(data, null, 2);
+  const content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   await writeOutput(filePath, content);
 }
 
