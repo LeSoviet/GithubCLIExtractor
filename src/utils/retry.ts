@@ -64,17 +64,17 @@ function sleep(ms: number): Promise<void> {
  */
 export function isRetryableError(error: Error): boolean {
   const retryableMessages = [
-    'ECONNRESET',
-    'ETIMEDOUT',
-    'ENOTFOUND',
-    'ECONNREFUSED',
+    'econnreset',
+    'etimedout',
+    'enotfound',
+    'econnrefused',
     'rate limit',
     'timeout',
     'network',
   ];
 
   const message = error.message.toLowerCase();
-  return retryableMessages.some((msg) => message.includes(msg));
+  return retryableMessages.some((msg) => message.includes(msg.toLowerCase()));
 }
 
 /**
@@ -84,14 +84,44 @@ export async function withSmartRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {}
 ): Promise<T> {
-  return withRetry(async () => {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt <= (options.maxRetries ?? 3); attempt++) {
     try {
       return await fn();
     } catch (error) {
-      if (error instanceof Error && !isRetryableError(error)) {
-        throw error; // Don't retry non-retryable errors
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // If error is not retryable, throw immediately
+      if (!isRetryableError(lastError)) {
+        throw lastError;
       }
-      throw error;
+      
+      // If this was the last attempt, throw
+      if (attempt >= (options.maxRetries ?? 3)) {
+        throw new Error(`Failed after ${options.maxRetries ?? 3} retries: ${lastError.message}`);
+      }
+      
+      // Calculate delay with exponential backoff
+      const initialDelay = options.initialDelay ?? 1000;
+      const backoffMultiplier = options.backoffMultiplier ?? 2;
+      const maxDelay = options.maxDelay ?? 30000;
+      const actualDelay = Math.min(
+        initialDelay * Math.pow(backoffMultiplier, attempt),
+        maxDelay
+      );
+      
+      logger.warn(
+        `Attempt ${attempt + 1}/${options.maxRetries ?? 3} failed: ${lastError.message}. Retrying in ${actualDelay}ms...`
+      );
+      
+      if (options.onRetry) {
+        options.onRetry(lastError, attempt + 1);
+      }
+      
+      await sleep(actualDelay);
     }
-  }, options);
+  }
+  
+  throw lastError!;
 }
