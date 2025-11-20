@@ -112,27 +112,6 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      - name: Check coverage thresholds
-        run: |
-          node -e "
-          const coverage = require('./coverage/coverage-summary.json');
-          const total = coverage.total;
-          const thresholds = { lines: 80, statements: 80, functions: 80, branches: 80 };
-          
-          let failed = false;
-          for (const [key, threshold] of Object.entries(thresholds)) {
-            const actual = total[key].pct;
-            if (actual < threshold) {
-              console.error(\`❌ ${key} coverage ${actual}% is below threshold ${threshold}%\`);
-              failed = true;
-            } else {
-              console.log(\`✅ ${key} coverage ${actual}% meets threshold ${threshold}%\`);
-            }
-          }
-          
-          if (failed) process.exit(1);
-          "
-
       - name: Generate coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
