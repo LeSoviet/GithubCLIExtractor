@@ -16,34 +16,53 @@ export class BranchExporter extends BaseExporter<Branch> {
     this.incrementApiCalls();
 
     try {
-      // Fetch branches - limit to 100 for performance
-      // Note: Removed --paginate as it can hang on large repos
+      console.log('[INFO] Fetching branches (timeout: 10s)...');
+      
+      // Fetch branches with aggressive timeout and no retry
       const branches = await execGhJson<GitHubBranch[]>(
-        `api repos/${repoId}/branches?per_page=100`
+        `api repos/${repoId}/branches?per_page=20`,
+        { 
+          timeout: 10000, // 10 second timeout
+          useRetry: false, // Disable retry for faster failure
+          useRateLimit: true
+        }
       );
 
+      if (!branches || !Array.isArray(branches)) {
+        console.log('[INFO] No branches found or invalid response');
+        return [];
+      }
+
+      console.log(`[INFO] Successfully fetched ${branches.length} branches`);
       return branches.map((branch) => this.convertBranch(branch));
-    } catch (error) {
-      throw new Error(`Failed to fetch branches: ${error}`);
+      
+    } catch (error: any) {
+      console.log(`[INFO] Branch fetch failed: ${error.message} - Skipping branches`);
+      return []; // Return empty array to allow export to continue
     }
   }
 
   protected async exportItem(branch: Branch): Promise<void> {
-    const shouldExportMarkdown = this.format === 'markdown' || this.format === 'both';
-    const shouldExportJson = this.format === 'json' || this.format === 'both';
+    try {
+      const shouldExportMarkdown = this.format === 'markdown' || this.format === 'both';
+      const shouldExportJson = this.format === 'json' || this.format === 'both';
 
-    const safeName = sanitizeFilename(branch.name);
+      const safeName = sanitizeFilename(branch.name);
 
-    if (shouldExportMarkdown) {
-      const markdown = this.toMarkdown(branch);
-      const filepath = join(this.outputPath, `BRANCH-${safeName}.md`);
-      await writeMarkdown(filepath, markdown);
-    }
+      if (shouldExportMarkdown) {
+        const markdown = this.toMarkdown(branch);
+        const filepath = join(this.outputPath, `BRANCH-${safeName}.md`);
+        await writeMarkdown(filepath, markdown);
+      }
 
-    if (shouldExportJson) {
-      const json = this.toJson(branch);
-      const filepath = join(this.outputPath, `BRANCH-${safeName}.json`);
-      await writeJson(filepath, json);
+      if (shouldExportJson) {
+        const json = this.toJson(branch);
+        const filepath = join(this.outputPath, `BRANCH-${safeName}.json`);
+        await writeJson(filepath, json);
+      }
+    } catch (error: any) {
+      console.log(`[INFO] Failed to export branch ${branch.name}: ${error.message}`);
+      throw error;
     }
   }
 
@@ -70,24 +89,18 @@ export class BranchExporter extends BaseExporter<Branch> {
     return 'branches';
   }
 
-  /**
-   * Convert GitHub API Branch to our format
-   */
   private convertBranch(ghBranch: GitHubBranch): Branch {
     return {
-      name: ghBranch.name,
+      name: ghBranch.name || 'unknown',
       lastCommit: {
-        sha: ghBranch.commit.sha,
-        message: ghBranch.commit.commit.message,
-        date: ghBranch.commit.commit.author.date,
+        sha: ghBranch.commit?.sha || '',
+        message: ghBranch.commit?.commit?.message || 'No message',
+        date: ghBranch.commit?.commit?.author?.date || new Date().toISOString(),
       },
-      isProtected: ghBranch.protected,
+      isProtected: ghBranch.protected || false,
     };
   }
 
-  /**
-   * Format date for display
-   */
   private formatDate(dateString: string): string {
     try {
       return format(new Date(dateString), 'PPpp');

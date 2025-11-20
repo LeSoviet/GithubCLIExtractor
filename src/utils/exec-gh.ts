@@ -29,6 +29,7 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
       const { stdout, stderr } = await execAsync(`gh ${command}`, {
         timeout,
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
+        killSignal: 'SIGTERM', // Ensure process can be killed
       });
 
       if (stderr && !stderr.includes('Logging in to')) {
@@ -41,7 +42,12 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
       }
 
       return stdout.trim();
-    } catch (error) {
+    } catch (error: any) {
+      // Handle timeout specifically
+      if (error.killed || error.signal === 'SIGTERM') {
+        throw new Error(`GitHub CLI command timed out after ${timeout}ms`);
+      }
+      
       if (error instanceof Error) {
         throw new Error(`GitHub CLI command failed: ${error.message}`);
       }
@@ -49,22 +55,34 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
     }
   };
 
-  // Apply rate limiting and retry logic
-  let result: Promise<string> = executeCommand();
+  // Create a promise that will execute the command
+  let resultPromise: () => Promise<string> = executeCommand;
 
+  // Apply retry logic first (inner wrapper)
   if (useRetry) {
-    result = withSmartRetry(() => result, {
-      maxRetries: 3,
-      initialDelay: 1000,
+    const originalPromise = resultPromise;
+    resultPromise = () => withSmartRetry(originalPromise, {
+      maxRetries: 2, // Reduced from 3
+      initialDelay: 500, // Reduced from 1000
     });
   }
 
+  // Apply rate limiting second (outer wrapper)
   if (useRateLimit && command.includes('api')) {
-    // Only rate limit API calls
-    result = withRateLimit(() => result);
+    const originalPromise = resultPromise;
+    resultPromise = () => withRateLimit(originalPromise);
   }
 
-  return result;
+  // Execute with overall timeout protection
+  return Promise.race([
+    resultPromise(),
+    new Promise<string>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Operation timed out after ${timeout * 1.5}ms`)),
+        timeout * 1.5 // 1.5x timeout as absolute limit
+      )
+    ),
+  ]);
 }
 
 /**
@@ -72,7 +90,7 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
  */
 export async function isGhInstalled(): Promise<boolean> {
   try {
-    await execAsync('gh --version');
+    await execAsync('gh --version', { timeout: 5000 });
     return true;
   } catch {
     return false;

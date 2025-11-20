@@ -15,15 +15,59 @@ export class ReleaseExporter extends BaseExporter<Release> {
     this.incrementApiCalls();
 
     try {
-      // Fetch releases - limit to 100 for performance
+      console.log('[INFO] Fetching releases list...');
+      
+      // Fetch releases with ONLY available fields
       const releases = await execGhJson<any[]>(
-        `release list --repo ${repoId} --limit 100 --json tagName,name,body,author,createdAt,publishedAt,isDraft,isPrerelease,assets,url`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `release list --repo ${repoId} --limit 100 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
+        { timeout: 15000, useRateLimit: false, useRetry: false }
       );
 
-      return releases.map((release) => this.convertRelease(release));
-    } catch (error) {
-      throw new Error(`Failed to fetch releases: ${error}`);
+      if (!releases || releases.length === 0) {
+        console.log('[INFO] No releases found');
+        return [];
+      }
+
+      console.log(`[INFO] Fetched ${releases.length} releases, now fetching details...`);
+
+      // Fetch full details for each release using the API
+      const releasesWithDetails = await Promise.all(
+        releases.map(async (release, index) => {
+          try {
+            console.log(`[INFO] Fetching details for release ${index + 1}/${releases.length}: ${release.tagName}`);
+            
+            // Fetch full release data including body, assets, and author
+            const fullRelease = await execGhJson<any>(
+              `api repos/${repoId}/releases/tags/${release.tagName}`,
+              { timeout: 10000, useRetry: false, useRateLimit: true }
+            );
+
+            return this.convertRelease({
+              ...release,
+              body: fullRelease.body || '',
+              assets: fullRelease.assets || [],
+              author: fullRelease.author || { login: 'unknown' },
+              url: fullRelease.html_url || ''
+            });
+          } catch (error: any) {
+            console.log(`[INFO] Could not fetch details for ${release.tagName}: ${error.message}`);
+            // Return release without body/assets/author
+            return this.convertRelease({
+              ...release,
+              body: '',
+              assets: [],
+              author: { login: 'unknown' },
+              url: `https://github.com/${repoId}/releases/tag/${release.tagName}`
+            });
+          }
+        })
+      );
+
+      console.log(`[INFO] Successfully processed ${releasesWithDetails.length} releases`);
+      return releasesWithDetails;
+      
+    } catch (error: any) {
+      throw new Error(`Failed to fetch releases: ${error.message}`);
     }
   }
 
@@ -64,7 +108,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
     markdown += `- **Published:** ${this.formatDate(release.publishedAt)}\n`;
     markdown += `- **URL:** ${release.url}\n\n`;
 
-    if (release.assets.length > 0) {
+    if (release.assets && release.assets.length > 0) {
       markdown += `## Assets (${release.assets.length})\n\n`;
       release.assets.forEach((asset) => {
         const sizeKB = (asset.size / 1024).toFixed(2);
@@ -94,21 +138,21 @@ export class ReleaseExporter extends BaseExporter<Release> {
   private convertRelease(ghRelease: any): Release {
     return {
       tagName: ghRelease.tagName,
-      name: ghRelease.name,
+      name: ghRelease.name || ghRelease.tagName,
       body: ghRelease.body || undefined,
       author: ghRelease.author?.login || 'unknown',
       createdAt: ghRelease.createdAt,
       publishedAt: ghRelease.publishedAt,
-      isDraft: ghRelease.isDraft,
-      isPrerelease: ghRelease.isPrerelease,
+      isDraft: ghRelease.isDraft || false,
+      isPrerelease: ghRelease.isPrerelease || false,
       assets:
         ghRelease.assets?.map((asset: any) => ({
           name: asset.name,
-          size: asset.size,
-          downloadCount: asset.downloadCount || 0,
-          downloadUrl: asset.url,
+          size: asset.size || 0,
+          downloadCount: asset.download_count || 0,
+          downloadUrl: asset.browser_download_url || asset.url,
         })) || [],
-      url: ghRelease.url,
+      url: ghRelease.url || ghRelease.html_url || '',
     };
   }
 
