@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getTemplateEngine, renderTemplate } from '../../../src/utils/template-engine.js';
+import { getTemplateEngine } from '../../../src/utils/template-engine.js';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';

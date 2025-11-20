@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '@tests/setup';
 import fs from 'fs/promises';
@@ -140,7 +140,7 @@ describe('PR Exporter Integration Tests', () => {
           {
             number: 1,
             title: 'Test PR',
-            body: 'Test body with **markdown**',
+            body: 'Test body with **``**',
             state: 'open',
             user: { login: 'testuser' },
             created_at: '2024-01-01T00:00:00Z',

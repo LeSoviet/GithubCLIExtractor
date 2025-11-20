@@ -132,14 +132,20 @@ describe('Performance Benchmarks', () => {
 
     bench('Object spread', () => {
       const copy = { ...testObject };
+      // Access the copy to prevent optimization
+      copy.id;
     });
 
     bench('Object.assign', () => {
       const copy = Object.assign({}, testObject);
+      // Access the copy to prevent optimization
+      copy.id;
     });
 
     bench('JSON parse/stringify clone', () => {
       const copy = JSON.parse(JSON.stringify(testObject));
+      // Access the copy to prevent optimization
+      copy.id;
     });
 
     bench('Object.keys', () => {
