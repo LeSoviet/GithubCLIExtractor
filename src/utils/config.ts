@@ -100,11 +100,10 @@ export class ConfigManager {
       const updatedConfig = { ...currentConfig, ...config };
 
       // Remove internal fields before saving
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const {
-        version: _version,
-        lastRun: _lastRun,
-        tokens: _tokens,
+        version: _version, // eslint-disable-line @typescript-eslint/no-unused-vars
+        lastRun: _lastRun, // eslint-disable-line @typescript-eslint/no-unused-vars
+        tokens: _tokens, // eslint-disable-line @typescript-eslint/no-unused-vars
         ...fileConfig
       } = updatedConfig;
 

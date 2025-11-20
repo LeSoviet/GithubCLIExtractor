@@ -41,22 +41,20 @@ describe('retry utilities', () => {
       expect(fn).toHaveBeenCalledTimes(3);
     });
 
-    // Skip in CI due to Unhandled Rejection warnings with fake timers
-    it.skipIf(!!process.env.CI)('should throw after max retries', async () => {
+    it('should throw after max retries', async () => {
       const fn = vi.fn().mockRejectedValue(new Error('persistent failure'));
 
-      // Use try-catch to properly handle the rejection
-      try {
-        const promise = withRetry(fn, { maxRetries: 2, initialDelay: 1000 });
-        await vi.runAllTimersAsync();
-        await promise;
-        // If we reach here, the test should fail
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toContain('Failed after 2 retries');
-        expect(fn).toHaveBeenCalledTimes(3); // Initial + 2 retries
-      }
+      const promise = withRetry(fn, { maxRetries: 2, initialDelay: 1000 });
+      
+      // Catch the error to prevent unhandled rejection
+      const resultPromise = promise.catch((error: Error) => error);
+      
+      await vi.runAllTimersAsync();
+      const error = await resultPromise;
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('Failed after 2 retries');
+      expect(fn).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
 
     it('should use exponential backoff', async () => {
@@ -176,35 +174,38 @@ describe('retry utilities', () => {
       expect(fn).toHaveBeenCalledTimes(2);
     });
 
-    // Skip in CI due to Unhandled Rejection warnings with fake timers
-    it.skipIf(!!process.env.CI)('should not retry non-retryable errors', async () => {
+    it('should not retry non-retryable errors', async () => {
       const fn = vi.fn().mockRejectedValue(new Error('Invalid input'));
 
       const promise = withSmartRetry(fn, { maxRetries: 3, initialDelay: 1000 });
+      
+      // Catch the error to prevent unhandled rejection
+      const resultPromise = promise.catch((error: Error) => error);
+      
+      const error = await resultPromise;
 
-      await expect(promise).rejects.toThrow('Invalid input');
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('Invalid input');
       expect(fn).toHaveBeenCalledTimes(1); // No retries
     });
 
-    // Skip in CI due to Unhandled Rejection warnings with fake timers
-    it.skipIf(!!process.env.CI)('should handle mixed error types', async () => {
+    it('should handle mixed error types', async () => {
       const fn = vi
         .fn()
         .mockRejectedValueOnce(new Error('ETIMEDOUT')) // Retryable
         .mockRejectedValueOnce(new Error('Invalid input')); // Non-retryable
 
-      // Use try-catch to properly handle the rejection
-      try {
-        const promise = withSmartRetry(fn, { maxRetries: 3, initialDelay: 1000 });
-        await vi.advanceTimersByTimeAsync(1000);
-        await promise;
-        // If we reach here, the test should fail
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toBe('Invalid input');
-        expect(fn).toHaveBeenCalledTimes(2);
-      }
+      const promise = withSmartRetry(fn, { maxRetries: 3, initialDelay: 1000 });
+      
+      // Catch the error to prevent unhandled rejection
+      const resultPromise = promise.catch((error: Error) => error);
+      
+      await vi.advanceTimersByTimeAsync(1000);
+      const error = await resultPromise;
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('Invalid input');
+      expect(fn).toHaveBeenCalledTimes(2);
     });
   });
 });
