@@ -22,7 +22,15 @@ import { CommitExporter } from './exporters/commits.js';
 import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
-import type { ExportOptions, ExportType, PullRequest, Commit, Branch, Issue, Release } from './types/index.js';
+import type {
+  ExportOptions,
+  ExportType,
+  PullRequest,
+  Commit,
+  Branch,
+  Issue,
+  Release,
+} from './types/index.js';
 import type { BaseExporter } from './exporters/base-exporter.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -425,7 +433,14 @@ async function executeFullBackup(options: ExportOptions, progress: ProgressTrack
 /**
  * Create the appropriate exporter based on type
  */
-function createExporter(options: ExportOptions): BaseExporter<PullRequest> | BaseExporter<Commit> | BaseExporter<Branch> | BaseExporter<Issue> | BaseExporter<Release> {
+function createExporter(
+  options: ExportOptions
+):
+  | BaseExporter<PullRequest>
+  | BaseExporter<Commit>
+  | BaseExporter<Branch>
+  | BaseExporter<Issue>
+  | BaseExporter<Release> {
   const finalOutputPath = buildOutputPath(
     options.outputPath,
     options.repository.owner,
