@@ -49,3 +49,6 @@ export/
 # Audit reports
 SECURITY_AUDIT.md
 audit-report.md
+
+# But don't ignore coverage-report as it's needed for CI
+!coverage-report/

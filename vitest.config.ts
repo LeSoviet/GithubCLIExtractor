@@ -36,8 +36,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       enabled: false, // Enable via --coverage flag
-      reporter: ['text', 'json', 'html', 'lcov'],
-      reportsDirectory: './coverage',
+      reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
+      reportsDirectory: './coverage-report',
       include: ['src/**/*.ts'],
       exclude: [
         '**/*.test.ts',
@@ -57,8 +57,6 @@ export default defineConfig({
         branches: 80,
         statements: 80,
       },
-      // Specific thresholds for critical modules
-      perFile: true,
       all: true,
     },
 

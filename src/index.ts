@@ -190,7 +190,7 @@ async function main() {
     if (process.env.GHX_TEST_MODE && args.dryRun) {
       console.log('🔍 Dry-run mode: No files will be created\n');
       console.log('\n✔ Dry-run completed successfully');
-      
+
       // Handle specific flags that tests expect
       if (args.format) {
         console.log(`  Format: ${args.format}`);
@@ -216,7 +216,7 @@ async function main() {
       if (args.fullBackup) {
         console.log('  Full backup mode');
       }
-      
+
       process.exit(0);
     }
 
