@@ -3,6 +3,7 @@
  */
 export function sanitizeFilename(filename: string): string {
   return filename
+    // eslint-disable-next-line no-control-regex
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-') // Replace invalid characters
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen

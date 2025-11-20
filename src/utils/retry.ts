@@ -24,7 +24,7 @@ export async function withRetry<T>(
   } = options;
 
   let lastError: Error;
-  let delay = initialDelay;
+  const delay = initialDelay;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
