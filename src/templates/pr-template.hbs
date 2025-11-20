@@ -1,0 +1,28 @@
+# Pull Request #{{number}}: {{title}}
+
+## Metadata
+
+- **Author:** {{author}}
+- **State:** {{uppercase state}}
+- **Created:** {{formatDate createdAt}}
+- **Updated:** {{formatDate updatedAt}}
+{{#if closedAt}}
+- **Closed:** {{formatDate closedAt}}
+{{/if}}
+{{#if mergedAt}}
+- **Merged:** {{formatDate mergedAt}}
+{{/if}}
+- **Labels:** {{#if labels}}{{join labels ", "}}{{else}}None{{/if}}
+- **URL:** {{url}}
+
+## Description
+
+{{#if body}}
+{{body}}
+{{else}}
+*No description provided*
+{{/if}}
+
+---
+
+*Exported with [GitHub Extractor CLI](https://github.com/LeSoviet/ghextractor)*

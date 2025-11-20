@@ -1,0 +1,31 @@
+# Source files
+src/
+tests/
+
+# Configuration
+tsconfig.json
+.eslintrc.json
+.prettierrc.json
+.gitignore
+
+# Development
+.vscode/
+.idea/
+*.swp
+
+# Testing
+coverage/
+*.test.ts
+*.spec.ts
+
+# CI/CD
+.github/
+
+# Documentation (keep README)
+docs/
+ROADMAP.md
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
