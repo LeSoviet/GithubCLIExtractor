@@ -16,7 +16,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
 
     try {
       console.log('[INFO] Fetching releases list...');
-      
+
       // Fetch releases with ONLY available fields
       const releases = await execGhJson<any[]>(
         `release list --repo ${repoId} --limit 100 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
@@ -34,8 +34,10 @@ export class ReleaseExporter extends BaseExporter<Release> {
       const releasesWithDetails = await Promise.all(
         releases.map(async (release, index) => {
           try {
-            console.log(`[INFO] Fetching details for release ${index + 1}/${releases.length}: ${release.tagName}`);
-            
+            console.log(
+              `[INFO] Fetching details for release ${index + 1}/${releases.length}: ${release.tagName}`
+            );
+
             // Fetch full release data including body, assets, and author
             const fullRelease = await execGhJson<any>(
               `api repos/${repoId}/releases/tags/${release.tagName}`,
@@ -47,7 +49,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
               body: fullRelease.body || '',
               assets: fullRelease.assets || [],
               author: fullRelease.author || { login: 'unknown' },
-              url: fullRelease.html_url || ''
+              url: fullRelease.html_url || '',
             });
           } catch (error: any) {
             console.log(`[INFO] Could not fetch details for ${release.tagName}: ${error.message}`);
@@ -57,7 +59,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
               body: '',
               assets: [],
               author: { login: 'unknown' },
-              url: `https://github.com/${repoId}/releases/tag/${release.tagName}`
+              url: `https://github.com/${repoId}/releases/tag/${release.tagName}`,
             });
           }
         })
@@ -65,7 +67,6 @@ export class ReleaseExporter extends BaseExporter<Release> {
 
       console.log(`[INFO] Successfully processed ${releasesWithDetails.length} releases`);
       return releasesWithDetails;
-      
     } catch (error: any) {
       throw new Error(`Failed to fetch releases: ${error.message}`);
     }

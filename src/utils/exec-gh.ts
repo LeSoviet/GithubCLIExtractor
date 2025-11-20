@@ -47,7 +47,7 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
       if (error.killed || error.signal === 'SIGTERM') {
         throw new Error(`GitHub CLI command timed out after ${timeout}ms`);
       }
-      
+
       if (error instanceof Error) {
         throw new Error(`GitHub CLI command failed: ${error.message}`);
       }
@@ -61,10 +61,11 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
   // Apply retry logic first (inner wrapper)
   if (useRetry) {
     const originalPromise = resultPromise;
-    resultPromise = () => withSmartRetry(originalPromise, {
-      maxRetries: 2, // Reduced from 3
-      initialDelay: 500, // Reduced from 1000
-    });
+    resultPromise = () =>
+      withSmartRetry(originalPromise, {
+        maxRetries: 2, // Reduced from 3
+        initialDelay: 500, // Reduced from 1000
+      });
   }
 
   // Apply rate limiting second (outer wrapper)

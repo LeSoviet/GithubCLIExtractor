@@ -17,14 +17,14 @@ export class BranchExporter extends BaseExporter<Branch> {
 
     try {
       console.log('[INFO] Fetching branches (timeout: 10s)...');
-      
+
       // Fetch branches with aggressive timeout and no retry
       const branches = await execGhJson<GitHubBranch[]>(
         `api repos/${repoId}/branches?per_page=20`,
-        { 
+        {
           timeout: 10000, // 10 second timeout
           useRetry: false, // Disable retry for faster failure
-          useRateLimit: true
+          useRateLimit: true,
         }
       );
 
@@ -35,7 +35,6 @@ export class BranchExporter extends BaseExporter<Branch> {
 
       console.log(`[INFO] Successfully fetched ${branches.length} branches`);
       return branches.map((branch) => this.convertBranch(branch));
-      
     } catch (error: any) {
       console.log(`[INFO] Branch fetch failed: ${error.message} - Skipping branches`);
       return []; // Return empty array to allow export to continue
