@@ -2,6 +2,17 @@
 
 A universal cross-platform CLI tool that allows you to extract Pull Requests, Commits, Branches, Issues, Releases, and generate complete documentation automatically using GitHub CLI.
 
+[![npm version](https://img.shields.io/npm/v/ghextractor.svg)](https://www.npmjs.com/package/ghextractor)
+[![npm downloads](https://img.shields.io/npm/dt/ghextractor.svg)](https://www.npmjs.com/package/ghextractor)
+
+## 🛠️ Built With
+
+- ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+- ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+- ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+- ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+- ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
+
 ## Features
 
 - 🚀 **Zero Configuration** - Works out of the box with GitHub CLI
@@ -18,7 +29,7 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 
 ## Installation
 
-### From npm (Coming Soon)
+### From npm
 
 ```bash
 npm install -g ghextractor
@@ -28,14 +39,11 @@ npm install -g ghextractor
 
 ```bash
 # Clone the repository
-git clone https://github.com/LeSoviet/ghextractor.git
-cd ghextractor
+git clone https://github.com/LeSoviet/GithubCLIExtractor.git
+cd GithubCLIExtractor
 
 # Install dependencies
 npm install
-
-# Run in development mode
-npm run dev
 ```
 
 ## Quick Start
@@ -56,34 +64,6 @@ npm run dev
    - Select output format (Markdown, JSON, or both)
    - Specify output path
 
-## Usage
-
-```bash
-ghextractor
-```
-
-The tool will guide you through an interactive menu to:
-- Scan your GitHub repositories
-- Select which repository to export from
-- Choose what data to extract
-- Configure export options
-
-## Project Structure
-
-```
-ghextractor/
-├── src/
-│   ├── cli/          # CLI prompts and UI
-│   ├── core/         # Core functionality (auth, rate limiting)
-│   ├── scanner/      # Repository scanning
-│   ├── exporters/    # Data exporters (PRs, commits, etc.)
-│   ├── utils/        # Utility functions
-│   └── types/        # TypeScript type definitions
-├── bin/              # CLI executable
-├── tests/            # Test files
-└── dist/             # Compiled output (after build)
-```
-
 ## Development
 
 ### Available Scripts
@@ -96,14 +76,6 @@ npm run test:coverage # Run tests with coverage
 npm run lint         # Lint code
 npm run format       # Format code with Prettier
 ```
-
-### Building
-
-```bash
-npm run build
-```
-
-This will compile TypeScript to both ESM and CommonJS formats in the `dist/` directory.
 
 ## Roadmap
 
@@ -141,9 +113,10 @@ MIT © LeSoviet
 
 ## Support
 
-- 🐛 [Report Issues](https://github.com/LeSoviet/ghextractor/issues)
-- 💡 [Request Features](https://github.com/LeSoviet/ghextractor/issues/new)
-- 📖 [Documentation](https://github.com/LeSoviet/ghextractor/wiki)
+- 🐛 [Report Issues](https://github.com/LeSoviet/GithubCLIExtractor/issues)
+- 💡 [Request Features](https://github.com/LeSoviet/GithubCLIExtractor/issues/new)
+- 📖 [Documentation](https://lesoviet.github.io/GithubCLIExtractor/)
+- 📦 [npm Package](https://www.npmjs.com/package/ghextractor)
 
 ## Acknowledgments
 
