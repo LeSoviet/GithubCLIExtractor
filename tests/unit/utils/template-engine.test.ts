@@ -9,7 +9,7 @@ describe('template-engine', () => {
   let engine: ReturnType<typeof getTemplateEngine>;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghx-template-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghextractor-template-test-'));
     engine = getTemplateEngine();
   });
 

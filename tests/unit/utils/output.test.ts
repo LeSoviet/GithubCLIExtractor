@@ -8,7 +8,7 @@ describe('output utilities', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghx-output-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghextractor-output-test-'));
   });
 
   afterEach(async () => {
@@ -43,7 +43,7 @@ describe('output utilities', () => {
       const result = buildOutputPath('./export', 'owner', 'repo', 'commits');
       
       // Should not contain double slashes or backslashes
-      expect(result).not.toMatch(/[\/\\]{2,}/);
+      expect(result).not.toMatch(/[/\\]{2,}/);
     });
   });
 

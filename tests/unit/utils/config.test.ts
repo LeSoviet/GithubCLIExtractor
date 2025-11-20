@@ -13,7 +13,7 @@ describe('ConfigManager', () => {
 
   beforeEach(() => {
     configManager = new ConfigManager();
-    testDir = join(tmpdir(), `ghx-config-test-${Date.now()}`);
+    testDir = join(tmpdir(), `ghextractor-config-test-${Date.now()}`);
     originalCwd = process.cwd();
   });
 

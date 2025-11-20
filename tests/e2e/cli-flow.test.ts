@@ -12,7 +12,7 @@ describe('CLI E2E Tests', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghx-e2e-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ghextractor-e2e-'));
   });
 
   afterAll(async () => {

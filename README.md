@@ -1,4 +1,4 @@
-# ghx - GitHub Extractor CLI
+# ghextractor - GitHub Extractor CLI
 
 A universal cross-platform CLI tool that allows you to extract Pull Requests, Commits, Branches, Issues, Releases, and generate complete documentation automatically using GitHub CLI.
 
@@ -21,15 +21,15 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 ### From npm (Coming Soon)
 
 ```bash
-npm install -g ghx
+npm install -g ghextractor
 ```
 
 ### From Source (Development)
 
 ```bash
 # Clone the repository
-git clone https://github.com/LeSoviet/ghx.git
-cd ghx
+git clone https://github.com/LeSoviet/ghextractor.git
+cd ghextractor
 
 # Install dependencies
 npm install
@@ -47,7 +47,7 @@ npm run dev
 
 2. **Run the extractor**:
    ```bash
-   ghx
+   ghextractor
    ```
 
 3. **Follow the interactive prompts**:

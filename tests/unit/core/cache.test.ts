@@ -11,7 +11,7 @@ describe('Cache', () => {
 
   beforeEach(async () => {
     // Create a temporary cache directory for testing
-    testCacheDir = join(tmpdir(), `ghx-test-cache-${Date.now()}`);
+    testCacheDir = join(tmpdir(), `ghextractor-test-cache-${Date.now()}`);
     cache = new Cache({ ttl: 1, cacheDir: testCacheDir });
     await cache.init();
   });
@@ -25,7 +25,7 @@ describe('Cache', () => {
 
   describe('initialization', () => {
     it('should create cache directory on init', async () => {
-      const newCacheDir = join(tmpdir(), `ghx-test-cache-new-${Date.now()}`);
+      const newCacheDir = join(tmpdir(), `ghextractor-test-cache-new-${Date.now()}`);
       const newCache = new Cache({ cacheDir: newCacheDir });
       
       await newCache.init();
