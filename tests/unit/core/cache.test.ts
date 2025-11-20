@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Cache } from '@/core/cache';
-import { mkdir, writeFile, readFile, rm } from 'fs/promises';
+import { writeFile, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';

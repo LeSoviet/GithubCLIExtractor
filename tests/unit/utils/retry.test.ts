@@ -65,7 +65,7 @@ describe('retry utilities', () => {
         .mockResolvedValue('success');
 
       const delays: number[] = [];
-      const onRetry = vi.fn((error, attempt) => {
+      const onRetry = vi.fn((_error, attempt) => {
         delays.push(attempt);
       });
 

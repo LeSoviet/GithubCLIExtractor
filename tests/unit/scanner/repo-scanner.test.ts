@@ -24,6 +24,10 @@ describe('repo-scanner', () => {
           description: 'Test repository 1',
           html_url: 'https://github.com/testuser/repo1',
           private: false,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
         {
           name: 'repo2',
@@ -31,6 +35,10 @@ describe('repo-scanner', () => {
           description: 'Test repository 2',
           html_url: 'https://github.com/testuser/repo2',
           private: true,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
       ];
 
@@ -57,6 +65,10 @@ describe('repo-scanner', () => {
           description: 'Other user repository',
           html_url: 'https://github.com/otheruser/repo1',
           private: false,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
       ];
 
@@ -79,6 +91,10 @@ describe('repo-scanner', () => {
           description: null,
           html_url: 'https://github.com/testuser/repo1',
           private: false,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
       ];
 
@@ -105,6 +121,10 @@ describe('repo-scanner', () => {
           description: 'Organization repository 1',
           html_url: 'https://github.com/testorg/org-repo1',
           private: false,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
         {
           name: 'org-repo2',
@@ -112,6 +132,10 @@ describe('repo-scanner', () => {
           description: 'Organization repository 2',
           html_url: 'https://github.com/testorg/org-repo2',
           private: true,
+          created_at: '2021-01-01T00:00:00Z',
+          updated_at: '2021-01-01T00:00:00Z',
+          pushed_at: '2021-01-01T00:00:00Z',
+          default_branch: 'main',
         },
       ];
 
@@ -144,6 +168,10 @@ describe('repo-scanner', () => {
         description: 'Test repository',
         html_url: 'https://github.com/testowner/test-repo',
         private: false,
+        created_at: '2021-01-01T00:00:00Z',
+        updated_at: '2021-01-01T00:00:00Z',
+        pushed_at: '2021-01-01T00:00:00Z',
+        default_branch: 'main',
       };
 
       vi.mocked(execGh.execGhJson).mockResolvedValue(mockRepo);
