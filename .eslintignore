@@ -1,0 +1,2 @@
+# Ignore bin directory as it contains simple JS entry point files
+bin/

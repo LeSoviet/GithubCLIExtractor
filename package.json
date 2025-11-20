@@ -1,5 +1,5 @@
 {
-  "name": "ghx",
+  "name": "ghextractor",
   "version": "0.1.0",
   "description": "Universal CLI tool to extract GitHub data (PRs, commits, issues, releases) into Markdown/JSON",
   "type": "module",
@@ -11,10 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
-    "ghx": "./bin/ghextractor.js"
+    "ghextractor": "./bin/ghextractor.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -30,14 +31,19 @@
     "test:watch": "vitest watch",
     "test:bench": "vitest bench",
     "test:ui": "vitest --ui",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint": "eslint src/**/*.ts --ignore-path .eslintignore",
+    "lint:fix": "eslint src/**/*.ts --fix --ignore-path .eslintignore",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "type-check": "tsc --noEmit",
     "security:audit": "npm audit --audit-level=moderate",
     "security:fix": "npm audit fix",
-    "prepublishOnly": "npm run build && npm run test:coverage"
+    "prepublishOnly": "npm run build && npm run test:coverage",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
     "github",
@@ -54,8 +60,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LeSoviet/ghextractor"
+    "url": "https://github.com/LeSoviet/GithubCLIExtractor"
   },
+  "bugs": {
+    "url": "https://github.com/LeSoviet/GithubCLIExtractor/issues"
+  },
+  "homepage": "https://github.com/LeSoviet/GithubCLIExtractor#readme",
   "dependencies": {
     "@clack/prompts": "^0.8.0",
     "bottleneck": "^2.19.5",
@@ -67,21 +77,26 @@
     "ora": "^8.0.0"
   },
   "devDependencies": {
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
     "@types/cli-progress": "^3.11.5",
     "@types/handlebars": "^4.0.40",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "@vitest/coverage-v8": "^1.6.1",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "eslint": "^8.56.0",
     "happy-dom": "^20.0.10",
     "husky": "^8.0.0",
     "lint-staged": "^15.2.0",
     "msw": "^2.12.2",
     "prettier": "^3.2.0",
+    "semantic-release": "^25.0.2",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0",
+    "vitepress": "^1.6.4",
     "vitest": "^1.0.0"
   }
 }

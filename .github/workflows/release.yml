@@ -94,7 +94,7 @@ jobs:
             
             ### Installation
             ```bash
-            npm install -g ghx@${{ github.ref_name }}
+            npm install -g ghextractor@${{ github.ref_name }}
             ```
             
             ### What's New
@@ -195,4 +195,4 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Links" >> $GITHUB_STEP_SUMMARY
           echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [npm Package](https://www.npmjs.com/package/ghx)" >> $GITHUB_STEP_SUMMARY
+          echo "- [npm Package](https://www.npmjs.com/package/ghextractor)" >> $GITHUB_STEP_SUMMARY

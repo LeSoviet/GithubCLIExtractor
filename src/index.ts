@@ -22,14 +22,21 @@ import { CommitExporter } from './exporters/commits.js';
 import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
-import type { ExportOptions, ExportType } from './types/index.js';
+import type { ExportOptions, ExportType, PullRequest, Commit, Branch, Issue, Release } from './types/index.js';
 import type { BaseExporter } from './exporters/base-exporter.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Support both ESM and CJS
+const getCurrentDir = (): string => {
+  try {
+    return typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
+  } catch {
+    return process.cwd();
+  }
+};
+const __dirname: string = getCurrentDir();
 
 /**
  * Parse command line arguments
@@ -76,7 +83,7 @@ function showHelp(): void {
 GitHub Extractor CLI
 
 Usage:
-  ghx [options]
+  ghextractor [options]
 
 Options:
   -h, --help              Show this help message
@@ -94,13 +101,13 @@ Options:
   --full-backup           Export all resources (PRs, issues, commits, branches, releases)
 
 Examples:
-  ghx                                    # Interactive mode
-  ghx --check                            # Check GitHub CLI setup
-  ghx --output ./my-export               # Custom output directory
-  ghx --format json                      # Export as JSON
-  ghx --full-backup                      # Full repository backup
-  ghx --labels bug,enhancement           # Filter by labels
-  ghx --since 2024-01-01 --until 2024-12-31  # Date range filter
+  ghextractor                                    # Interactive mode
+  ghextractor --check                            # Check GitHub CLI setup
+  ghextractor --output ./my-export               # Custom output directory
+  ghextractor --format json                      # Export as JSON
+  ghextractor --full-backup                      # Full repository backup
+  ghextractor --labels bug,enhancement           # Filter by labels
+  ghextractor --since 2024-01-01 --until 2024-12-31  # Date range filter
 
 For more information, visit: https://github.com/LeSoviet/ghextractor
 `);
@@ -418,7 +425,7 @@ async function executeFullBackup(options: ExportOptions, progress: ProgressTrack
 /**
  * Create the appropriate exporter based on type
  */
-function createExporter(options: ExportOptions): BaseExporter<any> {
+function createExporter(options: ExportOptions): BaseExporter<PullRequest> | BaseExporter<Commit> | BaseExporter<Branch> | BaseExporter<Issue> | BaseExporter<Release> {
   const finalOutputPath = buildOutputPath(
     options.outputPath,
     options.repository.owner,

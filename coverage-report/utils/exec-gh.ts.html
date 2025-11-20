@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.69% </span>
+                <span class="strong">27.92% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>31/92</span>
+                <span class='fraction'>31/111</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.69% </span>
+                <span class="strong">27.92% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>31/92</span>
+                <span class='fraction'>31/111</span>
             </div>
         
             
@@ -155,7 +155,26 @@
 <a name='L90'></a><a href='#L90'>90</a>
 <a name='L91'></a><a href='#L91'>91</a>
 <a name='L92'></a><a href='#L92'>92</a>
-<a name='L93'></a><a href='#L93'>93</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -178,6 +197,25 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -278,6 +316,7 @@ export interface ExecGhOptions {
 <span class="cstat-no" title="statement not covered" >      const { stdout, stderr } = await execAsync(`gh ${command}`, {</span>
 <span class="cstat-no" title="statement not covered" >        timeout,</span>
 <span class="cstat-no" title="statement not covered" >        maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs</span>
+<span class="cstat-no" title="statement not covered" >        killSignal: 'SIGTERM', // Ensure process can be killed</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      if (stderr &amp;&amp; !stderr.includes('Logging in to')) {</span>
@@ -290,7 +329,12 @@ export interface ExecGhOptions {
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      return stdout.trim();</span>
-<span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >    } catch (error: any) {</span>
+<span class="cstat-no" title="statement not covered" >      // Handle timeout specifically</span>
+<span class="cstat-no" title="statement not covered" >      if (error.killed || error.signal === 'SIGTERM') {</span>
+<span class="cstat-no" title="statement not covered" >        throw new Error(`GitHub CLI command timed out after ${timeout}ms`);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      if (error instanceof Error) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error(`GitHub CLI command failed: ${error.message}`);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
@@ -298,22 +342,35 @@ export interface ExecGhOptions {
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Apply rate limiting and retry logic</span>
-<span class="cstat-no" title="statement not covered" >  let result: Promise&lt;string&gt; = executeCommand();</span>
+<span class="cstat-no" title="statement not covered" >  // Create a promise that will execute the command</span>
+<span class="cstat-no" title="statement not covered" >  let resultPromise: () =&gt; Promise&lt;string&gt; = executeCommand;</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Apply retry logic first (inner wrapper)</span>
 <span class="cstat-no" title="statement not covered" >  if (useRetry) {</span>
-<span class="cstat-no" title="statement not covered" >    result = withSmartRetry(() =&gt; result, {</span>
-<span class="cstat-no" title="statement not covered" >      maxRetries: 3,</span>
-<span class="cstat-no" title="statement not covered" >      initialDelay: 1000,</span>
-<span class="cstat-no" title="statement not covered" >    });</span>
+<span class="cstat-no" title="statement not covered" >    const originalPromise = resultPromise;</span>
+<span class="cstat-no" title="statement not covered" >    resultPromise = () =&gt;</span>
+<span class="cstat-no" title="statement not covered" >      withSmartRetry(originalPromise, {</span>
+<span class="cstat-no" title="statement not covered" >        maxRetries: 2, // Reduced from 3</span>
+<span class="cstat-no" title="statement not covered" >        initialDelay: 500, // Reduced from 1000</span>
+<span class="cstat-no" title="statement not covered" >      });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Apply rate limiting second (outer wrapper)</span>
 <span class="cstat-no" title="statement not covered" >  if (useRateLimit &amp;&amp; command.includes('api')) {</span>
-<span class="cstat-no" title="statement not covered" >    // Only rate limit API calls</span>
-<span class="cstat-no" title="statement not covered" >    result = withRateLimit(() =&gt; result);</span>
+<span class="cstat-no" title="statement not covered" >    const originalPromise = resultPromise;</span>
+<span class="cstat-no" title="statement not covered" >    resultPromise = () =&gt; withRateLimit(originalPromise);</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  return result;</span>
+<span class="cstat-no" title="statement not covered" >  // Execute with overall timeout protection</span>
+<span class="cstat-no" title="statement not covered" >  return Promise.race([</span>
+<span class="cstat-no" title="statement not covered" >    resultPromise(),</span>
+<span class="cstat-no" title="statement not covered" >    new Promise&lt;string&gt;((_, reject) =&gt;</span>
+<span class="cstat-no" title="statement not covered" >      setTimeout(</span>
+<span class="cstat-no" title="statement not covered" >        () =&gt; reject(new Error(`Operation timed out after ${timeout * 1.5}ms`)),</span>
+<span class="cstat-no" title="statement not covered" >        timeout * 1.5 // 1.5x timeout as absolute limit</span>
+<span class="cstat-no" title="statement not covered" >      )</span>
+<span class="cstat-no" title="statement not covered" >    ),</span>
+<span class="cstat-no" title="statement not covered" >  ]);</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /**
@@ -321,7 +378,7 @@ export interface ExecGhOptions {
  */
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function isGhInstalled(): Promise&lt;boolean&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    await execAsync('gh --version');</span>
+<span class="cstat-no" title="statement not covered" >    await execAsync('gh --version', { timeout: 5000 });</span>
 <span class="cstat-no" title="statement not covered" >    return true;</span>
 <span class="cstat-no" title="statement not covered" >  } catch {</span>
 <span class="cstat-no" title="statement not covered" >    return false;</span>
@@ -346,7 +403,7 @@ export interface ExecGhOptions {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-20T19:59:11.101Z
+                at 2025-11-20T21:19:17.237Z
             </div>
         <script src="../prettify.js"></script>
         <script>
