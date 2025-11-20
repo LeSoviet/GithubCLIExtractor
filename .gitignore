@@ -51,3 +51,6 @@ audit-report.md
 
 # But don't ignore coverage-report as it's needed for CI
 !coverage-report/
+
+# Social
+social
