@@ -108,8 +108,11 @@ export class ProgressTracker {
 
     if (rateLimit) {
       const percentRemaining = (rateLimit.remaining / rateLimit.limit) * 100;
-      const statusColor = percentRemaining > 50 ? chalk.green : percentRemaining > 20 ? chalk.yellow : chalk.red;
-      console.log(statusColor(`⚡ Rate Limit: ${rateLimit.remaining}/${rateLimit.limit} remaining`));
+      const statusColor =
+        percentRemaining > 50 ? chalk.green : percentRemaining > 20 ? chalk.yellow : chalk.red;
+      console.log(
+        statusColor(`⚡ Rate Limit: ${rateLimit.remaining}/${rateLimit.limit} remaining`)
+      );
     }
 
     const durationSeconds = (result.duration / 1000).toFixed(2);

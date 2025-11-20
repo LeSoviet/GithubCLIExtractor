@@ -17,10 +17,11 @@ export class CommitExporter extends BaseExporter<Commit> {
     try {
       // Fetch commits - limit to 100 for performance (configurable later)
       // Note: Removed --paginate as it can hang on large repos
-      const commits = await execGhJson<GitHubCommit[]>(
-        `api repos/${repoId}/commits?per_page=100`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
-      );
+      const commits = await execGhJson<GitHubCommit[]>(`api repos/${repoId}/commits?per_page=100`, {
+        timeout: 60000,
+        useRateLimit: false,
+        useRetry: false,
+      });
 
       // Convert to our format
       const convertedCommits = commits.map((commit) => this.convertCommit(commit));

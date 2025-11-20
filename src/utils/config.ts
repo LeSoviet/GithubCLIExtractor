@@ -101,7 +101,12 @@ export class ConfigManager {
 
       // Remove internal fields before saving
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { version: _version, lastRun: _lastRun, tokens: _tokens, ...fileConfig } = updatedConfig;
+      const {
+        version: _version,
+        lastRun: _lastRun,
+        tokens: _tokens,
+        ...fileConfig
+      } = updatedConfig;
 
       await writeFile(path, JSON.stringify(fileConfig, null, 2), 'utf-8');
       logger.info(`Configuration saved to: ${path}`);

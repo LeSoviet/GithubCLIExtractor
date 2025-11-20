@@ -50,7 +50,7 @@ function parseArgs(): {
   fullBackup: boolean;
 } {
   const args = process.argv.slice(2);
-  
+
   return {
     help: args.includes('--help') || args.includes('-h'),
     version: args.includes('--version') || args.includes('-v'),
@@ -124,7 +124,7 @@ async function showVersion(): Promise<void> {
  */
 async function checkSetup(): Promise<void> {
   console.log('Checking GitHub CLI setup...\n');
-  
+
   const ghInstalled = await checkGhInstalled();
   if (ghInstalled) {
     console.log('✔ GitHub CLI (gh) is installed');
@@ -133,7 +133,7 @@ async function checkSetup(): Promise<void> {
     console.log('  Install from: https://cli.github.com/');
     process.exit(1);
   }
-  
+
   const authStatus = await getAuthStatus();
   if (authStatus.isAuthenticated) {
     console.log(`✔ Authenticated as: ${authStatus.username}`);
@@ -142,32 +142,32 @@ async function checkSetup(): Promise<void> {
     console.log('  Run: gh auth login');
     process.exit(1);
   }
-  
+
   console.log('\n✔ Setup is complete!');
 }
 
 async function main() {
   try {
     const args = parseArgs();
-    
+
     // Handle flags that exit immediately
     if (args.help) {
       showHelp();
       process.exit(0);
     }
-    
+
     if (args.version) {
       await showVersion();
       process.exit(0);
     }
-    
+
     if (args.check) {
       await checkSetup();
       process.exit(0);
     }
-    
+
     // Check if GitHub CLI is installed
-    
+
     // Check if GitHub CLI is installed
     const ghInstalled = await checkGhInstalled();
     if (!ghInstalled) {
@@ -197,7 +197,7 @@ async function main() {
     // Check and display rate limit
     const rateLimiter = getRateLimiter();
     const rateLimit = await rateLimiter.fetchRateLimitStatus();
-    
+
     if (args.verbose) {
       displayRateLimit(rateLimit);
     }
@@ -233,26 +233,29 @@ async function main() {
     }
 
     // Select repository (or use first for non-interactive mode)
-    const selectedRepo = process.env.GHX_TEST_MODE 
-      ? repositories[0] 
+    const selectedRepo = process.env.GHX_TEST_MODE
+      ? repositories[0]
       : await selectRepository(repositories);
-    
+
     if (!args.dryRun) {
       showInfo(`Selected: ${selectedRepo.owner}/${selectedRepo.name}`);
     }
 
     // Determine export type
-    const exportType: ExportType = args.fullBackup 
-      ? 'full-backup' 
-      : (process.env.GHX_TEST_MODE ? 'prs' : await selectExportType());
+    const exportType: ExportType = args.fullBackup
+      ? 'full-backup'
+      : process.env.GHX_TEST_MODE
+        ? 'prs'
+        : await selectExportType();
 
     // Determine export format
-    const exportFormat = args.format || (process.env.GHX_TEST_MODE ? 'markdown' : await selectExportFormat());
+    const exportFormat =
+      args.format || (process.env.GHX_TEST_MODE ? 'markdown' : await selectExportFormat());
 
     // Determine output path
     const defaultPath = args.output || './github-export';
-    const outputPath = process.env.GHX_TEST_MODE 
-      ? defaultPath 
+    const outputPath = process.env.GHX_TEST_MODE
+      ? defaultPath
       : await selectOutputPath(defaultPath);
 
     // Exit if dry-run
@@ -323,10 +326,7 @@ async function executeExport(options: ExportOptions): Promise<void> {
 /**
  * Execute full backup (all export types)
  */
-async function executeFullBackup(
-  options: ExportOptions,
-  progress: ProgressTracker
-): Promise<void> {
+async function executeFullBackup(options: ExportOptions, progress: ProgressTracker): Promise<void> {
   const types: ExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
   const results = [];
 

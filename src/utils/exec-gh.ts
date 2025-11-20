@@ -21,10 +21,7 @@ export interface ExecGhOptions {
  * @param command - The gh command to execute (without 'gh' prefix)
  * @param options - Additional options
  */
-export async function execGh(
-  command: string,
-  options: ExecGhOptions = {}
-): Promise<string> {
+export async function execGh(command: string, options: ExecGhOptions = {}): Promise<string> {
   const { timeout = 30000, useRateLimit = true, useRetry = true } = options;
 
   const executeCommand = async (): Promise<string> => {
@@ -85,10 +82,7 @@ export async function isGhInstalled(): Promise<boolean> {
 /**
  * Parse JSON output from gh command
  */
-export async function execGhJson<T>(
-  command: string,
-  options?: ExecGhOptions
-): Promise<T> {
+export async function execGhJson<T>(command: string, options?: ExecGhOptions): Promise<T> {
   const output = await execGh(command, options);
   try {
     return JSON.parse(output) as T;

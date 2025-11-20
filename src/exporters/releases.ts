@@ -101,12 +101,13 @@ export class ReleaseExporter extends BaseExporter<Release> {
       publishedAt: ghRelease.publishedAt,
       isDraft: ghRelease.isDraft,
       isPrerelease: ghRelease.isPrerelease,
-      assets: ghRelease.assets?.map((asset: any) => ({
-        name: asset.name,
-        size: asset.size,
-        downloadCount: asset.downloadCount || 0,
-        downloadUrl: asset.url,
-      })) || [],
+      assets:
+        ghRelease.assets?.map((asset: any) => ({
+          name: asset.name,
+          size: asset.size,
+          downloadCount: asset.downloadCount || 0,
+          downloadUrl: asset.url,
+        })) || [],
       url: ghRelease.url,
     };
   }

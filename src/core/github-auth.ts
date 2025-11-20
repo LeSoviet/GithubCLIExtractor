@@ -37,9 +37,7 @@ export async function ensureAuthenticated(): Promise<GitHubAuthStatus> {
   const authStatus = await getAuthStatus();
 
   if (!authStatus.isAuthenticated) {
-    throw new Error(
-      'Not authenticated with GitHub CLI. Please run: gh auth login'
-    );
+    throw new Error('Not authenticated with GitHub CLI. Please run: gh auth login');
   }
 
   return authStatus;

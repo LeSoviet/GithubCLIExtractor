@@ -47,7 +47,8 @@ export class IssueExporter extends BaseExporter<Issue> {
   }
 
   protected toMarkdown(issue: Issue): string {
-    const labels = issue.labels.length > 0 ? issue.labels.map((l) => `\`${l}\``).join(', ') : 'None';
+    const labels =
+      issue.labels.length > 0 ? issue.labels.map((l) => `\`${l}\``).join(', ') : 'None';
     const body = issue.body ? decodeUnicode(issue.body) : '*No description provided*';
 
     let markdown = `# Issue #${issue.number}: ${issue.title}\n\n`;

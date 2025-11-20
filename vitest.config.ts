@@ -27,10 +27,9 @@ export default defineConfig({
     hookTimeout: 10000,
 
     // Reporters
-    reporters: ['default', 'json', 'html'],
+    reporters: ['default', 'json'],
     outputFile: {
       json: './test-results/results.json',
-      html: './test-results/index.html',
     },
 
     // Coverage configuration with 80%+ thresholds
