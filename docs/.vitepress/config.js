@@ -11,7 +11,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/' },
       { text: 'API', link: '/api/' },
-      { text: 'Changelog', link: '/changelog/' }
+      { text: 'Changelog', link: '/changelog' }
     ],
     
     sidebar: {
@@ -47,7 +47,7 @@ export default defineConfig({
     
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2025 LeSoviet'
+      copyright: 'Copyright © 2025 Daniel Khadour (LeSoviet)'
     }
   }
 })
