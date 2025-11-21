@@ -33,7 +33,9 @@ yarn-error.log*
 
 # Testing
 coverage/
+coverage-report/
 .nyc_output/
+test-results/
 
 # Cache
 .cache/
@@ -48,9 +50,7 @@ export/
 # Audit reports
 SECURITY_AUDIT.md
 audit-report.md
+audit-output.json
 
-# But don't ignore coverage-report as it's needed for CI
-!coverage-report/
-
-# Social
-social
+# Social media content (temporary/generated)
+social/
