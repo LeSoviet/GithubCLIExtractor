@@ -20,7 +20,7 @@ describe('ConfigManager', () => {
   afterEach(async () => {
     // Restore original directory
     process.chdir(originalCwd);
-    
+
     // Clean up test directory
     if (existsSync(testDir)) {
       await rm(testDir, { recursive: true, force: true });

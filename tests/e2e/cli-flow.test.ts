@@ -29,7 +29,10 @@ describe.skipIf(process.env.CI === 'true')('CLI E2E Tests', () => {
   /**
    * Helper function to run CLI commands
    */
-  const runCLI = (args: string[] = [], input?: string): Promise<{
+  const runCLI = (
+    args: string[] = [],
+    input?: string
+  ): Promise<{
     stdout: string;
     stderr: string;
     exitCode: number;
@@ -106,7 +109,7 @@ describe.skipIf(process.env.CI === 'true')('CLI E2E Tests', () => {
     // We can't easily test this without mocking the gh command
     // Instead we verify the check command works
     const result = await runCLI(['--check']);
-    
+
     // If gh is installed, exit code should be 0
     // If not, it should be 1
     expect([0, 1]).toContain(result.exitCode);
@@ -206,13 +209,7 @@ describe.skipIf(process.env.CI === 'true')('CLI E2E Tests', () => {
 
   it('should filter exports by date range', async () => {
     // Test date filtering with dry-run
-    const result = await runCLI([
-      '--dry-run',
-      '--since',
-      '2024-01-01',
-      '--until',
-      '2024-12-31',
-    ]);
+    const result = await runCLI(['--dry-run', '--since', '2024-01-01', '--until', '2024-12-31']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Dry-run');
@@ -243,10 +240,7 @@ describe.skipIf(process.env.CI === 'true')('CLI E2E Tests', () => {
   it('should use custom templates', async () => {
     // Test custom template with dry-run
     const templatePath = path.join(tempDir, 'custom-template.hbs');
-    await fs.writeFile(
-      templatePath,
-      '# {{title}}\n\n{{body}}'
-    );
+    await fs.writeFile(templatePath, '# {{title}}\n\n{{body}}');
 
     const result = await runCLI(['--dry-run', '--template', templatePath]);
 

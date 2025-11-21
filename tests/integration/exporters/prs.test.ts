@@ -108,10 +108,7 @@ describe('PR Exporter Integration Tests', () => {
   it('should handle API errors gracefully', async () => {
     server.use(
       http.get('https://api.github.com/repos/testuser/test-repo/pulls', () => {
-        return HttpResponse.json(
-          { message: 'Not Found' },
-          { status: 404 }
-        );
+        return HttpResponse.json({ message: 'Not Found' }, { status: 404 });
       })
     );
 

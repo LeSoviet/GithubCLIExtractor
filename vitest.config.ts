@@ -66,7 +66,8 @@ export default defineConfig({
     },
 
     // Setup files (disabled on Windows due to MSW compatibility issues)
-    setupFiles: process.platform === 'win32' && process.env.CI !== 'true' ? [] : ['./tests/setup.ts'],
+    setupFiles:
+      process.platform === 'win32' && process.env.CI !== 'true' ? [] : ['./tests/setup.ts'],
 
     // Mocking behavior
     clearMocks: true,

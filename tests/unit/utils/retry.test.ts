@@ -45,10 +45,10 @@ describe('retry utilities', () => {
       const fn = vi.fn().mockRejectedValue(new Error('persistent failure'));
 
       const promise = withRetry(fn, { maxRetries: 2, initialDelay: 1000 });
-      
+
       // Catch the error to prevent unhandled rejection
       const resultPromise = promise.catch((error: Error) => error);
-      
+
       await vi.runAllTimersAsync();
       const error = await resultPromise;
 
@@ -83,10 +83,7 @@ describe('retry utilities', () => {
     });
 
     it('should respect max delay', async () => {
-      const fn = vi
-        .fn()
-        .mockRejectedValueOnce(new Error('fail'))
-        .mockResolvedValue('success');
+      const fn = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('success');
 
       const promise = withRetry(fn, {
         maxRetries: 2,
@@ -178,10 +175,10 @@ describe('retry utilities', () => {
       const fn = vi.fn().mockRejectedValue(new Error('Invalid input'));
 
       const promise = withSmartRetry(fn, { maxRetries: 3, initialDelay: 1000 });
-      
+
       // Catch the error to prevent unhandled rejection
       const resultPromise = promise.catch((error: Error) => error);
-      
+
       const error = await resultPromise;
 
       expect(error).toBeInstanceOf(Error);
@@ -196,10 +193,10 @@ describe('retry utilities', () => {
         .mockRejectedValueOnce(new Error('Invalid input')); // Non-retryable
 
       const promise = withSmartRetry(fn, { maxRetries: 3, initialDelay: 1000 });
-      
+
       // Catch the error to prevent unhandled rejection
       const resultPromise = promise.catch((error: Error) => error);
-      
+
       await vi.advanceTimersByTimeAsync(1000);
       const error = await resultPromise;
 
