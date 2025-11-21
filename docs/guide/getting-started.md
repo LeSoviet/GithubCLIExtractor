@@ -41,7 +41,12 @@ ghextractor --dry-run
 
 ## Interactive Mode Walkthrough
 
-1. **Repository Selection**: Choose from your personal repositories, organization repositories, or starred repositories
+1. **Repository Selection**: Choose from:
+   - Your personal repositories
+   - Repositories where you're a collaborator
+   - Organization repositories
+   - Starred repositories
+   - Enter a public repository manually (e.g., `facebook/react`)
 2. **Export Type**: Select what type of data to export:
    - Pull Requests
    - Commits
@@ -106,3 +111,20 @@ ghextractor --full-backup --output ./my-backup
 # Select repository
 # Wait for export to complete
 ```
+
+### Export Public Repository
+
+You can document any public GitHub repository:
+
+```bash
+ghextractor
+# Select "📝 Enter a repository manually"
+# Enter repository in format: owner/repo (e.g., facebook/react)
+# Select export type and format
+# Choose output directory
+```
+
+This is useful for:
+- Documenting open-source projects
+- Analyzing public repositories
+- Creating snapshots of external projects

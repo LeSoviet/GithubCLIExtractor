@@ -19,6 +19,8 @@ hero:
 features:
   - title: Zero Configuration
     details: Works out of the box with GitHub CLI - no complex setup required
+  - title: Public Repository Support
+    details: Document any public GitHub repository by entering owner/repo format
   - title: Multiple Export Formats
     details: Export data as Markdown, JSON, or both formats simultaneously
   - title: Full Repository Backup
@@ -27,6 +29,4 @@ features:
     details: Built-in rate limiting and retry mechanisms for large repositories
   - title: Cross-Platform
     details: Works on Windows, macOS, and Linux
-  - title: Open Source
-    details: MIT licensed with community-driven development
 ---
