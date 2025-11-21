@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-11-21
+
+### Fixed
+- **Complete Release Export**: Fixed incomplete release exports that were missing release notes (body content)
+- Changed from GitHub API endpoint to `gh release view` command for more reliable data fetching
+- Releases now export with full content including complete release notes, assets, and author information
+- Increased timeout from 10s to 30s and enabled automatic retries for better reliability with large repositories
+
+### Changed
+- Updated release fetching mechanism in `ReleaseExporter` to use native GitHub CLI commands
+- Improved error handling for release details fetching
+
 ## [0.2.0] - 2025-11-20
 
 ### Added

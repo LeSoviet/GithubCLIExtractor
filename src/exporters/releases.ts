@@ -30,7 +30,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
 
       console.log(`[INFO] Fetched ${releases.length} releases, now fetching details...`);
 
-      // Fetch full details for each release using the API
+      // Fetch full details for each release using gh release view
       const releasesWithDetails = await Promise.all(
         releases.map(async (release, index) => {
           try {
@@ -38,19 +38,13 @@ export class ReleaseExporter extends BaseExporter<Release> {
               `[INFO] Fetching details for release ${index + 1}/${releases.length}: ${release.tagName}`
             );
 
-            // Fetch full release data including body, assets, and author
+            // Fetch full release data including body, assets, and author using gh release view
             const fullRelease = await execGhJson<any>(
-              `api repos/${repoId}/releases/tags/${release.tagName}`,
-              { timeout: 10000, useRetry: false, useRateLimit: true }
+              `release view ${release.tagName} --repo ${repoId} --json tagName,name,body,author,createdAt,publishedAt,isDraft,isPrerelease,assets,url`,
+              { timeout: 30000, useRetry: true, useRateLimit: true }
             );
 
-            return this.convertRelease({
-              ...release,
-              body: fullRelease.body || '',
-              assets: fullRelease.assets || [],
-              author: fullRelease.author || { login: 'unknown' },
-              url: fullRelease.html_url || '',
-            });
+            return this.convertRelease(fullRelease);
           } catch (error: any) {
             console.log(`[INFO] Could not fetch details for ${release.tagName}: ${error.message}`);
             // Return release without body/assets/author
@@ -134,7 +128,7 @@ export class ReleaseExporter extends BaseExporter<Release> {
   }
 
   /**
-   * Convert GitHub API Release to our format
+   * Convert GitHub CLI Release to our format
    */
   private convertRelease(ghRelease: any): Release {
     return {
@@ -150,8 +144,8 @@ export class ReleaseExporter extends BaseExporter<Release> {
         ghRelease.assets?.map((asset: any) => ({
           name: asset.name,
           size: asset.size || 0,
-          downloadCount: asset.download_count || 0,
-          downloadUrl: asset.browser_download_url || asset.url,
+          downloadCount: asset.downloadCount || asset.download_count || 0,
+          downloadUrl: asset.url || asset.browser_download_url || '',
         })) || [],
       url: ghRelease.url || ghRelease.html_url || '',
     };
