@@ -35,7 +35,9 @@ export class IssueExporter extends BaseExporter<Issue> {
             const updatedAt = new Date(issue.updatedAt);
             return updatedAt > sinceDate;
           });
-          console.log(`[INFO] Diff mode: filtered to ${convertedIssues.length} issues updated since ${sinceDate.toLocaleString()}`);
+          console.log(
+            `[INFO] Diff mode: filtered to ${convertedIssues.length} issues updated since ${sinceDate.toLocaleString()}`
+          );
         }
       }
 

@@ -409,7 +409,10 @@ async function main() {
 /**
  * Execute the export based on the selected type
  */
-async function executeExport(options: ExportOptions, diffModeEnabled: boolean = false): Promise<void> {
+async function executeExport(
+  options: ExportOptions,
+  diffModeEnabled: boolean = false
+): Promise<void> {
   const progress = createProgressTracker();
 
   try {
@@ -456,7 +459,11 @@ async function executeExport(options: ExportOptions, diffModeEnabled: boolean = 
 /**
  * Execute full backup (all export types)
  */
-async function executeFullBackup(options: ExportOptions, progress: ProgressTracker, diffModeEnabled: boolean = false): Promise<void> {
+async function executeFullBackup(
+  options: ExportOptions,
+  progress: ProgressTracker,
+  diffModeEnabled: boolean = false
+): Promise<void> {
   const types: SingleExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
   const results = [];
   const stateManager = getStateManager();

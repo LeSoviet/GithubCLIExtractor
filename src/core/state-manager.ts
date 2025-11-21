@@ -66,15 +66,10 @@ export class StateManager {
   /**
    * Get last export state for a repository and type
    */
-  async getLastExport(
-    repository: string,
-    type: SingleExportType
-  ): Promise<ExportState | null> {
+  async getLastExport(repository: string, type: SingleExportType): Promise<ExportState | null> {
     const state = await this.load();
 
-    const exportState = state.exports.find(
-      (e) => e.repository === repository && e.type === type
-    );
+    const exportState = state.exports.find((e) => e.repository === repository && e.type === type);
 
     return exportState || null;
   }
@@ -171,9 +166,7 @@ export class StateManager {
    */
   async deleteExportState(repository: string, type: SingleExportType): Promise<void> {
     const state = await this.load();
-    state.exports = state.exports.filter(
-      (e) => !(e.repository === repository && e.type === type)
-    );
+    state.exports = state.exports.filter((e) => !(e.repository === repository && e.type === type));
     await this.save();
   }
 }

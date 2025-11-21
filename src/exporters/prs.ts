@@ -36,7 +36,9 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
             const updatedAt = new Date(pr.updatedAt);
             return updatedAt > sinceDate;
           });
-          console.log(`[INFO] Diff mode: filtered to ${convertedPRs.length} PRs updated since ${sinceDate.toLocaleString()}`);
+          console.log(
+            `[INFO] Diff mode: filtered to ${convertedPRs.length} PRs updated since ${sinceDate.toLocaleString()}`
+          );
         }
       }
 

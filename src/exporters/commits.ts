@@ -25,7 +25,9 @@ export class CommitExporter extends BaseExporter<Commit> {
         if (since) {
           // GitHub API accepts ISO 8601 format for since parameter
           apiUrl += `&since=${encodeURIComponent(since)}`;
-          console.log(`[INFO] Diff mode: fetching commits since ${new Date(since).toLocaleString()}`);
+          console.log(
+            `[INFO] Diff mode: fetching commits since ${new Date(since).toLocaleString()}`
+          );
         }
       }
 

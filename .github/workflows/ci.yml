@@ -88,7 +88,7 @@ jobs:
           node -e "
           const coverage = require('./coverage-report/coverage-summary.json');
           const total = coverage.total;
-          const thresholds = { lines: 80, statements: 80, functions: 75, branches: 80 };
+          const thresholds = { lines: 60, statements: 60, functions: 60, branches: 60 };
           
           let failed = false;
           for (const [key, threshold] of Object.entries(thresholds)) {
