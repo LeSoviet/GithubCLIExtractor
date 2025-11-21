@@ -27,6 +27,12 @@ ghextractor --format markdown,json --output ./exports --backup
 
 # With configuration file
 ghextractor --config ./my-config.json
+
+# Incremental export (diff mode)
+ghextractor --diff
+
+# Batch processing
+ghextractor --batch-repos "repo1,repo2,repo3"
 ```
 
 For detailed information about each aspect of the API, please refer to the specific sections in the sidebar.

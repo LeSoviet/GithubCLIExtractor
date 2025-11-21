@@ -15,7 +15,9 @@ The configuration file can be in JSON format with the following structure:
   "cache": true,
   "since": "2023-01-01",
   "until": "2023-12-31",
-  "concurrency": 5
+  "concurrency": 5,
+  "diffMode": true,
+  "forceFullExport": false
 }
 ```
 
@@ -61,6 +63,16 @@ The configuration file can be in JSON format with the following structure:
 - **Default**: `5`
 - **Description**: Maximum number of concurrent API requests.
 
+### diffMode
+- **Type**: `boolean`
+- **Default**: `false`
+- **Description**: Enable incremental export mode that only exports new/updated items since last run.
+
+### forceFullExport
+- **Type**: `boolean`
+- **Default**: `false`
+- **Description**: Force full export even if previous state exists (overrides diff mode).
+
 ### templates
 - **Type**: `object`
 - **Default**: `{}`
@@ -89,5 +101,7 @@ Each configuration option can also be set using environment variables:
 | since | `GHEXTRACTOR_SINCE` |
 | until | `GHEXTRACTOR_UNTIL` |
 | concurrency | `GHEXTRACTOR_CONCURRENCY` |
+| diffMode | `GHEXTRACTOR_DIFF_MODE` |
+| forceFullExport | `GHEXTRACTOR_FORCE_FULL_EXPORT` |
 
 Environment variables take precedence over configuration file values.

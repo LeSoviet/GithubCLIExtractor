@@ -14,7 +14,9 @@ Example configuration file:
   "output": "./exports",
   "backup": true,
   "rateLimit": 5000,
-  "cache": true
+  "cache": true,
+  "diffMode": true,
+  "forceFullExport": false
 }
 ```
 
@@ -27,6 +29,8 @@ Example configuration file:
 | `backup` | `boolean` | Enable full backup mode | `false` |
 | `rateLimit` | `number` | Rate limit in milliseconds | `1000` |
 | `cache` | `boolean` | Enable caching | `true` |
+| `diffMode` | `boolean` | Enable incremental export mode | `false` |
+| `forceFullExport` | `boolean` | Force full export even with diff mode | `false` |
 
 ## Environment Variables
 
@@ -37,6 +41,8 @@ You can also configure the CLI using environment variables:
 - `GHEXTRACTOR_BACKUP` - Enable backup mode (true/false)
 - `GHEXTRACTOR_RATE_LIMIT` - Rate limit in milliseconds
 - `GHEXTRACTOR_CACHE` - Enable caching (true/false)
+- `GHEXTRACTOR_DIFF_MODE` - Enable diff mode (true/false)
+- `GHEXTRACTOR_FORCE_FULL_EXPORT` - Force full export (true/false)
 
 ## Command Line Options
 
@@ -44,4 +50,10 @@ All configuration options can also be passed as command-line arguments:
 
 ```bash
 ghextractor --format markdown,json --output ./my-exports --backup
+
+# With diff mode
+ghextractor --diff --output ./my-exports
+
+# Force full export
+ghextractor --diff --force-full
 ```

@@ -42,10 +42,18 @@ test-results/
 .eslintcache
 .prettierache
 
+# VitePress cache
+docs/.vitepress/cache/
+
 # User data and exports
 .ghextractor/
 github-export/
 export/
+output/
+
+# Temporary files
+*.tmp
+*.temp
 
 # Audit reports
 SECURITY_AUDIT.md
@@ -55,4 +63,3 @@ audit-output.json
 # Social media content (temporary/generated)
 social/
 .claude/
-

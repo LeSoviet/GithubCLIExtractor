@@ -23,7 +23,9 @@ export default defineConfig({
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'Configuration', link: '/guide/configuration' },
-            { text: 'Export Formats', link: '/guide/export-formats' }
+            { text: 'Export Formats', link: '/guide/export-formats' },
+            { text: 'Diff Mode (Incremental Exports)', link: '/guide/diff-mode' },
+            { text: 'Batch Processing', link: '/guide/batch-processing' }
           ]
         }
       ],

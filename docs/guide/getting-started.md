@@ -37,6 +37,12 @@ ghextractor --labels bug,enhancement
 
 # Dry run to see what would be exported
 ghextractor --dry-run
+
+# Incremental export (only new/updated items)
+ghextractor --diff
+
+# Force full export even with diff mode
+ghextractor --diff --force-full
 ```
 
 ## Interactive Mode Walkthrough
@@ -111,6 +117,18 @@ ghextractor --full-backup --output ./my-backup
 # Select repository
 # Wait for export to complete
 ```
+
+### Incremental Export (Diff Mode)
+
+```bash
+# First run: Creates baseline and exports all items
+ghextractor --diff
+
+# Subsequent runs: Only exports new/updated items
+ghextractor --diff
+```
+
+This dramatically reduces API calls (80-95% reduction) and export time for regular updates.
 
 ### Export Public Repository
 

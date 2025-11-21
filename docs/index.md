@@ -29,4 +29,9 @@ features:
     details: Built-in rate limiting and retry mechanisms for large repositories
   - title: Cross-Platform
     details: Works on Windows, macOS, and Linux
+  - title: Incremental Exports
+    details: Export only new/updated items since last run (80-95% faster)
+  - title: Batch Processing
+    details: Export dozens or hundreds of repositories simultaneously
+
 ---

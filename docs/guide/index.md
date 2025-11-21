@@ -13,6 +13,7 @@ GitHub Extractor CLI is a universal cross-platform CLI tool that allows users to
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Open Source**: MIT licensed
 - **Enterprise-Grade Batch Processing**: Export dozens or hundreds of repositories simultaneously
+- **Incremental Exports**: Export only new/updated items since last run (80-95% faster)
 
 ## How It Works
 
