@@ -27,6 +27,7 @@ import { buildOutputPath } from './utils/output.js';
 import type {
   ExportOptions,
   ExportType,
+  SingleExportType,
   PullRequest,
   Commit,
   Branch,
@@ -362,15 +363,16 @@ async function main() {
       process.exit(0);
     }
 
-    // Get diff mode options if enabled
+    // Get diff mode options if enabled (not applicable for full-backup)
     const stateManager = getStateManager();
-    const diffModeOptions = args.diff
-      ? await stateManager.getDiffModeOptions(
-          `${selectedRepo.owner}/${selectedRepo.name}`,
-          exportType,
-          args.forceFullExport
-        )
-      : undefined;
+    const diffModeOptions =
+      args.diff && exportType !== 'full-backup'
+        ? await stateManager.getDiffModeOptions(
+            `${selectedRepo.owner}/${selectedRepo.name}`,
+            exportType,
+            args.forceFullExport
+          )
+        : undefined;
 
     // Show diff mode info
     if (diffModeOptions?.enabled) {
@@ -424,11 +426,12 @@ async function executeExport(options: ExportOptions, diffModeEnabled: boolean = 
       progress.succeed(`${exportTypeName} export completed!`);
 
       // Update state if diff mode is enabled
+      // (options.type is guaranteed to be SingleExportType here due to the if/else above)
       if (diffModeEnabled && result.success) {
         const stateManager = getStateManager();
         await stateManager.updateExportState(
           `${options.repository.owner}/${options.repository.name}`,
-          options.type,
+          options.type as SingleExportType,
           result.itemsExported,
           options.format,
           options.outputPath
@@ -454,7 +457,7 @@ async function executeExport(options: ExportOptions, diffModeEnabled: boolean = 
  * Execute full backup (all export types)
  */
 async function executeFullBackup(options: ExportOptions, progress: ProgressTracker, diffModeEnabled: boolean = false): Promise<void> {
-  const types: ExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
+  const types: SingleExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
   const results = [];
   const stateManager = getStateManager();
 

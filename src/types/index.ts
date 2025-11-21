@@ -79,6 +79,9 @@ export type ExportFormat = 'markdown' | 'json' | 'both';
 
 export type ExportType = 'prs' | 'commits' | 'branches' | 'issues' | 'releases' | 'full-backup';
 
+// Single export types (excludes 'full-backup' which is a batch operation)
+export type SingleExportType = Exclude<ExportType, 'full-backup'>;
+
 export interface ExportOptions {
   format: ExportFormat;
   outputPath: string;

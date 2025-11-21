@@ -2,12 +2,14 @@
  * State management types for incremental exports
  */
 
+import type { SingleExportType } from './index.js';
+
 export interface ExportState {
   /** Repository identifier (owner/name) */
   repository: string;
 
   /** Export type */
-  type: 'prs' | 'issues' | 'commits' | 'branches' | 'releases';
+  type: SingleExportType;
 
   /** Timestamp of last successful export */
   lastExportAt: string;

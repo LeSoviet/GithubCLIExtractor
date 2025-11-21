@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { StateStore, ExportState, DiffModeOptions } from '../types/state.js';
-import type { ExportType } from '../types/index.js';
+import type { SingleExportType } from '../types/index.js';
 
 /**
  * State Manager for incremental exports
@@ -68,7 +68,7 @@ export class StateManager {
    */
   async getLastExport(
     repository: string,
-    type: ExportType
+    type: SingleExportType
   ): Promise<ExportState | null> {
     const state = await this.load();
 
@@ -84,7 +84,7 @@ export class StateManager {
    */
   async updateExportState(
     repository: string,
-    type: ExportType,
+    type: SingleExportType,
     count: number,
     format: 'markdown' | 'json' | 'both',
     outputPath: string
@@ -120,7 +120,7 @@ export class StateManager {
    */
   async getDiffModeOptions(
     repository: string,
-    type: ExportType,
+    type: SingleExportType,
     forceFullExport: boolean = false
   ): Promise<DiffModeOptions> {
     if (forceFullExport) {
@@ -169,7 +169,7 @@ export class StateManager {
   /**
    * Delete export state for a repository and type
    */
-  async deleteExportState(repository: string, type: ExportType): Promise<void> {
+  async deleteExportState(repository: string, type: SingleExportType): Promise<void> {
     const state = await this.load();
     state.exports = state.exports.filter(
       (e) => !(e.repository === repository && e.type === type)

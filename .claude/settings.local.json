@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(npm install)",
-      "Bash(gh release list:*)"
+      "Bash(gh release list:*)",
+      "Bash(npm view:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(npm run docs:build:*)",
+      "Bash(npx vitepress build . --debug)",
+      "Bash(git add:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh release create:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
