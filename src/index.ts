@@ -11,12 +11,17 @@ import {
   showInfo,
   showOutro,
   promptRepositoryInput,
+  selectBatchRepositories,
+  selectBatchExportTypes,
+  promptBatchParallelism,
+  promptEnableDiffMode,
 } from './cli/prompts.js';
 import { createProgressTracker, ProgressTracker } from './cli/progress.js';
 import { checkGhInstalled, getAuthStatus } from './core/github-auth.js';
 import { getRateLimiter } from './core/rate-limiter.js';
 import { displayRateLimit } from './cli/rate-limit-display.js';
 import { getStateManager } from './core/state-manager.js';
+import { BatchProcessor } from './core/batch-processor.js';
 import { listUserRepositories, getRepositoryFromString } from './scanner/repo-scanner.js';
 import { PullRequestExporter } from './exporters/prs.js';
 import { IssueExporter } from './exporters/issues.js';
@@ -33,7 +38,9 @@ import type {
   Branch,
   Issue,
   Release,
+  ExportFormat,
 } from './types/index.js';
+import type { BatchConfig } from './types/batch.js';
 import type { BaseExporter } from './exporters/base-exporter.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -68,6 +75,10 @@ function parseArgs(): {
   labels?: string;
   template?: string;
   fullBackup: boolean;
+  batch?: string;
+  batchRepos?: string;
+  batchTypes?: string;
+  batchParallel?: number;
 } {
   const args = process.argv.slice(2);
 
@@ -87,6 +98,16 @@ function parseArgs(): {
     labels: args.includes('--labels') ? args[args.indexOf('--labels') + 1] : undefined,
     template: args.includes('--template') ? args[args.indexOf('--template') + 1] : undefined,
     fullBackup: args.includes('--full-backup'),
+    batch: args.includes('--batch') ? args[args.indexOf('--batch') + 1] : undefined,
+    batchRepos: args.includes('--batch-repos')
+      ? args[args.indexOf('--batch-repos') + 1]
+      : undefined,
+    batchTypes: args.includes('--batch-types')
+      ? args[args.indexOf('--batch-types') + 1]
+      : undefined,
+    batchParallel: args.includes('--batch-parallel')
+      ? parseInt(args[args.indexOf('--batch-parallel') + 1])
+      : undefined,
   };
 }
 
@@ -117,6 +138,12 @@ Options:
   --template <path>       Use custom template file
   --full-backup           Export all resources (PRs, issues, commits, branches, releases)
 
+Batch Export Options:
+  --batch <config.json>       Batch export from JSON config file
+  --batch-repos <repos>       Comma-separated list of repositories (owner/repo)
+  --batch-types <types>       Comma-separated export types (prs,issues,commits,branches,releases)
+  --batch-parallel <n>        Number of repositories to process in parallel (default: 3)
+
 Examples:
   ghextractor                                    # Interactive mode
   ghextractor --check                            # Check GitHub CLI setup
@@ -126,6 +153,12 @@ Examples:
   ghextractor --full-backup                      # Full repository backup
   ghextractor --labels bug,enhancement           # Filter by labels
   ghextractor --since 2024-01-01 --until 2024-12-31  # Date range filter
+
+Batch Examples:
+  ghextractor --batch-repos "facebook/react,vercel/next.js" --batch-types "releases"
+  ghextractor --batch-repos "repo1,repo2" --diff  # Batch + incremental
+  ghextractor --batch batch-config.json          # Batch from config file
+  ghextractor --batch-repos "repo1,repo2,repo3" --batch-parallel 5  # Custom parallelism
 
 For more information, visit: https://github.com/LeSoviet/ghextractor
 `);
@@ -261,6 +294,12 @@ async function main() {
       process.exit(1);
     }
 
+    // Handle batch export mode
+    if (args.batch || args.batchRepos) {
+      await handleBatchExport(args);
+      process.exit(0);
+    }
+
     // Dry-run mode
     if (args.dryRun) {
       console.log('🔍 Dry-run mode: No files will be created\n');
@@ -299,7 +338,68 @@ async function main() {
       showSuccess(`Found ${repositories.length} repositories`);
     }
 
-    // Select repository (or use first for non-interactive mode)
+    // Determine export type first (to know if we need batch mode)
+    const exportType: ExportType | 'batch-export' = args.fullBackup
+      ? 'full-backup'
+      : process.env.GHX_TEST_MODE
+        ? 'prs'
+        : await selectExportType();
+
+    // Handle batch export interactive mode
+    if (exportType === 'batch-export') {
+      showInfo('🔄 Batch Export Mode');
+
+      // Select batch repositories using multi-select
+      const batchRepositories = await selectBatchRepositories(repositories);
+
+      // Prompt for export types
+      const selectedTypes = await selectBatchExportTypes();
+
+      // Prompt for export format
+      const batchFormat = await selectExportFormat();
+
+      // Prompt for output path
+      const batchOutputPath = await selectOutputPath('./batch-export');
+
+      // Prompt for parallelism
+      const parallelism = await promptBatchParallelism();
+
+      // Prompt for diff mode
+      const enableDiff = await promptEnableDiffMode();
+
+      // Build batch config
+      const batchConfig: BatchConfig = {
+        repositories: batchRepositories,
+        exportTypes: selectedTypes as SingleExportType[],
+        format: batchFormat as ExportFormat,
+        outputPath: batchOutputPath,
+        parallelism,
+        diffMode: enableDiff,
+        verbose: args.verbose || false,
+      };
+
+      // Execute batch export
+      showInfo(`Processing ${batchRepositories.length} repositories...`);
+      const batchProcessor = new BatchProcessor(batchConfig);
+      const result = await batchProcessor.process();
+
+      // Show results
+      console.log('\n' + '='.repeat(60));
+      console.log('📊 Batch Export Summary');
+      console.log('='.repeat(60));
+      console.log(`✅ Successful: ${result.successfulRepositories}`);
+      console.log(`❌ Failed: ${result.failedRepositories}`);
+      console.log(`📁 Output: ${batchOutputPath}/batch-summary.md`);
+      console.log('='.repeat(60) + '\n');
+
+      showOutro('Thanks for using GitHub Extractor CLI!');
+
+      // Add small delay before exit to ensure async operations complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      process.exit(result.failedRepositories > 0 ? 1 : 0);
+    }
+
+    // For non-batch exports, select a single repository
     let selectedRepo;
 
     if (process.env.GHX_TEST_MODE) {
@@ -332,13 +432,6 @@ async function main() {
     if (!args.dryRun) {
       showInfo(`Selected: ${selectedRepo.owner}/${selectedRepo.name}`);
     }
-
-    // Determine export type
-    const exportType: ExportType = args.fullBackup
-      ? 'full-backup'
-      : process.env.GHX_TEST_MODE
-        ? 'prs'
-        : await selectExportType();
 
     // Determine export format
     const exportFormat =
@@ -579,6 +672,73 @@ function getExportTypeName(type: ExportType): string {
     'full-backup': 'Full Backup',
   };
   return names[type];
+}
+
+/**
+ * Handle batch export mode
+ */
+async function handleBatchExport(args: ReturnType<typeof parseArgs>): Promise<void> {
+  try {
+    let batchConfig: any;
+
+    // Option 1: Load from JSON file
+    if (args.batch) {
+      showInfo(`Loading batch configuration from: ${args.batch}`);
+      const configContent = await readFile(args.batch, 'utf-8');
+      batchConfig = JSON.parse(configContent);
+    }
+    // Option 2: Build from CLI args
+    else if (args.batchRepos) {
+      const repositories = args.batchRepos.split(',').map((r) => r.trim());
+
+      // Parse export types (default to all if not specified)
+      let exportTypes: SingleExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
+      if (args.batchTypes) {
+        exportTypes = args.batchTypes.split(',').map((t) => t.trim()) as SingleExportType[];
+      }
+
+      batchConfig = {
+        repositories,
+        exportTypes,
+        format: (args.format || 'markdown') as 'markdown' | 'json' | 'both',
+        outputPath: args.output || './github-export',
+        parallelism: args.batchParallel || 3,
+        diffMode: args.diff || false,
+        forceFullExport: args.forceFullExport || false,
+        verbose: args.verbose || false,
+      };
+    } else {
+      showError('Batch mode requires either --batch or --batch-repos');
+      process.exit(1);
+    }
+
+    // Validate configuration
+    if (!batchConfig.repositories || !Array.isArray(batchConfig.repositories)) {
+      showError('Invalid batch configuration: repositories must be an array');
+      process.exit(1);
+    }
+
+    if (batchConfig.repositories.length === 0) {
+      showError('No repositories specified for batch export');
+      process.exit(1);
+    }
+
+    // Create and run batch processor
+    const processor = new BatchProcessor(batchConfig);
+    const result = await processor.process();
+
+    // Small delay to ensure all async operations complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Exit with appropriate code
+    process.exit(result.failedRepositories > 0 ? 1 : 0);
+  } catch (error) {
+    showError('Batch export failed');
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+    process.exit(1);
+  }
 }
 
 // Run the CLI

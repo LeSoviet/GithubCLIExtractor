@@ -26,7 +26,19 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
 
   const executeCommand = async (): Promise<string> => {
     try {
-      const { stdout, stderr } = await execAsync(`gh ${command}`, {
+      // For Windows compatibility: if the command contains URL with query params,
+      // we need to quote only the URL part after 'api'
+      let fullCommand: string;
+      if (process.platform === 'win32' && command.startsWith('api ') && command.includes('&')) {
+        // Extract the api subcommand and the URL
+        const apiIndex = command.indexOf('api ');
+        const urlPart = command.substring(apiIndex + 4); // Get everything after "api "
+        fullCommand = `gh api "${urlPart}"`;
+      } else {
+        fullCommand = `gh ${command}`;
+      }
+
+      const { stdout, stderr } = await execAsync(fullCommand, {
         timeout,
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
         killSignal: 'SIGTERM', // Ensure process can be killed

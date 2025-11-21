@@ -1,0 +1,14 @@
+{
+  "repositories": [
+    "LeSoviet/GithubCLIExtractor",
+    "facebook/react",
+    "vercel/next.js"
+  ],
+  "exportTypes": ["releases"],
+  "format": "markdown",
+  "outputPath": "./batch-export",
+  "parallelism": 2,
+  "diffMode": false,
+  "forceFullExport": false,
+  "verbose": true
+}
