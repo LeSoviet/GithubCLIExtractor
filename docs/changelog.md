@@ -3,14 +3,54 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.6.3] - 2025-11-21
+
+### Fixed
+- fix: increment version to 0.6.3 to resolve npm publishing conflict
+
+## [0.6.2] - 2025-11-21
+
+### Fixed
+- fix: enhance npm publishing workflow with fallback mechanism
+
+## [0.6.1] - 2025-11-21
+
+### Fixed
+- fix: resolve npm authentication issues in CI/CD pipeline
+
+## [0.6.0] - 2025-11-21
+
+### Added
+- feat: implement enterprise-grade batch processing for multiple repositories
+- feat(batch): add batch export mode with interactive prompts and CLI options
+
+### Changed
+- chore(ci): improve linting, testing, and build workflows
+- chore(config): update ESLint and Vitest configurations
+- docs: document diff mode feature and update milestone status
+
+### Fixed
+- fix: setup automatic code formatting and linting on commit and push
+- fix: update .npmignore and package.json for improved file exclusions and correct repository URL
+
+## [0.5.0] - 2025-11-21
+
+### Added
+- docs: add milestone 7 status documentation
+
+### Changed
+- refactor(state): improve code formatting and readability
+- refactor(core): use SingleExportType for incremental export state management
+
+### Fixed
+- chore(release): bump version to v0.5.0
 
 ## [0.4.0] - 2025-11-21
 
 ### Added
 - **Diff Mode (Incremental Exports)**: Revolutionary feature that exports only new/updated items since last run
   - New `--diff` and `--incremental` flags for incremental exports
-  - State management system tracks last export timestamps
   - `--force-full` flag to override diff mode and force full export
   - Persistent state stored in `~/.ghextractor/state/exports.json`
   - Automatic detection of first-time exports
