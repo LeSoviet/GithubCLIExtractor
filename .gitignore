@@ -5,6 +5,7 @@ pnpm-lock.yaml
 
 # Build output
 dist/
+!docs/.vitepress/dist/
 build/
 *.tsbuildinfo
 
