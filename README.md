@@ -123,6 +123,16 @@ This feature is perfect for:
 - 📊 Generating reports on community contributions
 - 🎓 Learning from established codebases
 
+### Automatic Analytics (New in v0.7.0)
+
+Every export operation now automatically generates a comprehensive analytics report with insights about:
+- 📈 Activity patterns and contribution trends
+- 👥 Contributor analysis and bus factor metrics
+- 🏷️ Label distribution and issue lifecycle
+- 🛡️ Code health metrics including PR review coverage
+
+These analytics are generated automatically with every export, providing valuable insights without any additional configuration.
+
 ### Batch Processing (Enterprise-Grade)
 
 Export multiple repositories simultaneously with controlled concurrency:

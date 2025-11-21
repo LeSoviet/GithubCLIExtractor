@@ -33,5 +33,7 @@ features:
     details: Export only new/updated items since last run (80-95% faster)
   - title: Batch Processing
     details: Export dozens or hundreds of repositories simultaneously
+  - title: Automatic Analytics
+    details: Generate comprehensive analytics reports automatically with every export
 
 ---
