@@ -21,6 +21,7 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 - ⚡ **Incremental Exports** - Export only new/updated items (80-95% faster!)
 - 🌍 **Public Repository Support** - Document any public repository, even if you're not a contributor
 - 👥 **Collaboration Support** - Access repositories where you're a collaborator
+- 🏢 **Enterprise-Grade Batch Processing** - Export dozens or hundreds of repositories simultaneously
 - 🎨 **Beautiful CLI** - Modern interactive interface with @clack/prompts
 - 💪 **TypeScript** - Full type safety and great DX
 - 🛡️ **Read-Only** - Never modifies your repositories
@@ -122,6 +123,48 @@ This feature is perfect for:
 - 📊 Generating reports on community contributions
 - 🎓 Learning from established codebases
 
+### Batch Processing (Enterprise-Grade)
+
+Export multiple repositories simultaneously with controlled concurrency:
+
+```bash
+# Quick batch export from command line
+ghextractor --batch-repos "facebook/react,vercel/next.js,microsoft/vscode" --batch-types "releases,prs"
+
+# Batch export with incremental mode
+ghextractor --batch-repos "repo1,repo2,repo3" --diff
+
+# Batch export with custom parallelism
+ghextractor --batch-repos "repo1,repo2,repo3,repo4,repo5" --batch-parallel 5
+
+# Batch export from JSON configuration file
+ghextractor --batch batch-config.json
+```
+
+**JSON Configuration Example** (`batch-config.json`):
+```json
+{
+  "repositories": [
+    "facebook/react",
+    "vercel/next.js",
+    "microsoft/vscode"
+  ],
+  "exportTypes": ["releases", "prs"],
+  "format": "markdown",
+  "outputPath": "./batch-export",
+  "parallelism": 3,
+  "diffMode": true,
+  "verbose": true
+}
+```
+
+**Benefits:**
+- 🏢 Perfect for organizations with many repositories
+- ⚡ Process multiple repositories simultaneously
+- 📊 Consolidated summary report with per-repository details
+- 🛠️ Configurable parallelism to optimize performance
+- 🔄 Supports incremental exports for all repositories
+
 ## CLI Options
 
 ```bash
@@ -147,6 +190,15 @@ ghextractor [options]
 | `--labels <labels>` | | Filter by labels (comma-separated) |
 | `--template <path>` | | Use custom template file |
 | `--config <path>` | | Path to configuration file |
+
+### Batch Export Options
+
+| Option | Description |
+|--------|-------------|
+| `--batch <config.json>` | Batch export from JSON configuration file |
+| `--batch-repos <repos>` | Comma-separated list of repositories (owner/repo) |
+| `--batch-types <types>` | Comma-separated export types (prs,issues,commits,branches,releases) |
+| `--batch-parallel <n>` | Number of repositories to process in parallel (default: 3) |
 
 ### Examples
 
@@ -183,6 +235,12 @@ ghextractor --dry-run --verbose
 
 # Combine multiple options
 ghextractor --diff --format both --output ./exports --verbose
+
+# Batch export examples
+ghextractor --batch-repos "facebook/react,vercel/next.js" --batch-types "releases"
+ghextractor --batch-repos "repo1,repo2" --diff  # Batch + incremental
+ghextractor --batch batch-config.json  # Batch from config file
+ghextractor --batch-repos "repo1,repo2,repo3" --batch-parallel 5  # Custom parallelism
 ```
 
 ## Development
@@ -224,6 +282,7 @@ See [ROADMAP.md](ROADMAP.md) for detailed development plans and milestones.
 - ✅ Automated CI/CD with GitHub Actions
 - ✅ Semantic versioning and release automation
 - ✅ Cross-platform support (Windows, macOS, Linux)
+- ✅ Enterprise-grade batch processing for multiple repositories
 
 ## Contributing
 

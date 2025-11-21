@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-11-21
+
+### Added
+- **Enterprise-Grade Batch Processing**: Export multiple repositories simultaneously with controlled concurrency
+  - Process dozens or hundreds of repositories in a single command
+  - Configurable parallelism (default: 3 repositories at a time)
+  - JSON configuration file support for complex batch operations
+  - Command-line options for quick batch exports
+  - Comprehensive batch summary report with per-repository details
+- **Automatic Code Quality Enforcement**: Pre-commit and pre-push hooks to ensure code is properly formatted and linted
+  - Automatic Prettier formatting on commit
+  - ESLint validation on commit
+  - Pre-push validation to prevent unformatted code from being pushed
+- **Enhanced CI/CD Workflow**: Streamlined GitHub Actions with reduced redundancy and improved efficiency
+
+### Changed
+- **Improved Developer Experience**: More flexible linting configuration with reduced strictness
+- **Optimized CI Processes**: Consolidated multiple CI jobs into more efficient workflows
+- **Code Quality Standards**: Relaxed certain ESLint rules to reduce noise while maintaining code quality
+
+### Fixed
+- **Code Formatting Issues**: Resolved all Prettier formatting warnings across the codebase
+- **Linting Configuration**: Fixed ESLint configuration to properly include all project files
+
 ## [0.5.0] - 2025-11-21
 
 ### Added
