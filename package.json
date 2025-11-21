@@ -15,10 +15,13 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "ghextractor": "./bin/ghextractor.js"
+    "ghextractor": "bin/ghextractor.js"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
@@ -60,7 +63,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LeSoviet/GithubCLIExtractor"
+    "url": "git+https://github.com/LeSoviet/GithubCLIExtractor.git"
   },
   "bugs": {
     "url": "https://github.com/LeSoviet/GithubCLIExtractor/issues"

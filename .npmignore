@@ -15,8 +15,11 @@ tsconfig.json
 
 # Testing
 coverage/
+coverage-report/
+test-results/
 *.test.ts
 *.spec.ts
+vitest.config.ts
 
 # CI/CD
 .github/
@@ -29,3 +32,8 @@ ROADMAP.md
 *.log
 .DS_Store
 Thumbs.db
+audit-output.json
+github-export/
+social/
+.claude/
+tsconfig.test.json
