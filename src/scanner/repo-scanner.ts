@@ -4,14 +4,21 @@ import type { GitHubRepository } from '../types/github.js';
 
 /**
  * List all repositories for the authenticated user
+ * Includes repositories owned by the user and repositories where the user is a collaborator
  */
 export async function listUserRepositories(username?: string): Promise<Repository[]> {
   try {
-    const query = username
-      ? `repo list ${username} --json name,owner,description,url,isPrivate --limit 1000`
-      : 'repo list --json name,owner,description,url,isPrivate --limit 1000';
+    let repos: GitHubRepository[];
 
-    const repos = await execGhJson<GitHubRepository[]>(query);
+    if (username) {
+      // List repositories owned by a specific user
+      const query = `repo list ${username} --json name,owner,description,url,isPrivate --limit 1000`;
+      repos = await execGhJson<GitHubRepository[]>(query);
+    } else {
+      // List all repositories accessible to the authenticated user (owned + collaborator)
+      // Using the GitHub API endpoint that includes repos where user is a collaborator
+      repos = await execGhJson<GitHubRepository[]>('api user/repos --paginate');
+    }
 
     return repos.map((repo) => ({
       name: repo.name,
