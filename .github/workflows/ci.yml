@@ -7,9 +7,9 @@ on:
     branches: [main, develop]
 
 jobs:
-  # Lint and type check
-  lint:
-    name: Lint & Type Check
+  # Combined lint, type check, and format verification
+  code-quality:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,18 +23,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run ESLint
+      - name: Run ESLint (warnings only)
         run: npm run lint
 
       - name: Run TypeScript type check
         run: npx tsc --noEmit
 
       - name: Check formatting
-        run: npx prettier --check "src/**/*.ts"
+        run: npx prettier --check "src/**/*.ts" "tests/**/*.ts" "vitest.config.ts"
 
-  # Unit and integration tests
+  # Single comprehensive test job (combines previous separate test jobs)
   test:
-    name: Test (Node ${{ matrix.node-version }})
+    name: Test Suite
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -54,8 +54,11 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Run tests
-        run: npm test
+      - name: Run all tests
+        run: |
+          npm run test:unit
+          npm run test:integration
+          npm run test:e2e
         env:
           CI: true
 
@@ -118,40 +121,6 @@ jobs:
           npm install -g coverage-badge-creator
           coverage-badge-creator
 
-  # E2E tests
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Install GitHub CLI
-        run: |
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
-
-      - name: Run E2E tests
-        run: npm test -- --run tests/e2e
-        env:
-          CI: true
-          GHX_TEST_MODE: '1'
-
   # Build verification
   build:
     name: Build Verification
@@ -168,28 +137,24 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # TODO: Uncomment when build script is implemented
-      # - name: Build project
-      #   run: npm run build
-      #
-      # - name: Check build artifacts
-      #   run: |
-      #     test -f dist/index.js || exit 1
-      #     test -f dist/index.cjs || exit 1
-      #     test -f dist/index.d.ts || exit 1
-      #     echo "✅ All build artifacts present"
-      #
-      # - name: Upload build artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: build-artifacts
-      #     path: dist/
-      #     retention-days: 7
+      - name: Build project
+        run: npm run build
 
-      - name: Verify TypeScript compilation
-        run: npx tsc --noEmit
+      - name: Check build artifacts
+        run: |
+          test -f dist/index.js || exit 1
+          test -f dist/index.cjs || exit 1
+          test -f dist/index.d.ts || exit 1
+          echo "✅ All build artifacts present"
 
-  # Performance benchmarks
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+
+  # Performance benchmarks (only on PRs)
   benchmark:
     name: Performance Benchmarks
     runs-on: ubuntu-latest

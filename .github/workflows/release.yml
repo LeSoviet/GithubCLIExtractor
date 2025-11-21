@@ -29,10 +29,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run linting
+      - name: Run code quality checks
         run: npm run lint
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: npm run test:coverage
 
       - name: Build project
