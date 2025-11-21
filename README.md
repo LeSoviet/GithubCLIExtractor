@@ -18,6 +18,8 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 - 🚀 **Zero Configuration** - Works out of the box with GitHub CLI
 - 📦 **Multiple Export Formats** - Markdown, JSON, or both
 - 🔄 **Complete Data Extraction** - PRs, commits, branches, issues, releases
+- 🌍 **Public Repository Support** - Document any public repository, even if you're not a contributor
+- 👥 **Collaboration Support** - Access repositories where you're a collaborator
 - 🎨 **Beautiful CLI** - Modern interactive interface with @clack/prompts
 - ⚡ **TypeScript** - Full type safety and great DX
 - 🛡️ **Read-Only** - Never modifies your repositories
@@ -59,10 +61,37 @@ npm install
    ```
 
 3. **Follow the interactive prompts**:
-   - Select a repository
+   - Select a repository from your list OR enter any public repository (e.g., `facebook/react`)
    - Choose what to export (PRs, commits, issues, etc.)
    - Select output format (Markdown, JSON, or both)
    - Specify output path
+
+## Usage Examples
+
+### Document Your Own Repositories
+
+Simply run `ghextractor` and select from your list of repositories (including those where you're a collaborator).
+
+### Document Any Public Repository
+
+Want to document an open-source project? No problem!
+
+1. Run `ghextractor`
+2. When prompted to select a repository, choose **"📝 Enter a repository manually"**
+3. Type the repository in `owner/repo` format (e.g., `facebook/react`, `microsoft/vscode`, `torvalds/linux`)
+4. The tool will validate the repository and proceed with the export
+
+**Example repositories you can try:**
+- `facebook/react` - React library
+- `microsoft/vscode` - Visual Studio Code
+- `vercel/next.js` - Next.js framework
+- `nodejs/node` - Node.js runtime
+
+This feature is perfect for:
+- 📚 Creating documentation for dependencies you use
+- 🔍 Analyzing popular open-source projects
+- 📊 Generating reports on community contributions
+- 🎓 Learning from established codebases
 
 ## Development
 

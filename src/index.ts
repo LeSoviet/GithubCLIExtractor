@@ -10,12 +10,13 @@ import {
   showSuccess,
   showInfo,
   showOutro,
+  promptRepositoryInput,
 } from './cli/prompts.js';
 import { createProgressTracker, ProgressTracker } from './cli/progress.js';
 import { checkGhInstalled, getAuthStatus } from './core/github-auth.js';
 import { getRateLimiter } from './core/rate-limiter.js';
 import { displayRateLimit } from './cli/rate-limit-display.js';
-import { listUserRepositories } from './scanner/repo-scanner.js';
+import { listUserRepositories, getRepositoryFromString } from './scanner/repo-scanner.js';
 import { PullRequestExporter } from './exporters/prs.js';
 import { IssueExporter } from './exporters/issues.js';
 import { CommitExporter } from './exporters/commits.js';
@@ -290,9 +291,34 @@ async function main() {
     }
 
     // Select repository (or use first for non-interactive mode)
-    const selectedRepo = process.env.GHX_TEST_MODE
-      ? repositories[0]
-      : await selectRepository(repositories);
+    let selectedRepo;
+
+    if (process.env.GHX_TEST_MODE) {
+      selectedRepo = repositories[0];
+    } else {
+      const repoSelection = await selectRepository(repositories);
+
+      // If user selected "Enter manually" option
+      if (repoSelection === null) {
+        showInfo('Enter a public repository to document');
+        const repoInput = await promptRepositoryInput();
+
+        try {
+          showInfo('Validating repository...');
+          selectedRepo = await getRepositoryFromString(repoInput);
+          showSuccess(`Repository found: ${selectedRepo.owner}/${selectedRepo.name}`);
+        } catch (error) {
+          showError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to access repository. Make sure it exists and is public.'
+          );
+          process.exit(1);
+        }
+      } else {
+        selectedRepo = repoSelection;
+      }
+    }
 
     if (!args.dryRun) {
       showInfo(`Selected: ${selectedRepo.owner}/${selectedRepo.name}`);

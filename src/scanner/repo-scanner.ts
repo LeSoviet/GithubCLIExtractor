@@ -75,6 +75,26 @@ export async function getRepository(owner: string, name: string): Promise<Reposi
 }
 
 /**
+ * Get repository information from a repository string (owner/repo)
+ * This function validates that the repository exists and is accessible
+ */
+export async function getRepositoryFromString(repoString: string): Promise<Repository> {
+  const parts = repoString.trim().split('/');
+
+  if (parts.length !== 2) {
+    throw new Error('Invalid repository format. Use: owner/repo');
+  }
+
+  const [owner, name] = parts;
+
+  if (!owner || !name) {
+    throw new Error('Both owner and repository name are required');
+  }
+
+  return getRepository(owner, name);
+}
+
+/**
  * Search repositories by name
  */
 export function filterRepositories(repos: Repository[], query: string): Repository[] {

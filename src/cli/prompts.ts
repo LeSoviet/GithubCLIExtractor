@@ -12,12 +12,19 @@ export async function showWelcome(username?: string) {
   }
 }
 
-export async function selectRepository(repositories: Repository[]): Promise<Repository> {
-  const repoOptions = repositories.map((repo) => ({
-    value: repo,
-    label: `${repo.owner}/${repo.name}`,
-    hint: repo.description || 'No description',
-  }));
+export async function selectRepository(repositories: Repository[]): Promise<Repository | null> {
+  const repoOptions = [
+    ...repositories.map((repo) => ({
+      value: repo,
+      label: `${repo.owner}/${repo.name}`,
+      hint: repo.description || 'No description',
+    })),
+    {
+      value: null,
+      label: '📝 Enter a repository manually',
+      hint: 'Type owner/repo (e.g., facebook/react)',
+    },
+  ];
 
   const selected = await clack.select({
     message: 'Select a repository:',
@@ -30,7 +37,29 @@ export async function selectRepository(repositories: Repository[]): Promise<Repo
     process.exit(0);
   }
 
-  return selected as Repository;
+  return selected as Repository | null;
+}
+
+export async function promptRepositoryInput(): Promise<string> {
+  const repoInput = await clack.text({
+    message: 'Enter repository (owner/repo):',
+    placeholder: 'e.g., facebook/react',
+    validate: (value) => {
+      if (!value) return 'Repository is required';
+      if (!value.includes('/')) return 'Format must be: owner/repo';
+      const parts = value.split('/');
+      if (parts.length !== 2) return 'Format must be: owner/repo';
+      if (!parts[0] || !parts[1]) return 'Both owner and repo name are required';
+      return undefined;
+    },
+  });
+
+  if (clack.isCancel(repoInput)) {
+    clack.cancel('Operation cancelled');
+    process.exit(0);
+  }
+
+  return repoInput;
 }
 
 export async function selectExportType(): Promise<ExportType> {
