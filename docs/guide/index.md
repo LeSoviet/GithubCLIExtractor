@@ -12,6 +12,7 @@ GitHub Extractor CLI is a universal cross-platform CLI tool that allows users to
 - **Rate Limit Aware**: Built-in rate limiting and retry mechanisms
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Open Source**: MIT licensed
+- **Enterprise-Grade Batch Processing**: Export dozens or hundreds of repositories simultaneously
 
 ## How It Works
 
@@ -31,3 +32,4 @@ The tool uses the GitHub CLI (`gh`) under the hood to fetch data from GitHub's A
 - **Analytics and Reporting**: Analyze your GitHub workflow and productivity
 - **Migration Workflows**: Migrate data between repositories or organizations
 - **Research and Learning**: Study popular open-source projects by exporting their data
+- **Enterprise Documentation**: Document entire organizations with batch processing
