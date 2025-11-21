@@ -108,11 +108,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Publish to npm
+  # Publish to npm using GitHub's provenance
   publish-npm:
     name: Publish to npm
     runs-on: ubuntu-latest
     needs: release
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -122,7 +125,6 @@ jobs:
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
-          
 
       - name: Install dependencies
         run: npm install
@@ -132,6 +134,33 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Fallback publish to npm without provenance if the above fails
+  publish-npm-fallback:
+    name: Fallback Publish to npm
+    runs-on: ubuntu-latest
+    needs: [release, publish-npm]
+    if: failure()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Publish to npm (fallback)
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -180,7 +209,7 @@ jobs:
   notify:
     name: Post-release Notifications
     runs-on: ubuntu-latest
-    needs: [release, publish-npm]
+    needs: [release, publish-npm, publish-npm-fallback]
     if: always()
     steps:
       - name: Create release summary
@@ -192,6 +221,7 @@ jobs:
           echo "### Status" >> $GITHUB_STEP_SUMMARY
           echo "- GitHub Release: ${{ needs.release.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- npm Publish: ${{ needs.publish-npm.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- npm Publish (Fallback): ${{ needs.publish-npm-fallback.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Links" >> $GITHUB_STEP_SUMMARY
           echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
