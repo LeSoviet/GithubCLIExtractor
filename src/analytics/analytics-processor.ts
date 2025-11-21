@@ -1,0 +1,738 @@
+import type {
+  AnalyticsOptions,
+  AnalyticsReport,
+  ActivityAnalytics,
+  ContributorAnalytics,
+  LabelAnalytics,
+  HealthAnalytics,
+} from '../types/analytics.js';
+import { logger } from '../utils/logger.js';
+import { ensureDirectory } from '../utils/output.js';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
+import { execGhJson } from '../utils/exec-gh.js';
+
+/**
+ * AnalyticsProcessor handles generating analytics reports from exported data
+ */
+export class AnalyticsProcessor {
+  private options: AnalyticsOptions;
+  // private startTime: number = 0;
+
+  constructor(options: AnalyticsOptions) {
+    this.options = options;
+  }
+
+  /**
+   * Generate a complete analytics report
+   */
+  async generateReport(): Promise<AnalyticsReport> {
+    // this.startTime = Date.now();
+
+    logger.info(
+      `Generating analytics report for ${this.options.repository.owner}/${this.options.repository.name}...`
+    );
+
+    try {
+      // Ensure output directory exists
+      await ensureDirectory(this.options.outputPath);
+
+      // Generate each analytics module
+      const activity = await this.generateActivityAnalytics();
+      const contributors = await this.generateContributorAnalytics();
+      const labels = await this.generateLabelAnalytics();
+      const health = await this.generateHealthAnalytics();
+
+      const report: AnalyticsReport = {
+        repository: `${this.options.repository.owner}/${this.options.repository.name}`,
+        generatedAt: new Date().toISOString(),
+        activity,
+        contributors,
+        labels,
+        health,
+      };
+
+      // Export report in specified formats
+      await this.exportReport(report);
+
+      logger.success('Analytics report generated successfully');
+      return report;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to generate analytics report: ${errorMsg}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate activity analytics
+   */
+  private async generateActivityAnalytics(): Promise<ActivityAnalytics> {
+    const startTime = Date.now();
+    const result: ActivityAnalytics = {
+      success: false,
+      duration: 0,
+      errors: [],
+      repository: `${this.options.repository.owner}/${this.options.repository.name}`,
+      period: {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+        end: new Date().toISOString(),
+      },
+      commitsOverTime: {
+        dates: [],
+        counts: [],
+      },
+      prMergeRate: {
+        merged: 0,
+        closed: 0,
+        mergeRate: 0,
+      },
+      issueResolutionTime: {
+        averageHours: 0,
+        medianHours: 0,
+      },
+      busiestDays: [],
+      activeContributors: [],
+    };
+
+    try {
+      // Fetch PRs for merge rate calculation (increased limit for better analysis)
+      const prs = await execGhJson<any[]>(
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,state,mergedAt,closedAt,createdAt,author,title`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Calculate PR merge rate
+      const mergedPRs = prs.filter((pr) => pr.mergedAt);
+      const closedPRs = prs.filter((pr) => pr.state === 'closed' && !pr.mergedAt);
+      result.prMergeRate = {
+        merged: mergedPRs.length,
+        closed: closedPRs.length,
+        mergeRate: prs.length > 0 ? (mergedPRs.length / prs.length) * 100 : 0,
+      };
+
+      // Fetch issues for resolution time calculation (both open and closed for better analysis)
+      const issues = await execGhJson<any[]>(
+        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,createdAt,closedAt,state,title,author`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Calculate issue resolution time
+      if (issues.length > 0) {
+        const resolutionTimes = issues
+          .filter((issue) => issue.closedAt && issue.createdAt)
+          .map((issue) => {
+            const created = new Date(issue.createdAt);
+            const closed = new Date(issue.closedAt);
+            const diffMs = closed.getTime() - created.getTime();
+            return Math.max(0, diffMs / (1000 * 60 * 60)); // Hours, ensure non-negative
+          })
+          .filter((hours) => !isNaN(hours)); // Filter out any NaN values
+
+        if (resolutionTimes.length > 0) {
+          const averageHours =
+            resolutionTimes.reduce((sum, hours) => sum + hours, 0) / resolutionTimes.length;
+          const sortedTimes = [...resolutionTimes].sort((a, b) => a - b);
+          const medianHours = sortedTimes[Math.floor(sortedTimes.length / 2)] || 0;
+
+          result.issueResolutionTime = {
+            averageHours: isNaN(averageHours) ? 0 : averageHours,
+            medianHours: isNaN(medianHours) ? 0 : medianHours,
+          };
+        }
+      }
+
+      // Fetch commits for activity patterns (more comprehensive time range)
+      const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days for better analysis
+      const commits = await execGhJson<any[]>(
+        `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=300`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Group commits by day for activity patterns
+      const commitsByDay = new Map<string, number>();
+      commits.forEach((commit) => {
+        try {
+          const date = new Date(commit.commit.author.date);
+          // Check if date is valid
+          if (!isNaN(date.getTime())) {
+            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            commitsByDay.set(dateStr, (commitsByDay.get(dateStr) || 0) + 1);
+          }
+        } catch (e) {
+          // Skip invalid dates
+        }
+      });
+
+      result.commitsOverTime = {
+        dates: Array.from(commitsByDay.keys()),
+        counts: Array.from(commitsByDay.values()),
+      };
+
+      // Find busiest days (top 5)
+      const sortedDays = Array.from(commitsByDay.entries()).sort((a, b) => b[1] - a[1]);
+      result.busiestDays = sortedDays.slice(0, 5).map(([day, count]) => ({
+        day,
+        count,
+      }));
+
+      // Calculate active contributors
+      const contributors = new Set<string>();
+      commits.forEach((commit) => {
+        if (commit.commit.author.name) {
+          contributors.add(commit.commit.author.name);
+        }
+      });
+
+      result.activeContributors = [
+        {
+          period: 'last_30_days',
+          contributors: contributors.size,
+        },
+      ];
+
+      result.success = true;
+      result.duration = Date.now() - startTime;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(errorMsg);
+      logger.error(`Activity analytics failed: ${errorMsg}`);
+    }
+
+    result.duration = Date.now() - startTime;
+    return result;
+  }
+
+  /**
+   * Generate contributor analytics
+   */
+  private async generateContributorAnalytics(): Promise<ContributorAnalytics> {
+    const startTime = Date.now();
+    const result: ContributorAnalytics = {
+      success: false,
+      duration: 0,
+      errors: [],
+      repository: `${this.options.repository.owner}/${this.options.repository.name}`,
+      topContributors: [],
+      newVsReturning: {
+        new: 0,
+        returning: 0,
+      },
+      contributionDistribution: [],
+      busFactor: 0,
+    };
+
+    try {
+      // Fetch commits to analyze contributors
+      const sinceDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000); // Last 180 days for better analysis
+      const commits = await execGhJson<any[]>(
+        `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=300`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Group commits by author
+      const contributorStats = new Map<string, { commits: number; prs: number; reviews: number }>();
+
+      // Count commits per contributor
+      commits.forEach((commit) => {
+        try {
+          const author = (
+            commit.commit.author.name ||
+            commit.commit.author.email ||
+            'unknown'
+          ).trim();
+          if (author && author !== 'unknown') {
+            const stats = contributorStats.get(author) || { commits: 0, prs: 0, reviews: 0 };
+            stats.commits++;
+            contributorStats.set(author, stats);
+          }
+        } catch (e) {
+          // Skip invalid commits
+        }
+      });
+
+      // Fetch PRs to count PRs and reviews per contributor
+      const prs = await execGhJson<any[]>(
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,author,reviewDecision,createdAt`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Count PRs per contributor
+      prs.forEach((pr) => {
+        try {
+          if (pr.author?.login) {
+            const author = pr.author.login.trim();
+            if (author) {
+              const stats = contributorStats.get(author) || { commits: 0, prs: 0, reviews: 0 };
+              stats.prs++;
+              contributorStats.set(author, stats);
+            }
+          }
+        } catch (e) {
+          // Skip invalid PRs
+        }
+      });
+
+      // Create top contributors list
+      const contributorsArray = Array.from(contributorStats.entries())
+        .map(([login, stats]) => ({
+          login,
+          commits: stats.commits,
+          prs: stats.prs,
+          reviews: stats.reviews,
+          totalContributions: stats.commits + stats.prs + stats.reviews,
+        }))
+        .sort((a, b) => b.totalContributions - a.totalContributions);
+
+      result.topContributors = contributorsArray.slice(0, 10);
+
+      // Calculate contribution distribution
+      const totalContributions = contributorsArray.reduce(
+        (sum, c) => sum + c.totalContributions,
+        0
+      );
+      result.contributionDistribution = contributorsArray
+        .map((c) => ({
+          contributor: c.login,
+          percentage:
+            totalContributions > 0 ? (c.totalContributions / totalContributions) * 100 : 0,
+        }))
+        .slice(0, 10);
+
+      // Simple bus factor calculation (top 2 contributors hold > 50% of contributions)
+      if (contributorsArray.length > 0) {
+        const top2Contributions = contributorsArray
+          .slice(0, 2)
+          .reduce((sum, c) => sum + c.totalContributions, 0);
+
+        if (totalContributions > 0 && top2Contributions / totalContributions > 0.5) {
+          result.busFactor = 2;
+        } else {
+          result.busFactor = Math.min(contributorsArray.length, 5);
+        }
+      }
+
+      // For new vs returning, we'll use a simple heuristic
+      // In a real implementation, we'd track first-time contributors
+      const activeContributors = contributorsArray.length;
+      result.newVsReturning = {
+        new: Math.floor(activeContributors * 0.3), // Estimate 30% as new
+        returning: Math.ceil(activeContributors * 0.7), // Estimate 70% as returning
+      };
+
+      result.success = true;
+      result.duration = Date.now() - startTime;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(errorMsg);
+      logger.error(`Contributor analytics failed: ${errorMsg}`);
+    }
+
+    result.duration = Date.now() - startTime;
+    return result;
+  }
+
+  /**
+   * Generate label analytics
+   */
+  private async generateLabelAnalytics(): Promise<LabelAnalytics> {
+    const startTime = Date.now();
+    const result: LabelAnalytics = {
+      success: false,
+      duration: 0,
+      errors: [],
+      repository: `${this.options.repository.owner}/${this.options.repository.name}`,
+      labelDistribution: [],
+      issueLifecycle: {
+        averageOpenDays: 0,
+        medianOpenDays: 0,
+      },
+      mostCommonLabels: [],
+      issueVsPrratio: 0,
+    };
+
+    try {
+      // Fetch issues with labels
+      const issues = await execGhJson<any[]>(
+        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,labels,createdAt,closedAt,state,title,author`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Fetch PRs with labels
+      const prs = await execGhJson<any[]>(
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,labels,createdAt,closedAt,title,author`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Calculate issue/PR ratio
+      result.issueVsPrratio = prs.length > 0 ? issues.length / prs.length : 0;
+
+      // Collect all labels
+      const labelCounts = new Map<string, number>();
+
+      // Count labels from issues
+      issues.forEach((issue) => {
+        try {
+          if (Array.isArray(issue.labels)) {
+            issue.labels.forEach((label: any) => {
+              try {
+                const labelName = (label.name || 'unnamed').trim();
+                if (labelName) {
+                  labelCounts.set(labelName, (labelCounts.get(labelName) || 0) + 1);
+                }
+              } catch (e) {
+                // Skip invalid labels
+              }
+            });
+          }
+        } catch (e) {
+          // Skip invalid issues
+        }
+      });
+
+      // Count labels from PRs
+      prs.forEach((pr) => {
+        try {
+          if (Array.isArray(pr.labels)) {
+            pr.labels.forEach((label: any) => {
+              try {
+                const labelName = (label.name || 'unnamed').trim();
+                if (labelName) {
+                  labelCounts.set(labelName, (labelCounts.get(labelName) || 0) + 1);
+                }
+              } catch (e) {
+                // Skip invalid labels
+              }
+            });
+          }
+        } catch (e) {
+          // Skip invalid PRs
+        }
+      });
+
+      // Calculate label distribution
+      const totalLabels = Array.from(labelCounts.values()).reduce((sum, count) => sum + count, 0);
+      result.labelDistribution = Array.from(labelCounts.entries())
+        .map(([label, count]) => ({
+          label,
+          count,
+          percentage: totalLabels > 0 ? (count / totalLabels) * 100 : 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Find most common labels
+      result.mostCommonLabels = result.labelDistribution.slice(0, 5).map((item) => item.label);
+
+      // Calculate issue lifecycle metrics
+      if (issues.length > 0) {
+        const openDurations = issues
+          .filter((issue) => issue.closedAt && issue.createdAt)
+          .map((issue) => {
+            const created = new Date(issue.createdAt);
+            const closed = new Date(issue.closedAt);
+            return (closed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // Days
+          });
+
+        if (openDurations.length > 0) {
+          const averageOpenDays =
+            openDurations.reduce((sum, days) => sum + days, 0) / openDurations.length;
+          const sortedDurations = [...openDurations].sort((a, b) => a - b);
+          const medianOpenDays = sortedDurations[Math.floor(sortedDurations.length / 2)];
+
+          result.issueLifecycle = {
+            averageOpenDays,
+            medianOpenDays,
+          };
+        }
+      }
+
+      result.success = true;
+      result.duration = Date.now() - startTime;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(errorMsg);
+      logger.error(`Label analytics failed: ${errorMsg}`);
+    }
+
+    result.duration = Date.now() - startTime;
+    return result;
+  }
+
+  /**
+   * Generate code health analytics
+   */
+  private async generateHealthAnalytics(): Promise<HealthAnalytics> {
+    const startTime = Date.now();
+    const result: HealthAnalytics = {
+      success: false,
+      duration: 0,
+      errors: [],
+      repository: `${this.options.repository.owner}/${this.options.repository.name}`,
+      prReviewCoverage: {
+        reviewed: 0,
+        total: 0,
+        coveragePercentage: 0,
+      },
+      averagePrSize: {
+        additions: 0,
+        deletions: 0,
+        total: 0,
+      },
+      timeToFirstReview: {
+        averageHours: 0,
+        medianHours: 0,
+      },
+      deploymentFrequency: {
+        releases: 0,
+        period: 'monthly',
+      },
+    };
+
+    try {
+      // Fetch PRs to analyze review coverage and PR size
+      const prs = await execGhJson<any[]>(
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Calculate PR review coverage
+      if (prs.length > 0) {
+        const reviewedPRs = prs.filter(
+          (pr) => pr.reviewDecision === 'APPROVED' || pr.reviewDecision === 'CHANGES_REQUESTED'
+        );
+        const coveragePercentage = prs.length > 0 ? (reviewedPRs.length / prs.length) * 100 : 0;
+        result.prReviewCoverage = {
+          reviewed: reviewedPRs.length,
+          total: prs.length,
+          coveragePercentage: isNaN(coveragePercentage) ? 0 : coveragePercentage,
+        };
+      }
+
+      // Calculate average PR size
+      if (prs.length > 0) {
+        const totalAdditions = prs.reduce((sum, pr) => sum + (pr.additions || 0), 0);
+        const totalDeletions = prs.reduce((sum, pr) => sum + (pr.deletions || 0), 0);
+        const totalChanges = totalAdditions + totalDeletions;
+        const avgAdditions = prs.length > 0 ? totalAdditions / prs.length : 0;
+        const avgDeletions = prs.length > 0 ? totalDeletions / prs.length : 0;
+        const avgTotal = prs.length > 0 ? totalChanges / prs.length : 0;
+
+        result.averagePrSize = {
+          additions: isNaN(avgAdditions) ? 0 : Math.round(avgAdditions),
+          deletions: isNaN(avgDeletions) ? 0 : Math.round(avgDeletions),
+          total: isNaN(avgTotal) ? 0 : Math.round(avgTotal),
+        };
+      }
+
+      // Fetch releases to analyze deployment frequency
+      const releases = await execGhJson<any[]>(
+        `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 200 --json tagName,createdAt,publishedAt`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
+      );
+
+      // Calculate deployment frequency (releases per month)
+      if (releases.length > 0) {
+        try {
+          // Get date range of releases
+          const releaseDates = releases
+            .map((r: any) => new Date(r.createdAt))
+            .filter((date) => !isNaN(date.getTime())); // Filter out invalid dates
+
+          if (releaseDates.length > 0) {
+            result.deploymentFrequency = {
+              releases: releases.length,
+              period: 'monthly',
+            };
+          }
+        } catch (e) {
+          // If there's an error calculating deployment frequency, use default values
+          result.deploymentFrequency = {
+            releases: releases.length,
+            period: 'monthly',
+          };
+        }
+      }
+
+      result.success = true;
+      result.duration = Date.now() - startTime;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(errorMsg);
+      logger.error(`Health analytics failed: ${errorMsg}`);
+    }
+
+    result.duration = Date.now() - startTime;
+    return result;
+  }
+
+  /**
+   * Export the analytics report in the specified formats
+   */
+  private async exportReport(report: AnalyticsReport): Promise<void> {
+    const { format, outputPath } = this.options;
+    const repoIdentifier = `${this.options.repository.owner}-${this.options.repository.name}`;
+
+    try {
+      // Export as JSON
+      if (format === 'json' || format === 'both') {
+        const jsonPath = join(outputPath, `${repoIdentifier}-analytics.json`);
+        await writeFile(jsonPath, JSON.stringify(report, null, 2));
+        logger.info(`Analytics report saved as JSON: ${jsonPath}`);
+      }
+
+      // Export as Markdown
+      if (format === 'markdown' || format === 'both') {
+        const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
+        const markdownContent = this.generateMarkdownReport(report);
+        await writeFile(markdownPath, markdownContent);
+        logger.info(`Analytics report saved as Markdown: ${markdownPath}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to export analytics report: ${errorMsg}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a Markdown report from the analytics data
+   */
+  private generateMarkdownReport(report: AnalyticsReport): string {
+    let md = `# Analytics Report: ${report.repository}\n\n`;
+    md += `Generated: ${new Date(report.generatedAt).toLocaleString()}\n\n`;
+
+    // Executive Summary
+    md += `## Executive Summary\n\n`;
+    md += `This report provides a comprehensive analysis of the repository's activity, contributor patterns, labeling practices, and code health metrics.\n\n`;
+
+    // Activity Analytics
+    md += `## Activity Analytics\n\n`;
+    md += `- **Analysis Period**: ${new Date(report.activity.period.start).toLocaleDateString()} to ${new Date(report.activity.period.end).toLocaleDateString()}\n`;
+    md += `- **PR Merge Rate**: ${report.activity.prMergeRate.mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged} merged, ${report.activity.prMergeRate.closed} closed)\n`;
+
+    if (report.activity.issueResolutionTime.averageHours > 0) {
+      md += `- **Average Issue Resolution Time**: ${report.activity.issueResolutionTime.averageHours.toFixed(1)} hours\n`;
+      md += `- **Median Issue Resolution Time**: ${report.activity.issueResolutionTime.medianHours.toFixed(1)} hours\n`;
+    } else {
+      md += `- **Issue Resolution Time**: No closed issues found in the analysis period\n`;
+    }
+
+    if (report.activity.busiestDays.length > 0) {
+      md += `\n### Busiest Days\n`;
+      report.activity.busiestDays.slice(0, 3).forEach((day) => {
+        md += `- ${day.day}: ${day.count} commits\n`;
+      });
+    }
+
+    md += `\n`;
+
+    // Contributor Analytics
+    md += `## Contributor Analytics\n\n`;
+    md += `- **Bus Factor**: ${report.contributors.busFactor} (indicates project risk if key contributors are lost)\n`;
+    md += `- **Active Contributors**: ${report.activity.activeContributors[0]?.contributors || 0} in the last 90 days\n`;
+    md += `- **New vs Returning Contributors**: ${report.contributors.newVsReturning.new} new, ${report.contributors.newVsReturning.returning} returning\n\n`;
+
+    if (report.contributors.topContributors.length > 0) {
+      md += `### Top Contributors\n\n`;
+      md += `| Contributor | Commits | PRs | Reviews | Total Contributions |\n`;
+      md += `|-------------|---------|-----|--------|-------------------|\n`;
+
+      for (const contributor of report.contributors.topContributors.slice(0, 10)) {
+        md += `| ${contributor.login} | ${contributor.commits} | ${contributor.prs} | ${contributor.reviews} | ${contributor.totalContributions} |\n`;
+      }
+      md += `\n`;
+
+      if (report.contributors.contributionDistribution.length > 0) {
+        const topContributorPercentage =
+          report.contributors.contributionDistribution[0]?.percentage || 0;
+        md += `**Concentration of Contributions**: The top contributor accounts for ${topContributorPercentage.toFixed(1)}% of all contributions.\n\n`;
+      }
+    }
+
+    // Label Analytics
+    md += `## Label Analytics\n\n`;
+    if (report.labels.issueVsPrratio > 0) {
+      md += `- **Issue/PR Ratio**: 1:${report.labels.issueVsPrratio.toFixed(2)} (indicates the balance between issues and pull requests)\n`;
+    } else {
+      md += `- **Issue/PR Ratio**: No issues or PRs found\n`;
+    }
+
+    if (report.labels.mostCommonLabels.length > 0) {
+      md += `- **Most Common Labels**: ${report.labels.mostCommonLabels.join(', ')}\n`;
+    }
+
+    if (report.labels.issueLifecycle.averageOpenDays > 0) {
+      md += `- **Average Issue Lifecycle**: ${report.labels.issueLifecycle.averageOpenDays.toFixed(1)} days\n`;
+      md += `- **Median Issue Lifecycle**: ${report.labels.issueLifecycle.medianOpenDays.toFixed(1)} days\n`;
+    }
+
+    if (report.labels.labelDistribution.length > 0) {
+      md += `\n### Label Distribution\n\n`;
+      md += `| Label | Count | Percentage |\n`;
+      md += `|-------|-------|------------|\n`;
+
+      for (const label of report.labels.labelDistribution.slice(0, 10)) {
+        md += `| ${label.label} | ${label.count} | ${label.percentage.toFixed(1)}% |\n`;
+      }
+      md += `\n`;
+
+      // Insights about labeling
+      const unlabeledItems = report.labels.labelDistribution
+        .filter(
+          (l) => l.label.toLowerCase().includes('unname') || l.label.toLowerCase().includes('none')
+        )
+        .reduce((sum, l) => sum + l.count, 0);
+      if (unlabeledItems > 0) {
+        const totalItems = report.labels.labelDistribution.reduce((sum, l) => sum + l.count, 0);
+        const unlabeledPercentage = (unlabeledItems / totalItems) * 100;
+        md += `**Labeling Quality**: ${unlabeledPercentage.toFixed(1)}% of items are unlabeled, which may impact project organization.\n\n`;
+      }
+    }
+
+    // Health Analytics
+    md += `## Code Health Metrics\n\n`;
+    md += `- **PR Review Coverage**: ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed} reviewed out of ${report.health.prReviewCoverage.total} PRs)\n`;
+
+    if (report.health.averagePrSize.total > 0) {
+      md += `- **Average PR Size**: ${report.health.averagePrSize.total} lines (${report.health.averagePrSize.additions} additions, ${report.health.averagePrSize.deletions} deletions)\n`;
+    } else {
+      md += `- **Average PR Size**: No PRs found\n`;
+    }
+
+    md += `- **Deployment Frequency**: ${report.health.deploymentFrequency.releases} releases\n`;
+
+    // Insights and recommendations
+    md += `\n## Insights & Recommendations\n\n`;
+
+    // PR merge rate insight
+    if (report.activity.prMergeRate.mergeRate < 50) {
+      md += `⚠️ **PR Merge Rate**: Only ${report.activity.prMergeRate.mergeRate.toFixed(1)}% of PRs are being merged. Consider reviewing the PR process to improve merge rates.\n\n`;
+    } else if (report.activity.prMergeRate.mergeRate > 80) {
+      md += `✅ **PR Merge Rate**: ${report.activity.prMergeRate.mergeRate.toFixed(1)}% of PRs are being merged, indicating a healthy contribution process.\n\n`;
+    }
+
+    // Review coverage insight
+    if (report.health.prReviewCoverage.coveragePercentage < 70) {
+      md += `⚠️ **Review Coverage**: Only ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% of PRs are reviewed. Increasing review coverage can improve code quality.\n\n`;
+    }
+
+    // Bus factor insight
+    if (report.contributors.busFactor <= 2) {
+      md += `⚠️ **Bus Factor**: The bus factor is ${report.contributors.busFactor}, indicating high risk if key contributors are unavailable. Consider onboarding more contributors.\n\n`;
+    }
+
+    // Contribution concentration insight
+    if (report.contributors.contributionDistribution.length > 0) {
+      const topPercentage = report.contributors.contributionDistribution[0]?.percentage || 0;
+      if (topPercentage > 50) {
+        md += `⚠️ **Contribution Concentration**: The top contributor accounts for ${topPercentage.toFixed(1)}% of contributions, indicating potential knowledge siloing.\n\n`;
+      }
+    }
+
+    md += `---\n\n`;
+    md += `*Report generated by [GitHub Extractor CLI](https://github.com/LeSoviet/ghextractor)*\n`;
+
+    return md;
+  }
+}

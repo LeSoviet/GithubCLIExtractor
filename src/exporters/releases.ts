@@ -20,9 +20,9 @@ export class ReleaseExporter extends BaseExporter<Release> {
 
       console.log('[INFO] Fetching releases list...');
 
-      // Fetch releases with ONLY available fields
+      // Fetch releases with ONLY available fields - limit to 300 for better coverage
       const releases = await execGhJson<any[]>(
-        `release list --repo ${repoId} --limit 100 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
+        `release list --repo ${repoId} --limit 300 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
         { timeout: 15000, useRateLimit: false, useRetry: false }
       );
 

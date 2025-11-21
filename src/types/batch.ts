@@ -8,7 +8,7 @@ export interface BatchConfig {
   repositories: string[];
 
   /** Types of exports to perform */
-  exportTypes: SingleExportType[];
+  exportTypes: (SingleExportType | 'analytics')[];
 
   /** Export format */
   format: ExportFormat;
@@ -40,7 +40,7 @@ export interface BatchRepositoryResult {
   success: boolean;
 
   /** Export type that was performed */
-  exportType: SingleExportType;
+  exportType: SingleExportType | 'analytics';
 
   /** Number of items exported */
   itemsExported: number;

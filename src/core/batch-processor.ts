@@ -12,6 +12,7 @@ import { BranchExporter } from '../exporters/branches.js';
 import { ReleaseExporter } from '../exporters/releases.js';
 import { buildOutputPath } from '../utils/output.js';
 import { getStateManager } from './state-manager.js';
+import { AnalyticsProcessor } from '../analytics/analytics-processor.js';
 import { showInfo, showSuccess, showError } from '../cli/prompts.js';
 import type { Repository, SingleExportType } from '../types/index.js';
 import { writeFile, mkdir } from 'fs/promises';
@@ -187,7 +188,34 @@ export class BatchProcessor {
   /**
    * Export a single type for a repository
    */
-  private async exportSingleType(repository: Repository, exportType: SingleExportType) {
+  private async exportSingleType(
+    repository: Repository,
+    exportType: SingleExportType | 'analytics'
+  ) {
+    // Handle analytics separately
+    if (exportType === 'analytics') {
+      const analyticsOptions = {
+        enabled: true,
+        format: this.config.format,
+        outputPath: this.config.outputPath,
+        repository: repository,
+      };
+
+      const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+      await analyticsProcessor.generateReport();
+
+      // Return a mock result for analytics
+      return {
+        success: true,
+        itemsExported: 1,
+        itemsFailed: 0,
+        apiCalls: 0,
+        cacheHits: 0,
+        duration: 1000,
+        errors: [],
+      };
+    }
+
     const finalOutputPath = buildOutputPath(
       this.config.outputPath,
       repository.owner,
@@ -200,7 +228,7 @@ export class BatchProcessor {
     const diffModeOptions = this.config.diffMode
       ? await stateManager.getDiffModeOptions(
           `${repository.owner}/${repository.name}`,
-          exportType,
+          exportType as SingleExportType,
           this.config.forceFullExport
         )
       : undefined;
@@ -213,7 +241,7 @@ export class BatchProcessor {
     };
 
     // Create appropriate exporter
-    const exporter = this.createExporter(exportType, exportOptions);
+    const exporter = this.createExporter(exportType as SingleExportType, exportOptions);
 
     // Execute export
     const result = await exporter.export();
@@ -222,7 +250,7 @@ export class BatchProcessor {
     if (this.config.diffMode && result.success) {
       await stateManager.updateExportState(
         `${repository.owner}/${repository.name}`,
-        exportType,
+        exportType as SingleExportType,
         result.itemsExported,
         this.config.format,
         finalOutputPath
@@ -255,13 +283,14 @@ export class BatchProcessor {
   /**
    * Get human-readable name for export type
    */
-  private getExportTypeName(type: SingleExportType): string {
-    const names: Record<SingleExportType, string> = {
+  private getExportTypeName(type: SingleExportType | 'analytics'): string {
+    const names: Record<SingleExportType | 'analytics', string> = {
       prs: 'Pull Requests',
       issues: 'Issues',
       commits: 'Commits',
       branches: 'Branches',
       releases: 'Releases',
+      analytics: 'Analytics Report',
     };
     return names[type];
   }

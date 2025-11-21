@@ -29,6 +29,7 @@ import { CommitExporter } from './exporters/commits.js';
 import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
+import { AnalyticsProcessor } from './analytics/analytics-processor.js';
 import type {
   ExportOptions,
   ExportType,
@@ -75,6 +76,7 @@ function parseArgs(): {
   labels?: string;
   template?: string;
   fullBackup: boolean;
+  // analytics: boolean; // Removed as analytics are now generated automatically
   batch?: string;
   batchRepos?: string;
   batchTypes?: string;
@@ -98,6 +100,7 @@ function parseArgs(): {
     labels: args.includes('--labels') ? args[args.indexOf('--labels') + 1] : undefined,
     template: args.includes('--template') ? args[args.indexOf('--template') + 1] : undefined,
     fullBackup: args.includes('--full-backup'),
+    // analytics: args.includes('--analytics'), // Removed as analytics are now generated automatically
     batch: args.includes('--batch') ? args[args.indexOf('--batch') + 1] : undefined,
     batchRepos: args.includes('--batch-repos')
       ? args[args.indexOf('--batch-repos') + 1]
@@ -137,6 +140,7 @@ Options:
   --labels <labels>       Filter by labels (comma-separated)
   --template <path>       Use custom template file
   --full-backup           Export all resources (PRs, issues, commits, branches, releases)
+  // --analytics             Generate analytics report from exported data (now automatic)
 
 Batch Export Options:
   --batch <config.json>       Batch export from JSON config file
@@ -462,7 +466,7 @@ async function main() {
       args.diff && exportType !== 'full-backup'
         ? await stateManager.getDiffModeOptions(
             `${selectedRepo.owner}/${selectedRepo.name}`,
-            exportType,
+            exportType as SingleExportType,
             args.forceFullExport
           )
         : undefined;
@@ -512,6 +516,25 @@ async function executeExport(
     if (options.type === 'full-backup') {
       // Execute all exporters
       await executeFullBackup(options, progress, diffModeEnabled);
+
+      // Generate analytics automatically after full backup
+      try {
+        const analyticsOptions = {
+          enabled: true,
+          format: options.format,
+          outputPath: options.outputPath,
+          repository: options.repository,
+        };
+
+        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+        await analyticsProcessor.generateReport();
+        showInfo('📊 Analytics report generated automatically');
+      } catch (analyticsError) {
+        console.warn(
+          '⚠️  Failed to generate analytics report:',
+          analyticsError instanceof Error ? analyticsError.message : 'Unknown error'
+        );
+      }
     } else {
       // Execute single exporter
       const exporter = createExporter(options);
@@ -520,6 +543,25 @@ async function executeExport(
       progress.start(`Exporting ${exportTypeName}...`);
       const result = await exporter.export();
       progress.succeed(`${exportTypeName} export completed!`);
+
+      // Generate analytics automatically after each export
+      try {
+        const analyticsOptions = {
+          enabled: true,
+          format: options.format,
+          outputPath: options.outputPath,
+          repository: options.repository,
+        };
+
+        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+        await analyticsProcessor.generateReport();
+        showInfo('📊 Analytics report generated automatically');
+      } catch (analyticsError) {
+        console.warn(
+          '⚠️  Failed to generate analytics report:',
+          analyticsError instanceof Error ? analyticsError.message : 'Unknown error'
+        );
+      }
 
       // Update state if diff mode is enabled
       // (options.type is guaranteed to be SingleExportType here due to the if/else above)
