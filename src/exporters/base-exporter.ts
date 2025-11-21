@@ -1,11 +1,13 @@
 import type { Repository, ExportFormat, ExportResult } from '../types/index.js';
 import { ensureDirectory } from '../utils/output.js';
 import { logger } from '../utils/logger.js';
+import type { DiffModeOptions } from '../types/state.js';
 
 export interface ExporterOptions {
   repository: Repository;
   outputPath: string;
   format: ExportFormat;
+  diffMode?: DiffModeOptions;
 }
 
 /**
@@ -15,6 +17,7 @@ export abstract class BaseExporter<T> {
   protected repository: Repository;
   protected outputPath: string;
   protected format: ExportFormat;
+  protected diffMode?: DiffModeOptions;
   protected startTime: number = 0;
   protected apiCalls: number = 0;
   protected cacheHits: number = 0;
@@ -23,6 +26,7 @@ export abstract class BaseExporter<T> {
     this.repository = options.repository;
     this.outputPath = options.outputPath;
     this.format = options.format;
+    this.diffMode = options.diffMode;
   }
 
   /**
@@ -133,5 +137,30 @@ export abstract class BaseExporter<T> {
    */
   protected getRepoIdentifier(): string {
     return `${this.repository.owner}/${this.repository.name}`;
+  }
+
+  /**
+   * Check if diff mode is enabled
+   */
+  protected isDiffMode(): boolean {
+    return this.diffMode?.enabled === true;
+  }
+
+  /**
+   * Get the since date for diff mode filtering
+   */
+  protected getDiffModeSince(): string | undefined {
+    return this.diffMode?.since;
+  }
+
+  /**
+   * Log diff mode info
+   */
+  protected logDiffModeInfo(): void {
+    if (this.isDiffMode() && this.diffMode?.since) {
+      logger.info(
+        `📅 Diff mode enabled: exporting items updated since ${new Date(this.diffMode.since).toLocaleString()}`
+      );
+    }
   }
 }

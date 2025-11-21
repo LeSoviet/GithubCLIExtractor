@@ -15,6 +15,9 @@ export class ReleaseExporter extends BaseExporter<Release> {
     this.incrementApiCalls();
 
     try {
+      // Log diff mode info if enabled
+      this.logDiffModeInfo();
+
       console.log('[INFO] Fetching releases list...');
 
       // Fetch releases with ONLY available fields
@@ -60,7 +63,24 @@ export class ReleaseExporter extends BaseExporter<Release> {
       );
 
       console.log(`[INFO] Successfully processed ${releasesWithDetails.length} releases`);
-      return releasesWithDetails;
+
+      // Filter by date if diff mode is enabled
+      let filteredReleases = releasesWithDetails;
+      if (this.isDiffMode()) {
+        const since = this.getDiffModeSince();
+        if (since) {
+          const sinceDate = new Date(since);
+          filteredReleases = releasesWithDetails.filter((release) => {
+            const publishedAt = new Date(release.publishedAt);
+            return publishedAt > sinceDate;
+          });
+          console.log(
+            `[INFO] Diff mode: filtered to ${filteredReleases.length} releases published since ${sinceDate.toLocaleString()}`
+          );
+        }
+      }
+
+      return filteredReleases;
     } catch (error: any) {
       throw new Error(`Failed to fetch releases: ${error.message}`);
     }

@@ -15,9 +15,23 @@ export class CommitExporter extends BaseExporter<Commit> {
     this.incrementApiCalls();
 
     try {
+      // Log diff mode info if enabled
+      this.logDiffModeInfo();
+
+      // Build API URL with optional since parameter for diff mode
+      let apiUrl = `api repos/${repoId}/commits?per_page=100`;
+      if (this.isDiffMode()) {
+        const since = this.getDiffModeSince();
+        if (since) {
+          // GitHub API accepts ISO 8601 format for since parameter
+          apiUrl += `&since=${encodeURIComponent(since)}`;
+          console.log(`[INFO] Diff mode: fetching commits since ${new Date(since).toLocaleString()}`);
+        }
+      }
+
       // Fetch commits - limit to 100 for performance (configurable later)
       // Note: Removed --paginate as it can hang on large repos
-      const commits = await execGhJson<GitHubCommit[]>(`api repos/${repoId}/commits?per_page=100`, {
+      const commits = await execGhJson<GitHubCommit[]>(apiUrl, {
         timeout: 60000,
         useRateLimit: false,
         useRetry: false,
@@ -25,6 +39,10 @@ export class CommitExporter extends BaseExporter<Commit> {
 
       // Convert to our format
       const convertedCommits = commits.map((commit) => this.convertCommit(commit));
+
+      if (this.isDiffMode()) {
+        console.log(`[INFO] Diff mode: fetched ${convertedCommits.length} commits`);
+      }
 
       return convertedCommits;
     } catch (error) {

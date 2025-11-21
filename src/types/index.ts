@@ -84,6 +84,7 @@ export interface ExportOptions {
   outputPath: string;
   repository: Repository;
   type: ExportType;
+  diffMode?: import('./state.js').DiffModeOptions;
 }
 
 export interface RateLimitInfo {

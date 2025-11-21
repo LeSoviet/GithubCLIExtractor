@@ -15,6 +15,9 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
     this.incrementApiCalls();
 
     try {
+      // Log diff mode info if enabled
+      this.logDiffModeInfo();
+
       // Fetch PRs - limit to 100 for performance
       const prs = await execGhJson<any[]>(
         `pr list --repo ${repoId} --state all --limit 100 --json number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url`,
@@ -22,7 +25,22 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
       );
 
       // Convert GitHub API format to our format
-      return prs.map((pr) => this.convertPullRequest(pr));
+      let convertedPRs = prs.map((pr) => this.convertPullRequest(pr));
+
+      // Filter by date if diff mode is enabled
+      if (this.isDiffMode()) {
+        const since = this.getDiffModeSince();
+        if (since) {
+          const sinceDate = new Date(since);
+          convertedPRs = convertedPRs.filter((pr) => {
+            const updatedAt = new Date(pr.updatedAt);
+            return updatedAt > sinceDate;
+          });
+          console.log(`[INFO] Diff mode: filtered to ${convertedPRs.length} PRs updated since ${sinceDate.toLocaleString()}`);
+        }
+      }
+
+      return convertedPRs;
     } catch (error) {
       throw new Error(`Failed to fetch pull requests: ${error}`);
     }

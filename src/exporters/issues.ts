@@ -15,13 +15,31 @@ export class IssueExporter extends BaseExporter<Issue> {
     this.incrementApiCalls();
 
     try {
+      // Log diff mode info if enabled
+      this.logDiffModeInfo();
+
       // Fetch issues - limit to 100 for performance
       const issues = await execGhJson<any[]>(
         `issue list --repo ${repoId} --state all --limit 100 --json number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
-      return issues.map((issue) => this.convertIssue(issue));
+      let convertedIssues = issues.map((issue) => this.convertIssue(issue));
+
+      // Filter by date if diff mode is enabled
+      if (this.isDiffMode()) {
+        const since = this.getDiffModeSince();
+        if (since) {
+          const sinceDate = new Date(since);
+          convertedIssues = convertedIssues.filter((issue) => {
+            const updatedAt = new Date(issue.updatedAt);
+            return updatedAt > sinceDate;
+          });
+          console.log(`[INFO] Diff mode: filtered to ${convertedIssues.length} issues updated since ${sinceDate.toLocaleString()}`);
+        }
+      }
+
+      return convertedIssues;
     } catch (error) {
       throw new Error(`Failed to fetch issues: ${error}`);
     }

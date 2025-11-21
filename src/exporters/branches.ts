@@ -16,6 +16,9 @@ export class BranchExporter extends BaseExporter<Branch> {
     this.incrementApiCalls();
 
     try {
+      // Log diff mode info if enabled
+      this.logDiffModeInfo();
+
       console.log('[INFO] Fetching branches (timeout: 10s)...');
 
       // Fetch branches with aggressive timeout and no retry
@@ -34,7 +37,26 @@ export class BranchExporter extends BaseExporter<Branch> {
       }
 
       console.log(`[INFO] Successfully fetched ${branches.length} branches`);
-      return branches.map((branch) => this.convertBranch(branch));
+
+      // Convert branches
+      let convertedBranches = branches.map((branch) => this.convertBranch(branch));
+
+      // Filter by last commit date if diff mode is enabled
+      if (this.isDiffMode()) {
+        const since = this.getDiffModeSince();
+        if (since) {
+          const sinceDate = new Date(since);
+          convertedBranches = convertedBranches.filter((branch) => {
+            const lastCommitDate = new Date(branch.lastCommit.date);
+            return lastCommitDate > sinceDate;
+          });
+          console.log(
+            `[INFO] Diff mode: filtered to ${convertedBranches.length} branches with commits since ${sinceDate.toLocaleString()}`
+          );
+        }
+      }
+
+      return convertedBranches;
     } catch (error: any) {
       console.log(`[INFO] Branch fetch failed: ${error.message} - Skipping branches`);
       return []; // Return empty array to allow export to continue

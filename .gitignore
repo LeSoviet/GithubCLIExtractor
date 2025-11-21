@@ -54,3 +54,4 @@ audit-output.json
 
 # Social media content (temporary/generated)
 social/
+.claude/
