@@ -5,7 +5,7 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 [![npm version](https://img.shields.io/npm/v/ghextractor.svg)](https://www.npmjs.com/package/ghextractor)
 [![npm downloads](https://img.shields.io/npm/dt/ghextractor.svg)](https://www.npmjs.com/package/ghextractor)
 
-## 🛠️ Built With
+## Built With
 
 - ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 - ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
@@ -15,16 +15,16 @@ A universal cross-platform CLI tool that allows you to extract Pull Requests, Co
 
 ## Features
 
-- 🚀 **Zero Configuration** - Works out of the box with GitHub CLI
-- 📦 **Multiple Export Formats** - Markdown, JSON, or both
-- 🔄 **Complete Data Extraction** - PRs, commits, branches, issues, releases
-- ⚡ **Incremental Exports** - Export only new/updated items (80-95% faster!)
-- 🌍 **Public Repository Support** - Document any public repository, even if you're not a contributor
-- 👥 **Collaboration Support** - Access repositories where you're a collaborator
-- 🏢 **Enterprise-Grade Batch Processing** - Export dozens or hundreds of repositories simultaneously
-- 🎨 **Beautiful CLI** - Modern interactive interface with @clack/prompts
-- 💪 **TypeScript** - Full type safety and great DX
-- 🛡️ **Read-Only** - Never modifies your repositories
+- **Zero Configuration** - Works out of the box with GitHub CLI
+- **Multiple Export Formats** - Markdown, JSON, or both
+- **Complete Data Extraction** - PRs, commits, branches, issues, releases
+- **Incremental Exports** - Export only new/updated items (80-95% faster!)
+- **Public Repository Support** - Document any public repository, even if you're not a contributor
+- **Collaboration Support** - Access repositories where you're a collaborator
+- **Enterprise-Grade Batch Processing** - Export dozens or hundreds of repositories simultaneously
+- **Beautiful CLI** - Modern interactive interface with @clack/prompts
+- **TypeScript** - Full type safety and great DX
+- **Read-Only** - Never modifies your repositories
 
 ## Prerequisites
 
@@ -118,18 +118,18 @@ Want to document an open-source project? No problem!
 - `nodejs/node` - Node.js runtime
 
 This feature is perfect for:
-- 📚 Creating documentation for dependencies you use
-- 🔍 Analyzing popular open-source projects
-- 📊 Generating reports on community contributions
-- 🎓 Learning from established codebases
+- Creating documentation for dependencies you use
+- Analyzing popular open-source projects
+- Generating reports on community contributions
+- Learning from established codebases
 
 ### Automatic Analytics (New in v0.7.0)
 
 Every export operation now automatically generates a comprehensive analytics report with insights about:
-- 📈 Activity patterns and contribution trends
-- 👥 Contributor analysis and bus factor metrics
-- 🏷️ Label distribution and issue lifecycle
-- 🛡️ Code health metrics including PR review coverage
+- Activity patterns and contribution trends
+- Contributor analysis and bus factor metrics
+- Label distribution and issue lifecycle
+- Code health metrics including PR review coverage
 
 These analytics are generated automatically with every export, providing valuable insights without any additional configuration.
 
@@ -169,11 +169,11 @@ ghextractor --batch batch-config.json
 ```
 
 **Benefits:**
-- 🏢 Perfect for organizations with many repositories
-- ⚡ Process multiple repositories simultaneously
-- 📊 Consolidated summary report with per-repository details
-- 🛠️ Configurable parallelism to optimize performance
-- 🔄 Supports incremental exports for all repositories
+- Perfect for organizations with many repositories
+- Process multiple repositories simultaneously
+- Consolidated summary report with per-repository details
+- Configurable parallelism to optimize performance
+- Supports incremental exports for all repositories
 
 ## CLI Options
 
@@ -270,29 +270,29 @@ npm run format       # Format code with Prettier
 
 See [ROADMAP.md](ROADMAP.md) for detailed development plans and milestones.
 
-### Current Status: ✅ Production Ready
+### Current Status: Production Ready
 
-- ✅ Project structure and configuration
-- ✅ GitHub CLI integration
-- ✅ Authentication detection
-- ✅ Repository scanner
-- ✅ Interactive CLI interface
-- ✅ Data exporters (PRs, Issues, Commits, Branches, Releases)
-- ✅ Rate limiting with Bottleneck
-- ✅ Caching system with ETag support
-- ✅ Full backup mode
-- ✅ Incremental exports with diff mode (80-95% faster)
-- ✅ Markdown and JSON export formats
-- ✅ Custom template support
-- ✅ Configuration file support
-- ✅ Progress tracking and spinners
-- ✅ Error handling and retry logic
-- ✅ Comprehensive test suite (139 tests passing)
-- ✅ Published to npm as `ghextractor`
-- ✅ Automated CI/CD with GitHub Actions
-- ✅ Semantic versioning and release automation
-- ✅ Cross-platform support (Windows, macOS, Linux)
-- ✅ Enterprise-grade batch processing for multiple repositories
+- Project structure and configuration
+- GitHub CLI integration
+- Authentication detection
+- Repository scanner
+- Interactive CLI interface
+- Data exporters (PRs, Issues, Commits, Branches, Releases)
+- Rate limiting with Bottleneck
+- Caching system with ETag support
+- Full backup mode
+- Incremental exports with diff mode (80-95% faster)
+- Markdown and JSON export formats
+- Custom template support
+- Configuration file support
+- Progress tracking and spinners
+- Error handling and retry logic
+- Comprehensive test suite (139 tests passing)
+- Published to npm as `ghextractor`
+- Automated CI/CD with GitHub Actions
+- Semantic versioning and release automation
+- Cross-platform support (Windows, macOS, Linux)
+- Enterprise-grade batch processing for multiple repositories
 
 ## Contributing
 
@@ -304,10 +304,10 @@ MIT © LeSoviet
 
 ## Support
 
-- 🐛 [Report Issues](https://github.com/LeSoviet/GithubCLIExtractor/issues)
-- 💡 [Request Features](https://github.com/LeSoviet/GithubCLIExtractor/issues/new)
-- 📖 [Documentation](https://lesoviet.github.io/GithubCLIExtractor/)
-- 📦 [npm Package](https://www.npmjs.com/package/ghextractor)
+- [Report Issues](https://github.com/LeSoviet/GithubCLIExtractor/issues)
+- [Request Features](https://github.com/LeSoviet/GithubCLIExtractor/issues/new)
+- [Documentation](https://lesoviet.github.io/GithubCLIExtractor/)
+- [npm Package](https://www.npmjs.com/package/ghextractor)
 
 ## Acknowledgments
 

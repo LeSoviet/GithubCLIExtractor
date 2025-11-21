@@ -17,6 +17,7 @@ This will:
 3. Ask what type of data you want to export
 4. Ask for the output format (Markdown, JSON, or both)
 5. Begin exporting the data
+6. Analytics report is automatically generated
 
 ## Command Line Options
 
@@ -66,6 +67,8 @@ ghextractor --diff --force-full
    - Both formats
 4. **Output Location**: Specify where to save the exported data
 
+Analytics reports are now automatically generated with every export operation, providing insights into repository activity, contributor patterns, and code health metrics.
+
 ## Output Structure
 
 The exported data is organized in the following structure:
@@ -85,8 +88,10 @@ github-export/
 │       │   └── COMMIT-def456.md
 │       ├── branches/
 │       │   └── branches.json
-│       └── releases/
-│           └── releases.json
+│       ├── releases/
+│       │   └── releases.json
+│       └── analytics/
+│           └── report.md
 ```
 
 ## Examples

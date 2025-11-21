@@ -1,6 +1,6 @@
 # Analytics and Statistics
 
-GitHub Extractor CLI now includes powerful analytics capabilities that provide insights into your repositories' activity, contributor patterns, issue management, and code health metrics.
+GitHub Extractor CLI automatically generates powerful analytics reports with every export operation, providing insights into your repositories' activity, contributor patterns, issue management, and code health metrics.
 
 ## Overview
 
@@ -10,26 +10,28 @@ The analytics feature analyzes exported data to generate comprehensive reports w
 
 ### Single Repository Analytics
 
-Generate analytics for a single repository:
+Analytics reports are now automatically generated with every export operation. Simply run any export command:
 
 ```bash
-ghextractor --analytics
+ghextractor
 ```
 
-This will prompt you to select a repository and then generate an analytics report in your configured output directory.
+After selecting your repository and export options, an analytics report will be automatically generated alongside your exported data.
 
 ### Command Line Options
 
+Analytics are automatically included with all export operations. You can specify output directory for all exported data including analytics:
+
 ```bash
-ghextractor --analytics --output ./my-analytics
+ghextractor --output ./my-export
 ```
 
 ### Batch Analytics
 
-Generate analytics for multiple repositories:
+Analytics reports are automatically generated for all batch operations. Simply run any batch export:
 
 ```bash
-ghextractor --batch-repos "owner/repo1,owner/repo2" --batch-types "analytics"
+ghextractor --batch-repos "owner/repo1,owner/repo2"
 ```
 
 Or using a configuration file:
@@ -46,12 +48,14 @@ With a batch configuration like:
     "facebook/react",
     "microsoft/typescript"
   ],
-  "exportTypes": ["analytics"],
+  "exportTypes": ["prs", "issues"],
   "format": "markdown",
-  "outputPath": "./batch-analytics",
+  "outputPath": "./batch-export",
   "parallelism": 3
 }
 ```
+
+Analytics reports will be automatically generated for each repository in the batch.
 
 ## Analytics Modules
 
@@ -128,4 +132,4 @@ Generated: 2025-11-21 14:30:45
 
 ## Requirements
 
-Analytics requires existing exported data from other export types (prs, issues, commits, etc.) to analyze. The feature works best when you have a substantial amount of repository data to analyze.
+Analytics are automatically generated during the export process and require no additional setup. The feature works best when you have a substantial amount of repository data to analyze.

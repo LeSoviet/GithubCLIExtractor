@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [0.7.0] - 2025-11-21
+
+### Added
+- **Automatic Analytics Generation**: Analytics reports are now automatically generated with every export operation
+- **Enhanced Data Extraction Limits**: Increased data limits for better analysis of large repositories
+  - PR/Issue lists: 300 → 1000 items
+  - Release lists: 50 → 200 items
+  - Exporters: 100 → 500 items
+- **Comprehensive Test Coverage**: Added extensive unit tests for analytics module with 92%+ coverage
+
+### Changed
+- **Analytics Integration**: Removed `--analytics` flag as analytics are now automatically generated
+- **CLI Interface**: Removed analytics option from interactive prompts
+- **Data Processing**: Increased GitHub API limits for more comprehensive repository analysis
+
+### Technical
+- Updated export logic to automatically generate analytics after each export
+- Enhanced error handling for analytics generation
+- Improved test coverage for all analytics modules
+
 ## [0.6.3] - 2025-11-21
 
 ### Fixed

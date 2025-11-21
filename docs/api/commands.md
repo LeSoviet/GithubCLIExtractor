@@ -1,6 +1,6 @@
 # CLI Commands
 
-GitHub Extractor CLI provides a simple command-line interface for exporting GitHub data.
+GitHub Extractor CLI provides a simple command-line interface for exporting GitHub data. Analytics reports are automatically generated with every export operation.
 
 ## Main Command
 
