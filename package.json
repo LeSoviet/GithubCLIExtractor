@@ -1,6 +1,6 @@
 {
   "name": "ghextractor",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Universal CLI tool to extract GitHub data (PRs, commits, issues, releases) into Markdown/JSON",
   "type": "module",
   "main": "./dist/index.cjs",
