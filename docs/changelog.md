@@ -202,20 +202,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced repository discovery including collaboration repos
 - Comprehensive documentation with use cases for public repository documentation
 
-## [0.1.0] - 2024-12-XX
+## [0.1.0] - 2025-11-20
 
 ### Added
 - Initial release
-- GitHub CLI integration
-- Repository scanner
-- Interactive CLI interface
-- Data exporters (PRs, Issues, Commits, Branches, Releases)
-- Rate limiting with Bottleneck
-- Caching system with ETag support
-- Full backup mode
-- Markdown and JSON export formats
-- Custom template support
-- Configuration file support
-- Progress tracking and spinners
-- Error handling and retry logic
-- Comprehensive test suite
+  - GitHub CLI integration
+  - Repository scanner
+  - Interactive CLI interface
+  - Data exporters (PRs, Issues, Commits, Branches, Releases)
+  - Rate limiting with Bottleneck
+  - Caching system with ETag support
+  - Full backup mode
+  - Markdown and JSON export formats
+  - Custom template support
+  - Configuration file support
+  - Progress tracking and spinners
+  - Error handling and retry logic
+  - Comprehensive test suite
