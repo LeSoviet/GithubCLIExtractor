@@ -64,7 +64,7 @@ export async function checkForUpdates(): Promise<void> {
         chalk.yellow('│') +
           '  ' +
           chalk.dim('Changelog: ') +
-          chalk.blue.underline(changelogUrl) +
+          chalk.cyan.underline(changelogUrl) +
           ' '.repeat(Math.max(0, 70 - 14 - changelogUrl.length - 2)) +
           chalk.yellow('│')
       );

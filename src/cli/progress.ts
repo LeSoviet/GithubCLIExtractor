@@ -97,7 +97,7 @@ export class ProgressTracker {
       console.log(chalk.red(`✖ Failed: ${result.itemsFailed}`));
     }
 
-    console.log(chalk.blue(`🌐 API Calls: ${result.apiCalls}`));
+    console.log(chalk.cyan(`🌐 API Calls: ${result.apiCalls}`));
 
     if (result.cacheHits > 0) {
       const cacheRate = ((result.cacheHits / (result.apiCalls + result.cacheHits)) * 100).toFixed(

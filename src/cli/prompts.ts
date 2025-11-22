@@ -151,7 +151,7 @@ export function showSuccess(message: string) {
 }
 
 export function showInfo(message: string) {
-  clack.log.info(chalk.blue(message));
+  clack.log.info(chalk.cyan(message));
 }
 
 export function showWarning(message: string) {

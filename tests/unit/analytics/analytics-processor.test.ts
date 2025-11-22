@@ -35,6 +35,7 @@ describe('AnalyticsProcessor', () => {
       format: 'markdown',
       outputPath: './test-output',
       repository: mockRepository,
+      offline: false,
     };
 
     processor = new AnalyticsProcessor(options);
@@ -129,16 +130,16 @@ describe('AnalyticsProcessor', () => {
 
       // Mock all the API calls
       vi.mocked(execGh.execGhJson).mockImplementation(async (command: string) => {
-        if (command.includes('pr list') && command.includes('--state all --limit 1000')) {
+        if (command.includes('pr list') && command.includes('--state all --limit 500')) {
           return mockPRs;
         }
-        if (command.includes('issue list') && command.includes('--state all --limit 1000')) {
+        if (command.includes('issue list') && command.includes('--state all --limit 500')) {
           return mockIssues;
         }
         if (command.includes('api repos') && command.includes('commits')) {
           return mockCommits;
         }
-        if (command.includes('release list') && command.includes('--limit 200')) {
+        if (command.includes('release list') && command.includes('--limit 100')) {
           return mockReleases;
         }
         return [];
@@ -154,8 +155,13 @@ describe('AnalyticsProcessor', () => {
       // Verify activity analytics
       expect(report.activity).toBeDefined();
       expect(report.activity.success).toBe(true);
-      expect(report.activity.prMergeRate.merged).toBe(1);
-      expect(report.activity.prMergeRate.closed).toBe(1);
+      // Log para depuración
+      console.log('PRs:', report.activity.prMergeRate);
+      expect(report.activity.prMergeRate.merged + report.activity.prMergeRate.closed).toBe(2);
+      // Permitir que merged y closed sean 1 cada uno, pero si el mock falla, mostrar el valor
+      expect([report.activity.prMergeRate.merged, report.activity.prMergeRate.closed]).toEqual([
+        1, 1,
+      ]);
 
       // Verify contributor analytics
       expect(report.contributors).toBeDefined();
@@ -171,12 +177,12 @@ describe('AnalyticsProcessor', () => {
 
       // Verify that execGhJson was called with the correct commands
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('pr list --repo test-owner/test-repo --state all --limit 1000'),
+        expect.stringContaining('pr list --repo test-owner/test-repo --state all --limit 500'),
         expect.any(Object)
       );
 
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('issue list --repo test-owner/test-repo --state all --limit 1000'),
+        expect.stringContaining('issue list --repo test-owner/test-repo --state all --limit 500'),
         expect.any(Object)
       );
 
@@ -186,7 +192,7 @@ describe('AnalyticsProcessor', () => {
       );
 
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('release list --repo test-owner/test-repo --limit 200'),
+        expect.stringContaining('release list --repo test-owner/test-repo --limit 100'),
         expect.any(Object)
       );
     });
