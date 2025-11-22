@@ -183,7 +183,7 @@ export class AnalyticsProcessor {
         }
       }
 
-      // Fetch commits for activity patterns (only in online mode, skip in offline)
+      // Fetch commits for activity patterns (only in online mode, use parsed data in offline)
       let commits: any[] = [];
       if (!this.options.offline) {
         const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
@@ -191,6 +191,24 @@ export class AnalyticsProcessor {
           `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100`,
           { timeout: 30000, useRateLimit: false, useRetry: false }
         );
+      } else {
+        // In offline mode, we can't get commit data from markdown files
+        // So we'll use a simple heuristic based on PR authors
+        const prAuthors = new Set<string>();
+        prs.forEach((pr) => {
+          if (pr.author?.login) {
+            prAuthors.add(pr.author.login);
+          }
+        });
+        // Create mock commit data for each PR author
+        commits = Array.from(prAuthors).map((author) => ({
+          commit: {
+            author: {
+              name: author,
+              date: new Date().toISOString(),
+            },
+          },
+        }));
       }
 
       // Group commits by day for activity patterns
@@ -269,6 +287,7 @@ export class AnalyticsProcessor {
     try {
       // Fetch commits to analyze contributors (only in online mode)
       let commits: any[] = [];
+
       if (!this.options.offline) {
         const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
         commits = await execGhJson<any[]>(
@@ -299,10 +318,25 @@ export class AnalyticsProcessor {
       });
 
       // Fetch PRs to count PRs and reviews per contributor
-      const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,author,reviewDecision,createdAt`,
-        { timeout: 30000, useRateLimit: false, useRetry: false }
-      );
+      let prs: any[] = [];
+      if (!this.options.offline) {
+        prs = await execGhJson<any[]>(
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,author,reviewDecision,createdAt`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+      } else {
+        // In offline mode, use parsed data
+        const parser = new MarkdownParser(this.options.exportedDataPath!);
+        const parsedPRs = await parser.parsePullRequests();
+
+        // Convert parsed PRs to match GitHub API format
+        prs = parsedPRs.map((pr: any) => ({
+          number: pr.number,
+          author: { login: pr.author },
+          reviewDecision: 'REVIEWED', // Default value
+          createdAt: pr.createdAt,
+        }));
+      }
 
       // Count PRs per contributor
       prs.forEach((pr) => {
@@ -399,17 +433,47 @@ export class AnalyticsProcessor {
     };
 
     try {
-      // Fetch issues with labels
-      const issues = await execGhJson<any[]>(
-        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,state,title,author`,
-        { timeout: 30000, useRateLimit: false, useRetry: false }
-      );
+      let issues: any[] = [];
+      let prs: any[] = [];
 
-      // Fetch PRs with labels
-      const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,title,author`,
-        { timeout: 30000, useRateLimit: false, useRetry: false }
-      );
+      if (!this.options.offline) {
+        // Fetch issues with labels
+        issues = await execGhJson<any[]>(
+          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,state,title,author`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+
+        // Fetch PRs with labels
+        prs = await execGhJson<any[]>(
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,title,author`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+      } else {
+        // In offline mode, use parsed data
+        const parser = new MarkdownParser(this.options.exportedDataPath!);
+        const parsedIssues = await parser.parseIssues();
+        const parsedPRs = await parser.parsePullRequests();
+
+        // Convert parsed data to match GitHub API format
+        issues = parsedIssues.map((issue: any) => ({
+          number: issue.number,
+          labels: issue.labels.map((label: string) => ({ name: label })),
+          createdAt: issue.createdAt,
+          closedAt: issue.closedAt,
+          state: issue.state,
+          title: issue.title,
+          author: { login: issue.author },
+        }));
+
+        prs = parsedPRs.map((pr: any) => ({
+          number: pr.number,
+          labels: pr.labels.map((label: string) => ({ name: label })),
+          createdAt: pr.createdAt,
+          closedAt: pr.closedAt,
+          title: pr.title,
+          author: { login: pr.author },
+        }));
+      }
 
       // Calculate issue/PR ratio
       result.issueVsPrratio = prs.length > 0 ? issues.length / prs.length : 0;
@@ -537,11 +601,45 @@ export class AnalyticsProcessor {
     };
 
     try {
-      // Fetch PRs to analyze review coverage and PR size
-      const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
-        { timeout: 30000, useRateLimit: false, useRetry: false }
-      );
+      let prs: any[] = [];
+      let releases: any[] = [];
+
+      if (!this.options.offline) {
+        // Fetch PRs to analyze review coverage and PR size
+        prs = await execGhJson<any[]>(
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+
+        // Fetch releases to analyze deployment frequency
+        releases = await execGhJson<any[]>(
+          `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 100 --json tagName,createdAt,publishedAt`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+      } else {
+        // In offline mode, use parsed data
+        const parser = new MarkdownParser(this.options.exportedDataPath!);
+        const parsedPRs = await parser.parsePullRequests();
+        const parsedReleases = await parser.parseReleases();
+
+        // Convert parsed data to match GitHub API format
+        prs = parsedPRs.map((pr: any) => ({
+          number: pr.number,
+          reviewDecision: pr.mergedAt ? 'APPROVED' : 'CHANGES_REQUESTED',
+          additions: 0, // Not available in markdown files
+          deletions: 0, // Not available in markdown files
+          createdAt: pr.createdAt,
+          updatedAt: pr.closedAt || pr.createdAt,
+          author: { login: pr.author },
+          title: pr.title,
+        }));
+
+        releases = parsedReleases.map((release: any) => ({
+          tagName: release.tagName,
+          createdAt: release.createdAt,
+          publishedAt: release.publishedAt,
+        }));
+      }
 
       // Calculate PR review coverage
       if (prs.length > 0) {
@@ -571,12 +669,6 @@ export class AnalyticsProcessor {
           total: isNaN(avgTotal) ? 0 : Math.round(avgTotal),
         };
       }
-
-      // Fetch releases to analyze deployment frequency
-      const releases = await execGhJson<any[]>(
-        `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 100 --json tagName,createdAt,publishedAt`,
-        { timeout: 30000, useRateLimit: false, useRetry: false }
-      );
 
       // Calculate deployment frequency (releases per month)
       if (releases.length > 0) {
