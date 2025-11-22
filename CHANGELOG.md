@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-11-22
+
+### Added
+- **Enhanced Analytics Report Formatting**: Improved visual presentation and data clarity
+  - Dynamic contributor table that only shows columns with non-zero data
+  - Summary stats section with key metrics for executive overview
+  - Better handling of missing data with explanatory messages
+- **Improved Offline Mode Reliability**: Fixed core analytics processor to properly use parsed markdown data
+  - Active contributors now correctly calculated from PR authors (122 contributors vs 0)
+  - Review coverage accurately reflects PR review status
+  - All metrics now show meaningful values instead of zeros
+
+### Fixed
+- **Analytics Report Display Issues**: Resolved confusing "0 commits" displays in contributor tables
+- **Version Display**: Shows "n/a" instead of "unknown" when version cannot be determined
+- **PR Size Messaging**: Enhanced "No data available" message with explanation "(PRs contain no diff metadata)"
+- **Formatting Issues**: Fixed code style issues that were preventing clean commits
+
+### Changed
+- **Report Structure**: Added summary statistics section at end of analytics reports
+  - Total PRs processed and reviewed counts
+  - Release count and active contributor metrics
+  - Percentage of release-notes labels for quick insights
+
 ## [0.7.4] - 2025-11-22
 
 ### Added
