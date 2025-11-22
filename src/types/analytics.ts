@@ -15,6 +15,12 @@ export interface AnalyticsOptions {
 
   /** Repository to analyze */
   repository: Repository;
+
+  /** Use offline mode - parse exported markdown files instead of GitHub API */
+  offline?: boolean;
+
+  /** Path to exported data (required for offline mode) */
+  exportedDataPath?: string;
 }
 
 /**

@@ -11,6 +11,7 @@ import { ensureDirectory } from '../utils/output.js';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { execGhJson } from '../utils/exec-gh.js';
+import { MarkdownParser } from './markdown-parser.js';
 
 /**
  * AnalyticsProcessor handles generating analytics reports from exported data
@@ -96,11 +97,48 @@ export class AnalyticsProcessor {
     };
 
     try {
-      // Fetch PRs for merge rate calculation (increased limit for better analysis)
-      const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,state,mergedAt,closedAt,createdAt,author,title`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
-      );
+      let prs: any[];
+      let issues: any[];
+
+      // Use offline mode if enabled and path is provided
+      if (this.options.offline && this.options.exportedDataPath) {
+        logger.info('Using offline mode: parsing exported markdown files...');
+        const parser = new MarkdownParser(this.options.exportedDataPath);
+        const parsedPRs = await parser.parsePullRequests();
+        const parsedIssues = await parser.parseIssues();
+
+        // Convert parsed data to match GitHub API format
+        prs = parsedPRs.map((pr) => ({
+          number: pr.number,
+          state: pr.state === 'MERGED' ? 'closed' : pr.state.toLowerCase(),
+          mergedAt: pr.mergedAt,
+          closedAt: pr.closedAt,
+          createdAt: pr.createdAt,
+          author: { login: pr.author },
+          title: pr.title,
+        }));
+
+        issues = parsedIssues.map((issue) => ({
+          number: issue.number,
+          state: issue.state.toLowerCase(),
+          createdAt: issue.createdAt,
+          closedAt: issue.closedAt,
+          title: issue.title,
+          author: { login: issue.author },
+        }));
+      } else {
+        // Fetch PRs for merge rate calculation (increased limit for better analysis)
+        prs = await execGhJson<any[]>(
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,state,mergedAt,closedAt,createdAt,author,title`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
+        );
+
+        // Fetch issues for resolution time calculation (both open and closed for better analysis)
+        issues = await execGhJson<any[]>(
+          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,createdAt,closedAt,state,title,author`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
+        );
+      }
 
       // Calculate PR merge rate
       const mergedPRs = prs.filter((pr) => pr.mergedAt);
@@ -110,12 +148,6 @@ export class AnalyticsProcessor {
         closed: closedPRs.length,
         mergeRate: prs.length > 0 ? (mergedPRs.length / prs.length) * 100 : 0,
       };
-
-      // Fetch issues for resolution time calculation (both open and closed for better analysis)
-      const issues = await execGhJson<any[]>(
-        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,createdAt,closedAt,state,title,author`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
-      );
 
       // Calculate issue resolution time
       if (issues.length > 0) {

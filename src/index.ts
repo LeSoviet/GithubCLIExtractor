@@ -30,6 +30,7 @@ import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
 import { AnalyticsProcessor } from './analytics/analytics-processor.js';
+import { checkForUpdates } from './utils/version-checker.js';
 import type {
   ExportOptions,
   ExportType,
@@ -217,6 +218,14 @@ async function checkSetup(): Promise<void> {
 async function main() {
   try {
     const args = parseArgs();
+
+    // Check for updates (non-blocking, runs in background)
+    // Skip during tests and when showing help/version
+    if (!process.env.GHX_TEST_MODE && !args.help && !args.version && !args.check) {
+      checkForUpdates().catch(() => {
+        // Silently ignore errors
+      });
+    }
 
     // Handle flags that exit immediately
     if (args.help) {
@@ -519,11 +528,20 @@ async function executeExport(
 
       // Generate analytics automatically after full backup
       try {
+        // For analytics, use the base repository path (without export type subfolder)
+        const exportPath = join(
+          options.outputPath,
+          options.repository.owner,
+          options.repository.name
+        );
+
         const analyticsOptions = {
           enabled: true,
           format: options.format,
           outputPath: options.outputPath,
           repository: options.repository,
+          offline: true, // Use offline mode - parse exported files
+          exportedDataPath: exportPath,
         };
 
         const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
@@ -546,11 +564,20 @@ async function executeExport(
 
       // Generate analytics automatically after each export
       try {
+        // For analytics, use the base repository path (without export type subfolder)
+        const exportPath = join(
+          options.outputPath,
+          options.repository.owner,
+          options.repository.name
+        );
+
         const analyticsOptions = {
           enabled: true,
           format: options.format,
           outputPath: options.outputPath,
           repository: options.repository,
+          offline: true, // Use offline mode - parse exported files
+          exportedDataPath: exportPath,
         };
 
         const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);

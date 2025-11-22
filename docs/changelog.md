@@ -3,6 +3,35 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.7.2] - 2025-01-21
+
+### Added
+- **Automatic Update Notifications**: CLI now checks for new versions and notifies users when updates are available
+  - Non-blocking background check (once per day)
+  - Clear visual notification with update command
+  - Direct link to release changelog
+  - Skipped during tests and for help/version flags
+- **Offline Analytics Mode**: Analytics now work with exported data instead of requiring GitHub API access
+  - Automatically enabled when generating analytics after exports
+  - Parses exported markdown files (PRs, Issues, Releases)
+  - Works with private repositories and offline environments
+  - No more empty analytics reports!
+
+### Fixed
+- **Analytics Report Generation**: Fixed issue where analytics reports were empty
+  - Previous version tried to fetch from GitHub API even after export
+  - Now uses offline mode by default to parse local exported files
+  - Analytics now accurately reflect exported data
+
+### Technical
+- Added `update-notifier` dependency for version checking
+- Created `version-checker` utility module
+- Integrated version check into CLI startup flow
+- Created `MarkdownParser` class for parsing exported markdown files
+- Updated `AnalyticsProcessor` to support offline mode with `offline` and `exportedDataPath` options
+- Modified all analytics generation calls to use offline mode by default
 
 ## [0.7.0] - 2025-11-21
 
@@ -27,50 +56,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.6.3] - 2025-11-21
 
 ### Fixed
-- fix: increment version to 0.6.3 to resolve npm publishing conflict
+- **Version Conflict**: Incremented version to resolve npm publishing conflict
 
 ## [0.6.2] - 2025-11-21
 
 ### Fixed
-- fix: enhance npm publishing workflow with fallback mechanism
+- **CI/CD Pipeline**: Enhanced npm publishing workflow with fallback mechanism and improved authentication
 
 ## [0.6.1] - 2025-11-21
 
 ### Fixed
-- fix: resolve npm authentication issues in CI/CD pipeline
+- **CI/CD Pipeline**: Resolved npm authentication issues in GitHub Actions workflow
 
 ## [0.6.0] - 2025-11-21
 
 ### Added
-- feat: implement enterprise-grade batch processing for multiple repositories
-- feat(batch): add batch export mode with interactive prompts and CLI options
+- **Enterprise-Grade Batch Processing**: Export multiple repositories simultaneously with controlled concurrency
+  - Process dozens or hundreds of repositories in a single command
+  - Configurable parallelism (default: 3 repositories at a time)
+  - JSON configuration file support for complex batch operations
+  - Command-line options for quick batch exports
+  - Comprehensive batch summary report with per-repository details
+- **Automatic Code Quality Enforcement**: Pre-commit and pre-push hooks to ensure code is properly formatted and linted
+  - Automatic Prettier formatting on commit
+  - ESLint validation on commit
+  - Pre-push validation to prevent unformatted code from being pushed
+- **Enhanced CI/CD Workflow**: Streamlined GitHub Actions with reduced redundancy and improved efficiency
 
 ### Changed
-- chore(ci): improve linting, testing, and build workflows
-- chore(config): update ESLint and Vitest configurations
-- docs: document diff mode feature and update milestone status
+- **Improved Developer Experience**: More flexible linting configuration with reduced strictness
+- **Optimized CI Processes**: Consolidated multiple CI jobs into more efficient workflows
+- **Code Quality Standards**: Relaxed certain ESLint rules to reduce noise while maintaining code quality
 
 ### Fixed
-- fix: setup automatic code formatting and linting on commit and push
-- fix: update .npmignore and package.json for improved file exclusions and correct repository URL
+- **Code Formatting Issues**: Resolved all Prettier formatting warnings across the codebase
+- **Linting Configuration**: Fixed ESLint configuration to properly include all project files
 
 ## [0.5.0] - 2025-11-21
 
 ### Added
-- docs: add milestone 7 status documentation
+- **Documentation Updates**: Added milestone status documentation
+- **Workflow Improvements**: Enhanced CI/CD pipelines for better reliability
 
 ### Changed
-- refactor(state): improve code formatting and readability
-- refactor(core): use SingleExportType for incremental export state management
-
-### Fixed
-- chore(release): bump version to v0.5.0
+- **Version Bump**: Incremented version to v0.5.0 for continued development
 
 ## [0.4.0] - 2025-11-21
 
 ### Added
 - **Diff Mode (Incremental Exports)**: Revolutionary feature that exports only new/updated items since last run
   - New `--diff` and `--incremental` flags for incremental exports
+  - State management system tracks last export timestamps
   - `--force-full` flag to override diff mode and force full export
   - Persistent state stored in `~/.ghextractor/state/exports.json`
   - Automatic detection of first-time exports
@@ -128,17 +164,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.1.0] - 2024-12-XX
 
 ### Added
-- Initial release of GitHub Extractor CLI
-- Support for exporting Pull Requests, Issues, Commits, Branches, and Releases
-- Multiple export formats (Markdown, JSON)
-- Interactive CLI interface with [@clack/prompts](https://github.com/natemoo-re/clack)
-- Configuration file support
-- Rate limiting with [Bottleneck](https://github.com/SGrondin/bottleneck)
+- Initial release
+- GitHub CLI integration
+- Repository scanner
+- Interactive CLI interface
+- Data exporters (PRs, Issues, Commits, Branches, Releases)
+- Rate limiting with Bottleneck
 - Caching system with ETag support
 - Full backup mode
+- Markdown and JSON export formats
 - Custom template support
-- Cross-platform support (Windows, macOS, Linux)
+- Configuration file support
+- Progress tracking and spinners
+- Error handling and retry logic
 - Comprehensive test suite
-- GitHub Actions CI/CD workflow
-- Semantic versioning and release automation
-- Documentation with VitePress

@@ -194,11 +194,16 @@ export class BatchProcessor {
   ) {
     // Handle analytics separately
     if (exportType === 'analytics') {
+      // For analytics, use the base repository path (without export type subfolder)
+      const exportPath = join(this.config.outputPath, repository.owner, repository.name);
+
       const analyticsOptions = {
         enabled: true,
         format: this.config.format,
         outputPath: this.config.outputPath,
         repository: repository,
+        offline: true, // Use offline mode - parse exported files
+        exportedDataPath: exportPath,
       };
 
       const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);

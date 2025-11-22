@@ -35,5 +35,9 @@ features:
     details: Export dozens or hundreds of repositories simultaneously
   - title: Automatic Analytics
     details: Generate comprehensive analytics reports automatically with every export
+  - title: Offline Analytics Mode
+    details: Generate analytics from exported data without GitHub API access - works offline!
+  - title: Auto Update Notifications
+    details: Stay informed when new versions are available with smart, non-blocking notifications
 
 ---

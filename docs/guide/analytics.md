@@ -6,6 +6,8 @@ GitHub Extractor CLI automatically generates powerful analytics reports with eve
 
 The analytics feature analyzes exported data to generate comprehensive reports with key metrics and visualizations. This feature is available both for single repositories and in batch mode for multiple repositories.
 
+**New in v0.7.2**: Analytics now support **offline mode**, allowing you to generate reports from exported data without GitHub API access. See [Offline Analytics Mode](/features/offline-analytics) for details.
+
 ## Usage
 
 ### Single Repository Analytics
@@ -130,6 +132,33 @@ Generated: 2025-11-21 14:30:45
 - **Marketing**: "Wow" factor for demonstrations
 - **Premium Positioning**: Differentiates from basic scraping tools
 
+## Offline Analytics Mode
+
+**New in v0.7.2**: Analytics can now be generated from exported markdown files without requiring GitHub API access.
+
+### How Offline Mode Works
+
+When you export repository data, the CLI automatically:
+1. Exports data to markdown files
+2. Switches to offline mode
+3. Parses the exported markdown files
+4. Generates analytics from parsed data
+
+**Benefits**:
+- ✅ Works offline without internet connection
+- ✅ No GitHub API rate limit consumption
+- ✅ Instant analytics generation
+- ✅ Perfect for private repositories
+
+### Learn More
+
+For detailed information about offline analytics mode, see:
+- [Offline Analytics Mode](/features/offline-analytics) - Complete guide
+- [Supported Data Types](/features/offline-analytics#what-gets-parsed) - What gets parsed
+- [Technical Details](/features/offline-analytics#technical-details) - Implementation details
+
 ## Requirements
 
 Analytics are automatically generated during the export process and require no additional setup. The feature works best when you have a substantial amount of repository data to analyze.
+
+**v0.7.2+**: Offline mode is automatically enabled when generating analytics after exports, eliminating API access requirements.

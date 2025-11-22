@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-01-21
+
+### Added
+- **Automatic Update Notifications**: CLI now checks for new versions and notifies users when updates are available
+  - Non-blocking background check (once per day)
+  - Clear visual notification with update command
+  - Direct link to release changelog
+  - Skipped during tests and for help/version flags
+- **Offline Analytics Mode**: Analytics now work with exported data instead of requiring GitHub API access
+  - Automatically enabled when generating analytics after exports
+  - Parses exported markdown files (PRs, Issues, Releases)
+  - Works with private repositories and offline environments
+  - No more empty analytics reports!
+
+### Fixed
+- **Analytics Report Generation**: Fixed issue where analytics reports were empty
+  - Previous version tried to fetch from GitHub API even after export
+  - Now uses offline mode by default to parse local exported files
+  - Analytics now accurately reflect exported data
+
+### Technical
+- Added `update-notifier` dependency for version checking
+- Created `version-checker` utility module
+- Integrated version check into CLI startup flow
+- Created `MarkdownParser` class for parsing exported markdown files
+- Updated `AnalyticsProcessor` to support offline mode with `offline` and `exportedDataPath` options
+- Modified all analytics generation calls to use offline mode by default
+
 ## [0.7.0] - 2025-11-21
 
 ### Added
