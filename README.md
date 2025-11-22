@@ -11,7 +11,7 @@ GitHub Extractor CLI is a tool that extracts comprehensive data from GitHub repo
 - Pull Requests and Issues with full details
 - Commit histories and Branch information
 - Release notes and assets
-- Automatic analytics reports with offline mode (v0.7.3)
+- Automatic analytics reports with offline mode (v0.7.4)
 - Smart update notifications to keep you informed
 
 ## Why use it?
@@ -71,7 +71,7 @@ Production Ready - All core features implemented and tested:
 - Auto update notifications
 - Cross-platform support
 
-**Latest (v0.7.3)**:
+**Latest (v0.7.4)**:
 - ✅ Offline analytics mode - generate reports without API access
 - ✅ Auto update notifications - stay informed of new releases
 - ✅ Fixed empty analytics reports issue
