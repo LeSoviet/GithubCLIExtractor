@@ -78,7 +78,7 @@ Production Ready - All core features implemented and tested:
 
 ## License
 
-MIT © Daniel Khadour https://github.com/LeSoviet
+MIT © Daniel Khadour  https://github.com/LeSoviet
 
 ## Support
 
