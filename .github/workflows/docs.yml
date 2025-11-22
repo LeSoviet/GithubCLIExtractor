@@ -34,7 +34,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
       - name: Sync changelog before build
         run: |
           echo "📄 Ensuring changelog is synced..."
