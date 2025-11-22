@@ -54,26 +54,38 @@ export class MarkdownParser {
   async parsePullRequests(): Promise<ParsedPR[]> {
     try {
       const prDir = join(this.exportPath, 'Pull Requests');
+      logger.debug(`Looking for PRs in: ${prDir}`);
       const files = await readdir(prDir);
       const prFiles = files.filter((f) => f.startsWith('PR-') && f.endsWith('.md'));
+      logger.debug(`Found ${prFiles.length} PR files`);
 
       const prs: ParsedPR[] = [];
+      let successCount = 0;
+      let failCount = 0;
       for (const file of prFiles) {
         try {
           const content = await readFile(join(prDir, file), 'utf-8');
           const pr = this.parsePullRequest(content);
           if (pr) {
             prs.push(pr);
+            successCount++;
+          } else {
+            failCount++;
+            logger.debug(`Failed to parse PR file (returned null): ${file}`);
           }
         } catch (error) {
           // Skip files that can't be parsed
-          logger.debug(`Failed to parse PR file: ${file}`);
+          failCount++;
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          logger.debug(`Failed to parse PR file (exception): ${file} - ${errorMsg}`);
         }
       }
 
+      logger.debug(`Successfully parsed ${successCount} PRs, failed ${failCount}`);
       return prs;
     } catch (error) {
-      logger.debug('No Pull Requests directory found');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.debug(`No Pull Requests directory found: ${errorMsg}`);
       return [];
     }
   }
@@ -83,23 +95,36 @@ export class MarkdownParser {
    */
   private parsePullRequest(content: string): ParsedPR | null {
     try {
-      // Extract metadata section
-      const metadataMatch = content.match(/## Metadata\n\n([\s\S]*?)\n\n/);
-      if (!metadataMatch) return null;
+      // Extract number from title (e.g., "# Pull Request #13790: Title")
+      const titleMatch = content.match(/^# Pull Request #(\d+):\s*(.+?)\s*$/m);
+      if (!titleMatch) {
+        logger.debug('Failed to extract PR number and title from header');
+        return null;
+      }
+      const number = parseInt(titleMatch[1]);
+      const title = titleMatch[2].trim();
+
+      // FIX: Improved Regex for the Metadata section.
+      const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
+      if (!metadataMatch) {
+        logger.debug('Failed to find Metadata section');
+        return null;
+      }
 
       const metadata = metadataMatch[1];
 
       // Extract fields
-      const number = this.extractNumber(metadata, 'number');
       const author = this.extractField(metadata, 'Author');
       const state = this.extractField(metadata, 'State') as 'OPEN' | 'CLOSED' | 'MERGED';
       const createdAt = this.extractField(metadata, 'Created');
       const closedAt = this.extractField(metadata, 'Closed');
       const mergedAt = this.extractField(metadata, 'Merged');
       const labels = this.extractLabels(metadata);
-      const title = this.extractTitle(content);
 
-      if (!number || !author || !state || !createdAt || !title) {
+      if (!author || !state || !createdAt) {
+        logger.debug(
+          `Missing required fields: author='${author}', state='${state}', created='${createdAt}'`
+        );
         return null;
       }
 
@@ -114,6 +139,8 @@ export class MarkdownParser {
         title,
       };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.debug(`Exception parsing PR: ${errorMsg}`);
       return null;
     }
   }
@@ -153,22 +180,35 @@ export class MarkdownParser {
    */
   private parseIssue(content: string): ParsedIssue | null {
     try {
-      // Extract metadata section
-      const metadataMatch = content.match(/## Metadata\n\n([\s\S]*?)\n\n/);
-      if (!metadataMatch) return null;
+      // Extract number from title (e.g., "# Issue #13790: Title")
+      const titleMatch = content.match(/^# Issue #(\d+):\s*(.+?)\s*$/m);
+      if (!titleMatch) {
+        logger.debug('Failed to extract Issue number and title from header');
+        return null;
+      }
+      const number = parseInt(titleMatch[1]);
+      const title = titleMatch[2].trim();
+
+      // FIX: Improved Regex for the Metadata section.
+      const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
+      if (!metadataMatch) {
+        logger.debug('Failed to find Metadata section');
+        return null;
+      }
 
       const metadata = metadataMatch[1];
 
       // Extract fields
-      const number = this.extractNumber(metadata, 'number');
       const author = this.extractField(metadata, 'Author');
       const state = this.extractField(metadata, 'State') as 'OPEN' | 'CLOSED';
       const createdAt = this.extractField(metadata, 'Created');
       const closedAt = this.extractField(metadata, 'Closed');
       const labels = this.extractLabels(metadata);
-      const title = this.extractTitle(content);
 
-      if (!number || !author || !state || !createdAt || !title) {
+      if (!author || !state || !createdAt) {
+        logger.debug(
+          `Missing required fields: author=${author}, state=${state}, created=${createdAt}`
+        );
         return null;
       }
 
@@ -182,6 +222,8 @@ export class MarkdownParser {
         title,
       };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.debug(`Exception parsing Issue: ${errorMsg}`);
       return null;
     }
   }
@@ -221,8 +263,8 @@ export class MarkdownParser {
    */
   private parseRelease(content: string): ParsedRelease | null {
     try {
-      // Extract metadata section
-      const metadataMatch = content.match(/## Metadata\n\n([\s\S]*?)\n\n/);
+      // FIX: Improved Regex for the Metadata section.
+      const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
       if (!metadataMatch) return null;
 
       const metadata = metadataMatch[1];
@@ -247,26 +289,11 @@ export class MarkdownParser {
   }
 
   /**
-   * Extract title from markdown content
-   */
-  private extractTitle(content: string): string {
-    const match = content.match(/^# (?:Pull Request|Issue) #\d+: (.+)$/m);
-    return match ? match[1] : '';
-  }
-
-  /**
-   * Extract a numbered field from metadata
-   */
-  private extractNumber(metadata: string, field: string): number | null {
-    const match = metadata.match(new RegExp(`- \\*\\*${field}\\*\\*: #?(\\d+)`, 'i'));
-    return match ? parseInt(match[1]) : null;
-  }
-
-  /**
    * Extract a text field from metadata
    */
   private extractField(metadata: string, field: string): string {
-    const match = metadata.match(new RegExp(`- \\*\\*${field}\\*\\*: (.+)`, 'i'));
+    // The format is: - **FieldName:** Value (colon is INSIDE the bold markers)
+    const match = metadata.match(new RegExp(`- \\*\\*${field}:\\*\\*\\s*(.*)`, 'i'));
     if (!match) return '';
 
     const value = match[1].trim();
@@ -278,7 +305,8 @@ export class MarkdownParser {
    * Extract labels from metadata
    */
   private extractLabels(metadata: string): string[] {
-    const match = metadata.match(/- \*\*Labels\*\*: (.+)/i);
+    // The format is: - **Labels:** Value (colon is INSIDE the bold markers)
+    const match = metadata.match(/- \*\*Labels:\*\*\s*(.+)/i);
     if (!match || match[1].includes('None')) return [];
 
     // Parse labels like: `label1`, `label2`, `label3`

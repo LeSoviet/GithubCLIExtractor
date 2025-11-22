@@ -8,7 +8,7 @@ import type {
 } from '../types/analytics.js';
 import { logger } from '../utils/logger.js';
 import { ensureDirectory } from '../utils/output.js';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { execGhJson } from '../utils/exec-gh.js';
 import { MarkdownParser } from './markdown-parser.js';
@@ -28,7 +28,7 @@ export class AnalyticsProcessor {
    * Generate a complete analytics report
    */
   async generateReport(): Promise<AnalyticsReport> {
-    // this.startTime = Date.now();
+    const reportStartTime = Date.now();
 
     logger.info(
       `Generating analytics report for ${this.options.repository.owner}/${this.options.repository.name}...`
@@ -38,11 +38,13 @@ export class AnalyticsProcessor {
       // Ensure output directory exists
       await ensureDirectory(this.options.outputPath);
 
-      // Generate each analytics module
-      const activity = await this.generateActivityAnalytics();
-      const contributors = await this.generateContributorAnalytics();
-      const labels = await this.generateLabelAnalytics();
-      const health = await this.generateHealthAnalytics();
+      // Generate all analytics modules in parallel for faster execution
+      const [activity, contributors, labels, health] = await Promise.all([
+        this.generateActivityAnalytics(),
+        this.generateContributorAnalytics(),
+        this.generateLabelAnalytics(),
+        this.generateHealthAnalytics(),
+      ]);
 
       const report: AnalyticsReport = {
         repository: `${this.options.repository.owner}/${this.options.repository.name}`,
@@ -56,7 +58,8 @@ export class AnalyticsProcessor {
       // Export report in specified formats
       await this.exportReport(report);
 
-      logger.success('Analytics report generated successfully');
+      const reportDuration = ((Date.now() - reportStartTime) / 1000).toFixed(2);
+      logger.success(`Analytics report generated in ${reportDuration}s`);
       return report;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -107,8 +110,14 @@ export class AnalyticsProcessor {
         const parsedPRs = await parser.parsePullRequests();
         const parsedIssues = await parser.parseIssues();
 
+        logger.info(
+          `📄 Parsed ${parsedPRs.length} PRs, ${parsedIssues.length} issues from markdown files`
+        );
+        const mergedCount = parsedPRs.filter((pr: any) => pr.mergedAt).length;
+        logger.info(`🔀 Found ${mergedCount} merged PRs`);
+
         // Convert parsed data to match GitHub API format
-        prs = parsedPRs.map((pr) => ({
+        prs = parsedPRs.map((pr: any) => ({
           number: pr.number,
           state: pr.state === 'MERGED' ? 'closed' : pr.state.toLowerCase(),
           mergedAt: pr.mergedAt,
@@ -118,7 +127,7 @@ export class AnalyticsProcessor {
           title: pr.title,
         }));
 
-        issues = parsedIssues.map((issue) => ({
+        issues = parsedIssues.map((issue: any) => ({
           number: issue.number,
           state: issue.state.toLowerCase(),
           createdAt: issue.createdAt,
@@ -127,16 +136,16 @@ export class AnalyticsProcessor {
           author: { login: issue.author },
         }));
       } else {
-        // Fetch PRs for merge rate calculation (increased limit for better analysis)
+        // Fetch PRs for merge rate calculation
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,state,mergedAt,closedAt,createdAt,author,title`,
-          { timeout: 60000, useRateLimit: false, useRetry: false }
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,state,mergedAt,closedAt,createdAt,author,title`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
         );
 
-        // Fetch issues for resolution time calculation (both open and closed for better analysis)
+        // Fetch issues for resolution time calculation
         issues = await execGhJson<any[]>(
-          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,createdAt,closedAt,state,title,author`,
-          { timeout: 60000, useRateLimit: false, useRetry: false }
+          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,createdAt,closedAt,state,title,author`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
         );
       }
 
@@ -174,12 +183,15 @@ export class AnalyticsProcessor {
         }
       }
 
-      // Fetch commits for activity patterns (more comprehensive time range)
-      const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days for better analysis
-      const commits = await execGhJson<any[]>(
-        `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=300`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
-      );
+      // Fetch commits for activity patterns (only in online mode, skip in offline)
+      let commits: any[] = [];
+      if (!this.options.offline) {
+        const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
+        commits = await execGhJson<any[]>(
+          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+      }
 
       // Group commits by day for activity patterns
       const commitsByDay = new Map<string, number>();
@@ -255,12 +267,15 @@ export class AnalyticsProcessor {
     };
 
     try {
-      // Fetch commits to analyze contributors
-      const sinceDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000); // Last 180 days for better analysis
-      const commits = await execGhJson<any[]>(
-        `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=300`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
-      );
+      // Fetch commits to analyze contributors (only in online mode)
+      let commits: any[] = [];
+      if (!this.options.offline) {
+        const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
+        commits = await execGhJson<any[]>(
+          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100`,
+          { timeout: 30000, useRateLimit: false, useRetry: false }
+        );
+      }
 
       // Group commits by author
       const contributorStats = new Map<string, { commits: number; prs: number; reviews: number }>();
@@ -285,8 +300,8 @@ export class AnalyticsProcessor {
 
       // Fetch PRs to count PRs and reviews per contributor
       const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,author,reviewDecision,createdAt`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,author,reviewDecision,createdAt`,
+        { timeout: 30000, useRateLimit: false, useRetry: false }
       );
 
       // Count PRs per contributor
@@ -386,14 +401,14 @@ export class AnalyticsProcessor {
     try {
       // Fetch issues with labels
       const issues = await execGhJson<any[]>(
-        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,labels,createdAt,closedAt,state,title,author`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,state,title,author`,
+        { timeout: 30000, useRateLimit: false, useRetry: false }
       );
 
       // Fetch PRs with labels
       const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,labels,createdAt,closedAt,title,author`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,title,author`,
+        { timeout: 30000, useRateLimit: false, useRetry: false }
       );
 
       // Calculate issue/PR ratio
@@ -524,8 +539,8 @@ export class AnalyticsProcessor {
     try {
       // Fetch PRs to analyze review coverage and PR size
       const prs = await execGhJson<any[]>(
-        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 1000 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
+        { timeout: 30000, useRateLimit: false, useRetry: false }
       );
 
       // Calculate PR review coverage
@@ -559,8 +574,8 @@ export class AnalyticsProcessor {
 
       // Fetch releases to analyze deployment frequency
       const releases = await execGhJson<any[]>(
-        `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 200 --json tagName,createdAt,publishedAt`,
-        { timeout: 60000, useRateLimit: false, useRetry: false }
+        `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 100 --json tagName,createdAt,publishedAt`,
+        { timeout: 30000, useRateLimit: false, useRetry: false }
       );
 
       // Calculate deployment frequency (releases per month)
@@ -599,6 +614,57 @@ export class AnalyticsProcessor {
   }
 
   /**
+   * Get health status indicator
+   */
+  private getHealthStatus(value: number, warning: number, good: number): string {
+    if (value >= good) return '🟢 Excellent';
+    if (value >= warning) return '🟡 Fair';
+    return '🔴 Needs Improvement';
+  }
+
+  /**
+   * Get contributor count status
+   */
+  private getContributorStatus(count: number): string {
+    if (count >= 10) return '🟢 Healthy';
+    if (count >= 5) return '🟡 Moderate';
+    return '🔴 Limited';
+  }
+
+  /**
+   * Get bus factor status
+   */
+  private getBusFactorStatus(busFactor: number): string {
+    if (busFactor >= 5) return '🟢 Low Risk';
+    if (busFactor >= 3) return '🟡 Medium Risk';
+    return '🔴 High Risk';
+  }
+
+  /**
+   * Get deployment status
+   */
+  private getDeploymentStatus(releases: number): string {
+    if (releases >= 20) return '🟢 Very Active';
+    if (releases >= 10) return '🟡 Active';
+    if (releases >= 5) return '🟠 Moderate';
+    return '🔴 Low Activity';
+  }
+
+  /**
+   * Get package version from package.json
+   */
+  private async getPackageVersion(): Promise<string> {
+    try {
+      // Try to read package.json from the project root
+      const packagePath = join(__dirname, '../../package.json');
+      const packageJson = JSON.parse(await readFile(packagePath, 'utf-8'));
+      return packageJson.version || 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  /**
    * Export the analytics report in the specified formats
    */
   private async exportReport(report: AnalyticsReport): Promise<void> {
@@ -616,7 +682,7 @@ export class AnalyticsProcessor {
       // Export as Markdown
       if (format === 'markdown' || format === 'both') {
         const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
-        const markdownContent = this.generateMarkdownReport(report);
+        const markdownContent = await this.generateMarkdownReport(report);
         await writeFile(markdownPath, markdownContent);
         logger.info(`Analytics report saved as Markdown: ${markdownPath}`);
       }
@@ -630,40 +696,67 @@ export class AnalyticsProcessor {
   /**
    * Generate a Markdown report from the analytics data
    */
-  private generateMarkdownReport(report: AnalyticsReport): string {
-    let md = `# Analytics Report: ${report.repository}\n\n`;
-    md += `Generated: ${new Date(report.generatedAt).toLocaleString()}\n\n`;
+  private async generateMarkdownReport(report: AnalyticsReport): Promise<string> {
+    const now = new Date(report.generatedAt);
+    let md = `# 📊 Analytics Report\n\n`;
+    md += `## ${report.repository}\n\n`;
+    md += `**Generated:** ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at ${now.toLocaleTimeString()}\n\n`;
+    md += `---\n\n`;
 
-    // Executive Summary
-    md += `## Executive Summary\n\n`;
-    md += `This report provides a comprehensive analysis of the repository's activity, contributor patterns, labeling practices, and code health metrics.\n\n`;
+    // Executive Summary with key metrics
+    md += `## 📋 Executive Summary\n\n`;
+    md += `This comprehensive analytics report analyzes repository activity, contributor patterns, labeling practices, and code health metrics to provide actionable insights.\n\n`;
+
+    // Quick stats box
+    md += `### Key Metrics at a Glance\n\n`;
+    md += `| Metric | Value | Status |\n`;
+    md += `|--------|-------|--------|\n`;
+    md += `| **PR Merge Rate** | ${report.activity.prMergeRate.mergeRate.toFixed(1)}% | ${this.getHealthStatus(report.activity.prMergeRate.mergeRate, 50, 80)} |\n`;
+    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% | ${this.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |\n`;
+    md += `| **Active Contributors** | ${report.activity.activeContributors[0]?.contributors || 0} | ${this.getContributorStatus(report.activity.activeContributors[0]?.contributors || 0)} |\n`;
+    md += `| **Bus Factor** | ${report.contributors.busFactor} | ${this.getBusFactorStatus(report.contributors.busFactor)} |\n`;
+    md += `| **Deployment Frequency** | ${report.health.deploymentFrequency.releases} releases | ${this.getDeploymentStatus(report.health.deploymentFrequency.releases)} |\n\n`;
+    md += `---\n\n`;
 
     // Activity Analytics
-    md += `## Activity Analytics\n\n`;
-    md += `- **Analysis Period**: ${new Date(report.activity.period.start).toLocaleDateString()} to ${new Date(report.activity.period.end).toLocaleDateString()}\n`;
-    md += `- **PR Merge Rate**: ${report.activity.prMergeRate.mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged} merged, ${report.activity.prMergeRate.closed} closed)\n`;
+    md += `## 📈 Activity Analytics\n\n`;
+    md += `**Analysis Period:** ${new Date(report.activity.period.start).toLocaleDateString()} to ${new Date(report.activity.period.end).toLocaleDateString()}\n\n`;
+
+    md += `### Pull Request Metrics\n\n`;
+    md += `- **Merge Rate:** ${report.activity.prMergeRate.mergeRate.toFixed(1)}%\n`;
+    md += `- **Merged PRs:** ${report.activity.prMergeRate.merged}\n`;
+    md += `- **Closed (not merged):** ${report.activity.prMergeRate.closed}\n`;
+    md += `- **Total PRs:** ${report.activity.prMergeRate.merged + report.activity.prMergeRate.closed}\n\n`;
+
+    md += `### Issue Resolution\n\n`;
 
     if (report.activity.issueResolutionTime.averageHours > 0) {
-      md += `- **Average Issue Resolution Time**: ${report.activity.issueResolutionTime.averageHours.toFixed(1)} hours\n`;
-      md += `- **Median Issue Resolution Time**: ${report.activity.issueResolutionTime.medianHours.toFixed(1)} hours\n`;
+      const avgDays = (report.activity.issueResolutionTime.averageHours / 24).toFixed(1);
+      const medianDays = (report.activity.issueResolutionTime.medianHours / 24).toFixed(1);
+      md += `- **Average Resolution Time:** ${avgDays} days (${report.activity.issueResolutionTime.averageHours.toFixed(0)} hours)\n`;
+      md += `- **Median Resolution Time:** ${medianDays} days (${report.activity.issueResolutionTime.medianHours.toFixed(0)} hours)\n`;
     } else {
-      md += `- **Issue Resolution Time**: No closed issues found in the analysis period\n`;
+      md += `- **Resolution Time:** No closed issues found in analysis period\n`;
     }
 
     if (report.activity.busiestDays.length > 0) {
-      md += `\n### Busiest Days\n`;
-      report.activity.busiestDays.slice(0, 3).forEach((day) => {
-        md += `- ${day.day}: ${day.count} commits\n`;
+      md += `\n### 🔥 Activity Hotspots\n\n`;
+      md += `**Most Active Days:**\n\n`;
+      report.activity.busiestDays.slice(0, 5).forEach((day, index) => {
+        const emoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📅';
+        md += `${emoji} **${day.day}:** ${day.count} commits\n`;
       });
     }
 
-    md += `\n`;
+    md += `\n---\n\n`;
 
     // Contributor Analytics
-    md += `## Contributor Analytics\n\n`;
-    md += `- **Bus Factor**: ${report.contributors.busFactor} (indicates project risk if key contributors are lost)\n`;
-    md += `- **Active Contributors**: ${report.activity.activeContributors[0]?.contributors || 0} in the last 90 days\n`;
-    md += `- **New vs Returning Contributors**: ${report.contributors.newVsReturning.new} new, ${report.contributors.newVsReturning.returning} returning\n\n`;
+    md += `## 👥 Contributor Analytics\n\n`;
+    md += `### Team Health\n\n`;
+    md += `- **Bus Factor:** ${report.contributors.busFactor} ${this.getBusFactorStatus(report.contributors.busFactor)}\n`;
+    md += `  - *Indicates project risk if key contributors become unavailable*\n`;
+    md += `- **Active Contributors:** ${report.activity.activeContributors[0]?.contributors || 0} (last 90 days)\n`;
+    md += `- **Contributor Mix:** ${report.contributors.newVsReturning.new} new, ${report.contributors.newVsReturning.returning} returning\n\n`;
 
     if (report.contributors.topContributors.length > 0) {
       md += `### Top Contributors\n\n`;
@@ -683,20 +776,24 @@ export class AnalyticsProcessor {
     }
 
     // Label Analytics
-    md += `## Label Analytics\n\n`;
-    if (report.labels.issueVsPrratio > 0) {
-      md += `- **Issue/PR Ratio**: 1:${report.labels.issueVsPrratio.toFixed(2)} (indicates the balance between issues and pull requests)\n`;
-    } else {
-      md += `- **Issue/PR Ratio**: No issues or PRs found\n`;
-    }
+    md += `## 🏷️ Label Analytics\n\n`;
 
-    if (report.labels.mostCommonLabels.length > 0) {
-      md += `- **Most Common Labels**: ${report.labels.mostCommonLabels.join(', ')}\n`;
+    md += `### Issue/PR Balance\n\n`;
+    if (report.labels.issueVsPrratio > 0) {
+      md += `- **Ratio:** 1:${report.labels.issueVsPrratio.toFixed(2)} (${report.labels.issueVsPrratio > 1 ? 'More issues than PRs' : 'More PRs than issues'})\n`;
+    } else {
+      md += `- **Ratio:** No data available\n`;
     }
 
     if (report.labels.issueLifecycle.averageOpenDays > 0) {
-      md += `- **Average Issue Lifecycle**: ${report.labels.issueLifecycle.averageOpenDays.toFixed(1)} days\n`;
-      md += `- **Median Issue Lifecycle**: ${report.labels.issueLifecycle.medianOpenDays.toFixed(1)} days\n`;
+      md += `\n### Issue Lifecycle\n\n`;
+      md += `- **Average Time Open:** ${report.labels.issueLifecycle.averageOpenDays.toFixed(1)} days\n`;
+      md += `- **Median Time Open:** ${report.labels.issueLifecycle.medianOpenDays.toFixed(1)} days\n`;
+    }
+
+    if (report.labels.mostCommonLabels.length > 0) {
+      md += `\n### Most Common Labels\n\n`;
+      md += `${report.labels.mostCommonLabels.map((label, i) => `${i + 1}. \`${label}\``).join('\n')}\n`;
     }
 
     if (report.labels.labelDistribution.length > 0) {
@@ -723,47 +820,116 @@ export class AnalyticsProcessor {
     }
 
     // Health Analytics
-    md += `## Code Health Metrics\n\n`;
-    md += `- **PR Review Coverage**: ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed} reviewed out of ${report.health.prReviewCoverage.total} PRs)\n`;
+    md += `---\n\n`;
+    md += `## 💊 Code Health Metrics\n\n`;
 
+    md += `### Review Process\n\n`;
+    md += `- **Review Coverage:** ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% ${this.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)}\n`;
+    md += `- **Reviewed PRs:** ${report.health.prReviewCoverage.reviewed} / ${report.health.prReviewCoverage.total}\n\n`;
+
+    md += `### PR Size Analysis\n\n`;
     if (report.health.averagePrSize.total > 0) {
-      md += `- **Average PR Size**: ${report.health.averagePrSize.total} lines (${report.health.averagePrSize.additions} additions, ${report.health.averagePrSize.deletions} deletions)\n`;
+      md += `- **Average Changes:** ${report.health.averagePrSize.total} lines per PR\n`;
+      md += `  - **Additions:** +${report.health.averagePrSize.additions} lines\n`;
+      md += `  - **Deletions:** -${report.health.averagePrSize.deletions} lines\n\n`;
+
+      // Add PR size recommendation
+      if (report.health.averagePrSize.total > 500) {
+        md += `> ⚠️ **Note:** Average PR size is large (>500 lines). Consider breaking down changes into smaller PRs for easier review.\n\n`;
+      } else if (report.health.averagePrSize.total < 100) {
+        md += `> ✅ **Good Practice:** Small PR sizes facilitate faster reviews and reduce merge conflicts.\n\n`;
+      }
     } else {
-      md += `- **Average PR Size**: No PRs found\n`;
+      md += `- **Average PR Size:** No data available\n\n`;
     }
 
-    md += `- **Deployment Frequency**: ${report.health.deploymentFrequency.releases} releases\n`;
+    md += `### Deployment Activity\n\n`;
+    md += `- **Total Releases:** ${report.health.deploymentFrequency.releases} ${this.getDeploymentStatus(report.health.deploymentFrequency.releases)}\n`;
 
     // Insights and recommendations
-    md += `\n## Insights & Recommendations\n\n`;
+    md += `\n---\n\n`;
+    md += `## 💡 Insights & Recommendations\n\n`;
+
+    const recommendations: string[] = [];
 
     // PR merge rate insight
     if (report.activity.prMergeRate.mergeRate < 50) {
-      md += `⚠️ **PR Merge Rate**: Only ${report.activity.prMergeRate.mergeRate.toFixed(1)}% of PRs are being merged. Consider reviewing the PR process to improve merge rates.\n\n`;
+      recommendations.push(
+        `🔴 **Low PR Merge Rate (${report.activity.prMergeRate.mergeRate.toFixed(1)}%)**\n   - Review PR approval process\n   - Provide clearer contribution guidelines\n   - Consider implementing PR templates`
+      );
     } else if (report.activity.prMergeRate.mergeRate > 80) {
-      md += `✅ **PR Merge Rate**: ${report.activity.prMergeRate.mergeRate.toFixed(1)}% of PRs are being merged, indicating a healthy contribution process.\n\n`;
+      recommendations.push(
+        `🟢 **Excellent PR Merge Rate (${report.activity.prMergeRate.mergeRate.toFixed(1)}%)**\n   - Indicates healthy contribution workflow\n   - Maintain current review standards`
+      );
     }
 
     // Review coverage insight
     if (report.health.prReviewCoverage.coveragePercentage < 70) {
-      md += `⚠️ **Review Coverage**: Only ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% of PRs are reviewed. Increasing review coverage can improve code quality.\n\n`;
+      recommendations.push(
+        `🟡 **Review Coverage Needs Improvement (${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}%)**\n   - Encourage more code reviews\n   - Consider requiring reviews before merge\n   - Set up CODEOWNERS file`
+      );
+    } else {
+      recommendations.push(
+        `🟢 **Strong Review Coverage (${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}%)**\n   - Excellent code quality practices\n   - Continue current review process`
+      );
     }
 
     // Bus factor insight
     if (report.contributors.busFactor <= 2) {
-      md += `⚠️ **Bus Factor**: The bus factor is ${report.contributors.busFactor}, indicating high risk if key contributors are unavailable. Consider onboarding more contributors.\n\n`;
+      recommendations.push(`🔴 **Critical: Low Bus Factor (${report.contributors.busFactor})**
+   - High project risk if key contributors leave
+   - Encourage knowledge sharing
+   - Document critical systems
+   - Onboard new contributors`);
+    } else if (report.contributors.busFactor >= 5) {
+      recommendations.push(
+        `🟢 **Healthy Bus Factor (${report.contributors.busFactor})**\n   - Good distribution of knowledge\n   - Low project continuity risk`
+      );
     }
 
     // Contribution concentration insight
     if (report.contributors.contributionDistribution.length > 0) {
       const topPercentage = report.contributors.contributionDistribution[0]?.percentage || 0;
       if (topPercentage > 50) {
-        md += `⚠️ **Contribution Concentration**: The top contributor accounts for ${topPercentage.toFixed(1)}% of contributions, indicating potential knowledge siloing.\n\n`;
+        recommendations.push(
+          `🟡 **High Contribution Concentration (${topPercentage.toFixed(1)}%)**\n   - Top contributor dominates contributions\n   - Risk of knowledge silos\n   - Encourage broader participation`
+        );
       }
     }
 
+    // Issue resolution time insight
+    if (report.activity.issueResolutionTime.averageHours > 0) {
+      const avgDays = report.activity.issueResolutionTime.averageHours / 24;
+      if (avgDays > 30) {
+        recommendations.push(
+          `🟡 **Slow Issue Resolution (${avgDays.toFixed(1)} days avg)**\n   - Consider triaging issues more frequently\n   - Set up issue templates for clarity\n   - Prioritize critical issues`
+        );
+      } else if (avgDays < 7) {
+        recommendations.push(
+          `🟢 **Fast Issue Resolution (${avgDays.toFixed(1)} days avg)**\n   - Excellent responsiveness\n   - Maintain current triage process`
+        );
+      }
+    }
+
+    if (recommendations.length > 0) {
+      recommendations.forEach((rec, i) => {
+        md += `### ${i + 1}. ${rec}\n\n`;
+      });
+    } else {
+      md += `✅ All metrics are within healthy ranges. Continue current practices!\n\n`;
+    }
+
     md += `---\n\n`;
-    md += `*Report generated by [GitHub Extractor CLI](https://github.com/LeSoviet/ghextractor)*\n`;
+    md += `## 📚 Report Metadata\n\n`;
+    md += `- **Analysis Duration:**\n`;
+    md += `  - Activity: ${(report.activity.duration / 1000).toFixed(2)}s\n`;
+    md += `  - Contributors: ${(report.contributors.duration / 1000).toFixed(2)}s\n`;
+    md += `  - Labels: ${(report.labels.duration / 1000).toFixed(2)}s\n`;
+    md += `  - Health: ${(report.health.duration / 1000).toFixed(2)}s\n`;
+    md += `- **Generated by:** [GitHub Extractor CLI (ghextractor)](https://github.com/LeSoviet/GithubCLIExtractor)
+`;
+    md += `- **Version:** ${await this.getPackageVersion()}
+`;
 
     return md;
   }

@@ -215,6 +215,19 @@ async function checkSetup(): Promise<void> {
   console.log('\n✔ Setup is complete!');
 }
 
+/**
+ * Clean up resources before exit
+ */
+async function cleanup(): Promise<void> {
+  try {
+    // Stop the rate limiter to prevent hanging timers
+    const rateLimiter = getRateLimiter();
+    await rateLimiter.stop();
+  } catch (error) {
+    // Silently ignore cleanup errors
+  }
+}
+
 async function main() {
   try {
     const args = parseArgs();
@@ -230,16 +243,19 @@ async function main() {
     // Handle flags that exit immediately
     if (args.help) {
       showHelp();
+      await cleanup();
       process.exit(0);
     }
 
     if (args.version) {
       await showVersion();
+      await cleanup();
       process.exit(0);
     }
 
     if (args.check) {
       await checkSetup();
+      await cleanup();
       process.exit(0);
     }
 
@@ -310,6 +326,7 @@ async function main() {
     // Handle batch export mode
     if (args.batch || args.batchRepos) {
       await handleBatchExport(args);
+      await cleanup();
       process.exit(0);
     }
 
@@ -406,6 +423,7 @@ async function main() {
       console.log('='.repeat(60) + '\n');
 
       showOutro('Thanks for using GitHub Extractor CLI!');
+      await cleanup();
 
       // Add small delay before exit to ensure async operations complete
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -502,12 +520,15 @@ async function main() {
     await executeExport(exportOptions, args.diff);
 
     showOutro('Thanks for using GitHub Extractor CLI!');
+    await cleanup();
+    process.exit(0);
   } catch (error) {
     if (error instanceof Error) {
       showError(error.message);
     } else {
       showError('An unexpected error occurred');
     }
+    await cleanup();
     process.exit(1);
   }
 }
@@ -796,8 +817,8 @@ async function handleBatchExport(args: ReturnType<typeof parseArgs>): Promise<vo
     const processor = new BatchProcessor(batchConfig);
     const result = await processor.process();
 
-    // Small delay to ensure all async operations complete
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Clean up resources before exit
+    await cleanup();
 
     // Exit with appropriate code
     process.exit(result.failedRepositories > 0 ? 1 : 0);
@@ -806,6 +827,7 @@ async function handleBatchExport(args: ReturnType<typeof parseArgs>): Promise<vo
     if (error instanceof Error) {
       console.error(error.message);
     }
+    await cleanup();
     process.exit(1);
   }
 }
