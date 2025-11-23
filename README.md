@@ -71,11 +71,11 @@ Production Ready - All core features implemented and tested:
 - Auto update notifications
 - Cross-platform support
 
-**Latest (v0.9.0)**:
-- ✅ Modular analytics system - better maintainability and testability
-- ✅ 56 new tests - comprehensive test coverage (201 total tests)
-- ✅ Reduced code complexity - 21% reduction in main files
-- ✅ Dead code cleanup - removed 17 unused dependencies
+**Latest (v0.9.2)**:
+- ✅ Fixed version detection issues in built distributions
+- ✅ Enhanced version command to properly read package version from multiple paths
+- ✅ Improved StateManager to use actual package version instead of hardcoded values
+- ✅ Added comprehensive tests to prevent future regressions
 
 ## License
 
