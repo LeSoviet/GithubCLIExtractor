@@ -3,6 +3,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import type { StateStore, ExportState, DiffModeOptions } from '../types/state.js';
 import type { SingleExportType } from '../types/index.js';
+import { getCurrentVersion } from '../utils/version-checker.js';
 
 /**
  * State Manager for incremental exports
@@ -33,7 +34,7 @@ export class StateManager {
     } catch (error) {
       // State file doesn't exist or is invalid, create new
       this.state = {
-        version: '1.0.0',
+        version: await getCurrentVersion(),
         exports: [],
         updatedAt: new Date().toISOString(),
       };
@@ -146,7 +147,7 @@ export class StateManager {
    */
   async clear(): Promise<void> {
     this.state = {
-      version: '1.0.0',
+      version: await getCurrentVersion(),
       exports: [],
       updatedAt: new Date().toISOString(),
     };

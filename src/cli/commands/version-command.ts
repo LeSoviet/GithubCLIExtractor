@@ -11,22 +11,21 @@ export class VersionCommand implements CommandHandler {
     try {
       // Try multiple paths to find package.json
       const possiblePaths = [
-        // When running from dist/ in npm global install
-        join(dirname(fileURLToPath(import.meta.url)), '../../../package.json'),
+        // When running from dist/ in npm global install (dist is one level deep)
+        join(dirname(fileURLToPath(import.meta.url)), '../package.json'),
         // When running locally
         join(process.cwd(), 'package.json'),
         // When __dirname is available (CJS)
-        typeof __dirname !== 'undefined' ? join(__dirname, '../../../package.json') : null,
+        typeof __dirname !== 'undefined' ? join(__dirname, '../package.json') : null,
       ].filter(Boolean) as string[];
 
-      let version = '0.1.0';
-
+      // Try to find the version
       for (const packageJsonPath of possiblePaths) {
         try {
           const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
           if (packageJson.name === 'ghextractor' && packageJson.version) {
-            version = packageJson.version;
-            break;
+            console.log(packageJson.version);
+            return;
           }
         } catch {
           // Try next path
@@ -34,9 +33,11 @@ export class VersionCommand implements CommandHandler {
         }
       }
 
-      console.log(version);
+      // If we can't find the version, log unknown
+      console.log('unknown');
     } catch (error) {
-      console.log('0.1.0');
+      // In case of any unexpected error, still log unknown
+      console.log('unknown');
     }
   }
 }

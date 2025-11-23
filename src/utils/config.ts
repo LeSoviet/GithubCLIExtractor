@@ -4,6 +4,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import type { ConfigFile, CLIConfig } from '../types/config.js';
 import { logger } from './logger.js';
+import { getCurrentVersion } from './version-checker.js';
 
 const CONFIG_FILENAMES = ['.ghextractorrc.json', 'ghextractor.config.json'];
 const GLOBAL_CONFIG_PATH = join(homedir(), '.ghextractor', 'config.json');
@@ -49,6 +50,12 @@ export class ConfigManager {
     if (!configPath) {
       // Return default configuration
       this.config = this.getDefaultConfig();
+      // Update version field with detected package version
+      try {
+        this.config.version = await getCurrentVersion();
+      } catch {
+        // ignore
+      }
       logger.debug('Using default configuration');
       return this.config;
     }
@@ -62,6 +69,12 @@ export class ConfigManager {
         ...this.getDefaultConfig(),
         ...fileConfig,
       };
+      // Ensure we populate the version from package.json if possible
+      try {
+        this.config.version = await getCurrentVersion();
+      } catch {
+        // ignore
+      }
 
       logger.info(`Loaded configuration from: ${configPath}`);
       return this.config;
@@ -77,7 +90,7 @@ export class ConfigManager {
    */
   private getDefaultConfig(): CLIConfig {
     return {
-      version: '0.1.0',
+      version: 'unknown', // This will be updated with actual package version when config is loaded
       defaultFormat: 'markdown',
       outputPath: './github-export',
       excludeLabels: [],

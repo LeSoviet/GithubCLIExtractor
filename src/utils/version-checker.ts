@@ -19,7 +19,7 @@ const getCurrentDir = (): string => {
 export async function checkForUpdates(): Promise<void> {
   try {
     const currentDir = getCurrentDir();
-    const packageJsonPath = join(currentDir, '../../package.json');
+    const packageJsonPath = join(currentDir, '../package.json');
     const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
 
     // Check for updates
@@ -84,10 +84,33 @@ export async function checkForUpdates(): Promise<void> {
  */
 export async function getCurrentVersion(): Promise<string> {
   try {
-    const currentDir = getCurrentDir();
-    const packageJsonPath = join(currentDir, '../../package.json');
-    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-    return packageJson.version || 'unknown';
+    // Try multiple paths to find package.json
+    const possiblePaths = [
+      // When running from dist/ (most common case)
+      join(getCurrentDir(), '../package.json'),
+      // When running from src/ in development
+      join(getCurrentDir(), '../../package.json'),
+      // When __dirname is available (CJS)
+      typeof __dirname !== 'undefined' ? join(__dirname, '../package.json') : null,
+      typeof __dirname !== 'undefined' ? join(__dirname, '../../package.json') : null,
+      // Fallback to process.cwd()
+      join(process.cwd(), 'package.json'),
+    ].filter(Boolean) as string[];
+
+    // Try to find the version
+    for (const packageJsonPath of possiblePaths) {
+      try {
+        const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
+        if (packageJson.name === 'ghextractor' && packageJson.version) {
+          return packageJson.version;
+        }
+      } catch {
+        // Try next path
+        continue;
+      }
+    }
+
+    return 'unknown';
   } catch (error) {
     return 'unknown';
   }
