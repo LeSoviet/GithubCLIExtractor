@@ -71,10 +71,11 @@ Production Ready - All core features implemented and tested:
 - Auto update notifications
 - Cross-platform support
 
-**Latest (v0.8.0)**:
-- ✅ Offline analytics mode - generate reports without API access
-- ✅ Auto update notifications - stay informed of new releases
-- ✅ Fixed empty analytics reports issue
+**Latest (v0.9.0)**:
+- ✅ Modular analytics system - better maintainability and testability
+- ✅ 56 new tests - comprehensive test coverage (201 total tests)
+- ✅ Reduced code complexity - 21% reduction in main files
+- ✅ Dead code cleanup - removed 17 unused dependencies
 
 ## License
 
