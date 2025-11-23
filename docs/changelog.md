@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2025-11-23
+
+### Fixed
+- **Version Detection**: Fixed issues with version detection in built distributions
+  - `VersionCommand` now properly reads package version from multiple possible paths
+  - `StateManager` now uses actual package version instead of hardcoded '1.0.0'
+  - `getCurrentVersion()` utility enhanced to try multiple paths for package.json
+  - Added comprehensive tests to prevent future regressions
+  - Fixed failing version-checker tests that expected semver format
+
 ## [0.9.1] - 2025-11-23
 
 ### Fixed
