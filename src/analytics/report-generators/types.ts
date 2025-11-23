@@ -1,10 +1,4 @@
-import type {
-  ActivityAnalytics,
-  AnalyticsReport,
-  ContributorAnalytics,
-  HealthAnalytics,
-  LabelAnalytics,
-} from '../../types/analytics.js';
+import type { AnalyticsReport } from '../../types/analytics.js';
 
 /**
  * Interface for section generators
