@@ -20,6 +20,7 @@ import { createProgressTracker, ProgressTracker } from './cli/progress.js';
 import { checkGhInstalled, getAuthStatus } from './core/github-auth.js';
 import { getRateLimiter } from './core/rate-limiter.js';
 import { displayRateLimit } from './cli/rate-limit-display.js';
+import { HelpCommand, VersionCommand, CheckCommand } from './cli/commands/index.js';
 import { getStateManager } from './core/state-manager.js';
 import { BatchProcessor } from './core/batch-processor.js';
 import { listUserRepositories, getRepositoryFromString } from './scanner/repo-scanner.js';
@@ -119,100 +120,24 @@ function parseArgs(): {
  * Show help message
  */
 function showHelp(): void {
-  console.log(`
-GitHub Extractor CLI
-
-Usage:
-  ghextractor [options]
-
-Options:
-  -h, --help              Show this help message
-  -v, --version           Show version number
-  --check                 Check GitHub CLI installation and authentication
-  --output <path>         Custom output directory (default: ./github-export)
-  --format <format>       Export format: markdown, json, both (default: markdown)
-  --config <path>         Path to configuration file
-  --verbose               Show detailed output
-  --dry-run               Simulate export without creating files
-  --diff, --incremental   Incremental export (only new/updated items since last run)
-  --force-full            Force full export even if previous state exists
-  --since <date>          Filter by date range (start)
-  --until <date>          Filter by date range (end)
-  --labels <labels>       Filter by labels (comma-separated)
-  --template <path>       Use custom template file
-  --full-backup           Export all resources (PRs, issues, commits, branches, releases)
-  // --analytics             Generate analytics report from exported data (now automatic)
-
-Batch Export Options:
-  --batch <config.json>       Batch export from JSON config file
-  --batch-repos <repos>       Comma-separated list of repositories (owner/repo)
-  --batch-types <types>       Comma-separated export types (prs,issues,commits,branches,releases)
-  --batch-parallel <n>        Number of repositories to process in parallel (default: 3)
-
-Examples:
-  ghextractor                                    # Interactive mode
-  ghextractor --check                            # Check GitHub CLI setup
-  ghextractor --output ./my-export               # Custom output directory
-  ghextractor --format json                      # Export as JSON
-  ghextractor --diff                             # Incremental export (80-95% faster!)
-  ghextractor --full-backup                      # Full repository backup
-  ghextractor --labels bug,enhancement           # Filter by labels
-  ghextractor --since 2024-01-01 --until 2024-12-31  # Date range filter
-
-Batch Examples:
-  ghextractor --batch-repos "facebook/react,vercel/next.js" --batch-types "releases"
-  ghextractor --batch-repos "repo1,repo2" --diff  # Batch + incremental
-  ghextractor --batch batch-config.json          # Batch from config file
-  ghextractor --batch-repos "repo1,repo2,repo3" --batch-parallel 5  # Custom parallelism
-
-For more information, visit: https://github.com/LeSoviet/ghextractor
-`);
+  const helpCommand = new HelpCommand();
+  helpCommand.execute();
 }
 
 /**
  * Show version
  */
 async function showVersion(): Promise<void> {
-  try {
-    const packageJsonPath = join(__dirname, '../package.json');
-    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-    console.log(packageJson.version || '0.1.0');
-  } catch (error) {
-    console.log('0.1.0');
-  }
+  const versionCommand = new VersionCommand();
+  await versionCommand.execute();
 }
 
 /**
  * Check GitHub CLI installation and authentication
  */
 async function checkSetup(): Promise<void> {
-  console.log('Checking GitHub CLI setup...\n');
-
-  const ghInstalled = await checkGhInstalled();
-  if (ghInstalled) {
-    console.log('✔ GitHub CLI (gh) is installed');
-  } else {
-    console.log('✖ GitHub CLI (gh) is not installed');
-    console.log('  Install from: https://cli.github.com/');
-    // In test mode, don't exit with error
-    if (!process.env.GHX_TEST_MODE) {
-      process.exit(1);
-    }
-  }
-
-  const authStatus = await getAuthStatus();
-  if (authStatus.isAuthenticated) {
-    console.log(`✔ Authenticated as: ${authStatus.username}`);
-  } else {
-    console.log('✖ Not authenticated');
-    console.log('  Run: gh auth login');
-    // In test mode, don't exit with error
-    if (!process.env.GHX_TEST_MODE) {
-      process.exit(1);
-    }
-  }
-
-  console.log('\n✔ Setup is complete!');
+  const checkCommand = new CheckCommand();
+  await checkCommand.execute();
 }
 
 /**
