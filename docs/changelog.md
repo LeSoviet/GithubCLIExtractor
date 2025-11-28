@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2025-11-28
+
+### Fixed
+
+- **npm Publish Workflow**: Fixed duplicate and conflicting npm publish jobs that caused 403 errors
+  - Removed fallback publish job that was causing duplicate publish attempts
+  - Simplified workflow structure: combine build verification with release creation
+  - Fixed references to changelog output variable (changelog → extract-changelog)
+  - Added explicit build artifact verification before npm publish
+  - Changed to use `npm ci` for reproducible installs (skips audit and peer dependency warnings)
+- **npm Package Warnings**: Eliminated warnings about bin files not found
+  - Cleaned up .npmignore to exclude coverage output files
+  - Improved package contents to only include necessary production files
+- **Release Process**: Improved consistency and clarity
+  - All builds now use `npm run build:all` for consistency
+  - Tests run with coverage in release job
+  - Documentation URLs fixed in publish summary
+
+### Changed
+
+- **Workflow Architecture**: Streamlined GitHub Actions publish workflow
+  - Single verify-and-release job replaces separate create-release job
+  - Reduced from 3 to 2 parallel publish jobs
+  - Better logging and verification steps
+  - Improved artifact checking before publishing
+
+### Technical
+
+- Updated publish workflow to use latest best practices
+- Improved build reproducibility with npm ci
+- Enhanced error detection with artifact verification
+
 ## [0.9.7] - 2025-11-28
 
 ### Added
