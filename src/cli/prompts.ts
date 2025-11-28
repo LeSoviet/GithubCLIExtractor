@@ -5,7 +5,7 @@ import type { Repository, ExportFormat, ExportType } from '../types/index.js';
 export async function showWelcome(username?: string) {
   console.clear();
 
-  clack.intro(chalk.bold.cyan('GitHub Extractor CLI'));
+  clack.intro(chalk.bold.magenta('GitHub Extractor CLI'));
 
   if (username) {
     clack.log.success(`Logged in as: ${chalk.bold(username)}`);
@@ -140,7 +140,7 @@ export function showSuccess(message: string) {
 }
 
 export function showInfo(message: string) {
-  clack.log.info(chalk.cyan(message));
+  clack.log.info(chalk.magenta(message));
 }
 
 export function showOutro(message: string) {

@@ -16,7 +16,7 @@ export class ProgressTracker {
     this.startTime = Date.now();
     this.spinner = ora({
       text: message,
-      color: 'cyan',
+      color: 'magenta',
     }).start();
   }
 
@@ -90,14 +90,14 @@ export class ProgressTracker {
       console.log(chalk.red(`✖ Status: Failed`));
     }
 
-    console.log(chalk.cyan(`📦 Total Items: ${result.itemsExported + result.itemsFailed}`));
+    console.log(chalk.magenta(`📦 Total Items: ${result.itemsExported + result.itemsFailed}`));
     console.log(chalk.green(`✔ Exported: ${result.itemsExported}`));
 
     if (result.itemsFailed > 0) {
       console.log(chalk.red(`✖ Failed: ${result.itemsFailed}`));
     }
 
-    console.log(chalk.cyan(`🌐 API Calls: ${result.apiCalls}`));
+    console.log(chalk.magenta(`🌐 API Calls: ${result.apiCalls}`));
 
     if (result.cacheHits > 0) {
       const cacheRate = ((result.cacheHits / (result.apiCalls + result.cacheHits)) * 100).toFixed(
