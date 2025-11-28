@@ -1,39 +1,102 @@
-# Source files
+# Development files
 src/
 tests/
-
-# Configuration
-tsconfig.json
-.eslintrc.json
-.prettierrc.json
-.gitignore
-
-# Development
+docs/
+.github/
 .vscode/
 .idea/
-*.swp
 
-# Testing
-coverage/
-coverage-report/
-test-results/
-*.test.ts
-*.spec.ts
+# Configuration files
+tsconfig*.json
 vitest.config.ts
+electron.vite.config.ts
+prettier.config.js
+eslint.config.js
+.eslintrc.json
+.prettierrc.json
 
-# CI/CD
-.github/
+# Build and cache
+.vite/
+.electron-vite/
+node_modules/.vite
+node_modules/.electron-vite
 
-# Documentation (keep README)
-docs/
-ROADMAP.md
-
-# Misc
-*.log
+# IDE and OS
 .DS_Store
 Thumbs.db
-audit-output.json
-github-export/
-social/
+*.swp
+*.swo
+*~
+.env
+.env.local
+.env.*.local
+
+# Git and CI
+.git/
+.gitignore
+.github/
+.gitattributes
+.husky/
+.lint-staged
+
+# Logs and debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+test-analytics-scenarios.js
+coverage/
+coverage-report/
+.nyc_output/
+test-results/
+
+# Build temporary files
+*.tsbuildinfo
+*.tmp
+*.temp
+
+# Private/internal documentation
+CLAUDE.md
+.mcp.json
 .claude/
-tsconfig.test.json
+claude/
+audit-output.json
+
+# Build scripts
+build.ps1
+install-gui.bat
+install-gui.sh
+
+# Development utilities
+Makefile
+webpack.config.js
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Electron preload source (already compiled in out/)
+electron/preload/
+
+# Only keep compiled output, not sources
+electron/main/index.ts
+electron/renderer/src/
+electron/renderer/main.tsx
+electron/renderer/index.html
+
+# VitePress docs build artifacts
+docs/.vitepress/
+
+# Social media content
+social/
+
+# Lock files if using npm (keeping for reproducibility)
+# Note: Uncomment if you want to omit lock files
+# package-lock.json
+# yarn.lock
