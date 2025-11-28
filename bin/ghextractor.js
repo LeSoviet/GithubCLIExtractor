@@ -72,56 +72,26 @@ async function launchGUI() {
 
   // Check if GUI is built (both main and renderer must exist)
   if (!fs.existsSync(mainPath) || !fs.existsSync(rendererPath)) {
-    console.log('\n⚠️  GUI not built yet!\n');
-    console.log('First-time setup needed. Choose:');
-    console.log('  1) Build GUI and launch (takes ~30-60 seconds)');
-    console.log('  2) Use CLI instead (faster)');
-    console.log('  3) Go back to menu\n');
+    console.log('\n⏳ GUI not built yet. Building now...\n');
 
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+    try {
+      const isWindows = process.platform === 'win32';
+      const npmCmd = isWindows ? 'npm.cmd' : 'npm';
 
-    return new Promise((resolve) => {
-      rl.question('Your choice (1/2/3): ', async (answer) => {
-        rl.close();
+      // Show building message
+      console.log('🔨 Building GUI...');
 
-        switch (answer.trim()) {
-          case '1':
-            console.log('\n🔨 Building GUI... This may take a minute.\n');
-            try {
-              const isWindows = process.platform === 'win32';
-              const npmCmd = isWindows ? 'npm.cmd' : 'npm';
-              execSync(`${npmCmd} run build:gui`, {
-                stdio: 'inherit',
-                cwd: join(__dirname, '..')
-              });
-              console.log('\n✅ GUI built successfully!\n');
-              // Now try to launch
-              await launchGUI();
-              resolve();
-            } catch (err) {
-              console.error('\n❌ Build failed. Falling back to CLI.\n');
-              launchCLI();
-              resolve();
-            }
-            break;
-          case '2':
-            console.log('\nLaunching CLI instead...\n');
-            launchCLI();
-            resolve();
-            break;
-          case '3':
-            showMenu();
-            resolve();
-            break;
-          default:
-            console.log('Invalid choice.\n');
-            process.exit(1);
-        }
+      execSync(`${npmCmd} run build:gui`, {
+        stdio: 'inherit',
+        cwd: join(__dirname, '..')
       });
-    });
+
+      console.log('\n✅ GUI built successfully!\n');
+      // Continue to launch GUI
+    } catch (err) {
+      console.error('\n❌ Build failed. Please try again.\n');
+      process.exit(1);
+    }
   }
 
   try {

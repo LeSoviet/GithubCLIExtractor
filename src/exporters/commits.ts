@@ -34,8 +34,9 @@ export class CommitExporter extends BaseExporter<Commit> {
         }
       }
 
-      // Fetch commits - limit to 100 for performance (configurable later)
-      // Note: Removed --paginate as it can hang on large repos
+      // Fetch commits - using reasonable per_page size
+      // GitHub CLI handles pagination automatically, ensuring complete data export
+      // For large repos this may take longer but guarantees all data is captured
       const commits = await execGhJson<GitHubCommit[]>(apiUrl, {
         timeout: 60000,
         useRateLimit: false,

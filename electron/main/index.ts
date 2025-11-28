@@ -31,12 +31,15 @@ function updateTitlebarTheme(darkMode: boolean) {
       x: 13,
       y: 13,
     });
+  } else if (process.platform === 'linux') {
+    // Linux: Set background color for consistency
+    mainWindow.setBackgroundColor(darkMode ? '#1e1e1e' : '#ffffff');
   }
 }
 
 function createWindow() {
   console.log('[Main] Creating browser window...');
-  mainWindow = new BrowserWindow({
+  const windowConfig: Electron.BrowserWindowConstructorOptions = {
     width: 1200,
     height: 800,
     minWidth: 800,
@@ -48,11 +51,17 @@ function createWindow() {
     },
     title: 'GitHub Extractor',
     autoHideMenuBar: false,
-    // Initialize with dark theme
     backgroundColor: isDarkTheme ? '#1e1e1e' : '#ffffff',
-    // Show native frame to support custom titlebar styling
-    frame: true,
-  });
+    frame: false,
+    titleBarStyle: 'hidden',
+  };
+
+  // macOS specific configuration
+  if (process.platform === 'darwin') {
+    windowConfig.titleBarStyle = 'hiddenInset';
+  }
+
+  mainWindow = new BrowserWindow(windowConfig);
 
   // Load the app - use dev server in development, file in production
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -92,6 +101,43 @@ function createWindow() {
   // Listen for theme changes from renderer
   ipcMain.on('theme-changed', (_event, isDark: boolean) => {
     updateTitlebarTheme(isDark);
+  });
+
+  // Window control handlers for custom titlebar
+  ipcMain.on('window-minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    if (mainWindow) mainWindow.close();
+  });
+
+  // Dev tools toggle
+  ipcMain.on('toggle-dev-tools', () => {
+    if (mainWindow) {
+      if (mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+      } else {
+        mainWindow.webContents.openDevTools();
+      }
+    }
+  });
+
+  // Reload app
+  ipcMain.on('reload-app', () => {
+    if (mainWindow) {
+      mainWindow.webContents.reloadIgnoringCache();
+    }
   });
 }
 

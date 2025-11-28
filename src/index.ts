@@ -31,6 +31,10 @@ import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
 import { AnalyticsProcessor } from './analytics/analytics-processor.js';
+import {
+  validateExportedData,
+  displayDataCompletenessStatus,
+} from './analytics/data-completeness-validator.js';
 import { checkForUpdates } from './utils/version-checker.js';
 import type {
   ExportOptions,
@@ -482,21 +486,28 @@ async function executeExport(
           options.repository.name
         );
 
-        const analyticsOptions = {
-          enabled: true,
-          format: options.format,
-          outputPath: options.outputPath,
-          repository: options.repository,
-          offline: true, // Use offline mode - parse exported files
-          exportedDataPath: exportPath,
-        };
+        // Validate data completeness before generating analytics
+        const completeness = await validateExportedData(exportPath);
+        displayDataCompletenessStatus(completeness);
 
-        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
-        await analyticsProcessor.generateReport();
-        showInfo('📊 Analytics report generated automatically');
+        if (completeness.isComplete) {
+          const analyticsOptions = {
+            enabled: true,
+            format: options.format,
+            outputPath: options.outputPath,
+            repository: options.repository,
+            offline: true, // Use offline mode - parse exported files
+            exportedDataPath: exportPath,
+          };
+
+          const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+          await analyticsProcessor.generateReport();
+        } else {
+          showInfo('\u23ed\ufe0f  Analytics report skipped (some data types are missing)');
+        }
       } catch (analyticsError) {
         console.warn(
-          '⚠️  Failed to generate analytics report:',
+          '\u26a0\ufe0f  Failed to generate analytics report:',
           analyticsError instanceof Error ? analyticsError.message : 'Unknown error'
         );
       }
@@ -518,18 +529,27 @@ async function executeExport(
           options.repository.name
         );
 
-        const analyticsOptions = {
-          enabled: true,
-          format: options.format,
-          outputPath: options.outputPath,
-          repository: options.repository,
-          offline: true, // Use offline mode - parse exported files
-          exportedDataPath: exportPath,
-        };
+        // Validate data completeness before generating analytics
+        const completeness = await validateExportedData(exportPath);
+        displayDataCompletenessStatus(completeness);
 
-        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
-        await analyticsProcessor.generateReport();
-        showInfo('📊 Analytics report generated automatically');
+        if (completeness.isComplete) {
+          const analyticsOptions = {
+            enabled: true,
+            format: options.format,
+            outputPath: options.outputPath,
+            repository: options.repository,
+            offline: true, // Use offline mode - parse exported files
+            exportedDataPath: exportPath,
+          };
+
+          const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+          await analyticsProcessor.generateReport();
+        } else {
+          showInfo(
+            '⏭️  Analytics report skipped (use Full Repository Backup for complete analysis)'
+          );
+        }
       } catch (analyticsError) {
         console.warn(
           '⚠️  Failed to generate analytics report:',

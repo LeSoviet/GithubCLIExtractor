@@ -3,6 +3,7 @@ import { execGhJson } from '../utils/exec-gh.js';
 import { sanitizeFilename, decodeUnicode, sanitizeUnicode } from '../utils/sanitize.js';
 import { convertPullRequest } from '../utils/converters.js';
 import { logger } from '../utils/logger.js';
+import { getExportLimit } from '../config/export-limits.js';
 import type { PullRequest } from '../types/index.js';
 
 /**
@@ -17,9 +18,10 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      // Fetch PRs - limit to 500 for better coverage
+      // Fetch PRs using dynamically configured limit for complete data export
+      const prLimit = getExportLimit('prs');
       const prs = await execGhJson<any[]>(
-        `pr list --repo ${repoId} --state all --limit 500 --json number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url`,
+        `pr list --repo ${repoId} --state all --limit ${prLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 

@@ -3,6 +3,7 @@ import { execGhJson } from '../utils/exec-gh.js';
 import { decodeUnicode, sanitizeUnicode } from '../utils/sanitize.js';
 import { convertIssue } from '../utils/converters.js';
 import { logger } from '../utils/logger.js';
+import { getExportLimit } from '../config/export-limits.js';
 import type { Issue } from '../types/index.js';
 
 /**
@@ -17,9 +18,10 @@ export class IssueExporter extends BaseExporter<Issue> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      // Fetch issues - limit to 500 for better coverage
+      // Fetch issues using dynamically configured limit for complete data export
+      const issueLimit = getExportLimit('issues');
       const issues = await execGhJson<any[]>(
-        `issue list --repo ${repoId} --state all --limit 500 --json number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url`,
+        `issue list --repo ${repoId} --state all --limit ${issueLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 

@@ -6,6 +6,7 @@ import RepositorySelector from './components/RepositorySelector';
 import FilterPanel from './components/FilterPanel';
 import ExportPanel from './components/ExportPanel';
 import ProgressDisplay from './components/ProgressDisplay';
+import Titlebar from './components/Titlebar';
 
 interface Repository {
   owner: string;
@@ -208,6 +209,7 @@ function AppContent() {
 
   return (
     <div className="app">
+      <Titlebar />
       <header className="app-header">
         <div className="app-header-content">
           <h1>GitHub Extractor</h1>

@@ -91,11 +91,27 @@ export class AnalyticsProcessor {
       const validationResult = validator.validate(report);
 
       if (!validationResult.valid) {
-        logger.warn(`Report validation found ${validationResult.errors.length} errors`);
+        logger.error(
+          `❌ Report validation FAILED with ${validationResult.errors.length} critical errors`
+        );
         const summary = validator.generateSummary(validationResult);
-        logger.warn(summary);
+        logger.error(summary);
+
+        logger.info('');
+        logger.info('💡 Possible causes:');
+        logger.info('  1. Partial data export (missing Issues, Commits, etc)');
+        logger.info('  2. Date filters applied inconsistently');
+        logger.info('  3. Data inconsistency in markdown files');
+
+        throw new Error(
+          'Report validation failed - cannot generate report with data inconsistencies'
+        );
       } else if (validationResult.warnings.length > 0) {
-        logger.info(`Report validation passed with ${validationResult.warnings.length} warnings`);
+        logger.info(
+          `✅ Report validation passed with ${validationResult.warnings.length} warnings`
+        );
+      } else {
+        logger.success('✅ Report validation passed all checks');
       }
 
       // Generate benchmark comparison
@@ -170,6 +186,7 @@ export class AnalyticsProcessor {
         );
         const mergedCount = parsedPRs.filter((pr: any) => pr.mergedAt).length;
         logger.info(`🔀 Found ${mergedCount} merged PRs`);
+        logger.debug(`  → Activity analytics will use ALL ${parsedPRs.length} PRs for metrics`);
 
         // Convert parsed data to match GitHub API format
         prs = parsedPRs.map((pr: any) => ({
@@ -383,6 +400,7 @@ export class AnalyticsProcessor {
         // In offline mode, use parsed data
         const parser = new MarkdownParser(this.options.exportedDataPath!);
         const parsedPRs = await parser.parsePullRequests();
+        logger.debug(`  → Health analytics parsing PRs: found ${parsedPRs.length} total PRs`);
 
         // Convert parsed PRs to match GitHub API format
         prs = parsedPRs.map((pr: any) => ({
