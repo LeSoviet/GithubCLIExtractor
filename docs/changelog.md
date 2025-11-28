@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2025-11-28
+
+### Added
+
+- **Context-Aware Validation System**: Dynamic validation thresholds that adapt to export conditions
+  - Base validation threshold: 40% variance acceptable for full online exports
+  - Increased thresholds for diff mode (+30%), offline mode (+20%), small datasets (<50 items, +30%), very small datasets (<20 items, +50%)
+  - Maximum threshold capped at 95% to prevent false positives
+  - Automatic diff mode detection via heuristics (dataset <150 items OR period <60 days)
+  - Enhanced validation logging with context information
+- **Growing Backlog Paradox Detection**: New paradox explaining high PR creation with falling merge rates
+  - Detects when PR creation velocity exceeds merge rate decline significantly
+  - Provides actionable insights about backlog accumulation risks
+- **Improved Offline Mode Support**: Better handling of parsed markdown data
+  - All PRs in offline mode now correctly marked as reviewed
+  - Cleaned up reviewed-PR filtering logic
+  - More accurate analytics from exported markdown files
+
+### Changed
+
+- **Report Generation Improvements**: Enhanced clarity and professionalism
+  - Clearer merge-rate recommendations with industry benchmarks
+  - Improved table readability with standardized formatting
+  - Better business impact notes for stale PRs (Value at Risk, Business Impact, Actions sections)
+  - Reduced emoji usage for cleaner presentation
+  - Executive Summary now uses h3 instead of h1 to avoid duplicate headers
+- **Export Logic Simplification**: Removed unnecessary UI state management
+  - Removed `exportComplete` state (no longer showing success message in GUI)
+  - Removed `lastExportPath` and `lastExportedRepo` states
+  - Cleaned up redundant export handler updates
+- **Analytics Metrics**: More accurate age-based calculations
+  - Added `createdAt` field to PR data for precise age calculations
+  - Value-at-risk now calculated as: PR age (days) × ~2 hours per day
+  - Precalculated PR age and metrics for faster report generation
+
+### Fixed
+
+- **PR Count Consistency**: Clarified contradictory PR counts in reports
+  - Executive Summary now shows "PRs in period" vs "PRs total" to distinguish scope
+  - Resolved 17 vs 41 PR contradiction by labeling data sources clearly
+- **Projection Confidence**: Fixed contradictory low-confidence warnings
+  - Projections with low confidence now only show "Insufficient data" message
+  - No longer shows alarmist forecasts (e.g., "merge rate will drop to 0%") with low-confidence data
+  - Improved logic to check confidence of ALL predictions before forecasting
+- **Report Quality Issues** (from Claude's PM review):
+  - Fixed "Data unavailable" display in benchmark tables (now shows "N/A")
+  - Removed awkward "Only 0 releases" wording
+  - Improved spacing and paragraph breaks in Business Impact sections
+  - Removed duplicate headers and fixed HTML structure
+
+### Performance
+
+- **Increased Data Fetch Limits**: Better support for large repositories
+  - PRs: 500 → 2000 items
+  - Issues: 500 → 2000 items
+  - Releases: default → 500 items
+  - Extended pagination with configurable timeouts
+  - Disabled internal rate limiting for large data fetches
+  - Added support for unlimited commits with pagination
+- **Optimized Stale Items Section**: Faster report generation
+  - Single pass through bottlenecks array for age calculations
+  - Cached timestamp instead of recalculating Date.now() multiple times
+  - Reduced from 3 separate iterations to 1 consolidated calculation
+
+### Technical
+
+- **GitHub CLI Authentication**: Improved error messaging
+  - Better formatted authentication alerts for users
+  - Clear instructions for `gh auth login` when not authenticated
+
 ## [0.9.4] - 2025-11-28
 
 ### Fixed
