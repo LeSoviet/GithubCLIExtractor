@@ -12,19 +12,19 @@ export function displayRateLimit(rateLimit: RateLimitInfo): void {
 
   if (percentRemaining > 50) {
     statusColor = chalk.green;
-    statusEmoji = '✅';
+    statusEmoji = '[OK]';
   } else if (percentRemaining > 20) {
     statusColor = chalk.yellow;
-    statusEmoji = '⚠️';
+    statusEmoji = '[WARN]';
   } else {
     statusColor = chalk.red;
-    statusEmoji = '🚨';
+    statusEmoji = '[ALERT]';
   }
 
   const resetTime = rateLimit.reset.toLocaleTimeString();
 
   console.log();
-  console.log(chalk.bold('📊 GitHub API Rate Limit Status:'));
+  console.log(chalk.bold('[INFO] GitHub API Rate Limit Status:'));
   console.log(chalk.gray('─'.repeat(50)));
   console.log(
     statusEmoji +
@@ -33,7 +33,7 @@ export function displayRateLimit(rateLimit: RateLimitInfo): void {
         `${rateLimit.remaining}/${rateLimit.limit} requests remaining (${percentRemaining.toFixed(1)}%)`
       )
   );
-  console.log(chalk.magenta(`🔄 Resets at: ${resetTime}`));
+  console.log(chalk.magenta(`[INFO] Resets at: ${resetTime}`));
   console.log(chalk.gray('─'.repeat(50)));
   console.log();
 }

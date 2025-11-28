@@ -92,13 +92,13 @@ export class AnalyticsProcessor {
 
       if (!validationResult.valid) {
         logger.error(
-          `❌ Report validation FAILED with ${validationResult.errors.length} critical errors`
+          `[FAILED] Report validation FAILED with ${validationResult.errors.length} critical errors`
         );
         const summary = validator.generateSummary(validationResult);
         logger.error(summary);
 
         logger.info('');
-        logger.info('💡 Possible causes:');
+        logger.info('[INFO] Possible causes:');
         logger.info('  1. Partial data export (missing Issues, Commits, etc)');
         logger.info('  2. Date filters applied inconsistently');
         logger.info('  3. Data inconsistency in markdown files');
@@ -108,10 +108,10 @@ export class AnalyticsProcessor {
         );
       } else if (validationResult.warnings.length > 0) {
         logger.info(
-          `✅ Report validation passed with ${validationResult.warnings.length} warnings`
+          `[PASSED] Report validation passed with ${validationResult.warnings.length} warnings`
         );
       } else {
-        logger.success('✅ Report validation passed all checks');
+        logger.success('[PASSED] Report validation passed all checks');
       }
 
       // Generate benchmark comparison
@@ -130,11 +130,11 @@ export class AnalyticsProcessor {
       await this.exportReport(report);
 
       const reportDuration = ((Date.now() - reportStartTime) / 1000).toFixed(2);
-      logger.success(`Analytics report generated in ${reportDuration}s`);
+      logger.success(`[OK] Analytics report generated in ${reportDuration}s`);
       return report;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(`Failed to generate analytics report: ${errorMsg}`);
+      logger.error(`[ERROR] Failed to generate analytics report: ${errorMsg}`);
       throw error;
     }
   }
@@ -176,16 +176,16 @@ export class AnalyticsProcessor {
 
       // Use offline mode if enabled and path is provided
       if (this.options.offline && this.options.exportedDataPath) {
-        logger.info('Using offline mode: parsing exported markdown files...');
+        logger.info('[OFFLINE] Using offline mode: parsing exported markdown files...');
         const parser = new MarkdownParser(this.options.exportedDataPath);
         const parsedPRs = await parser.parsePullRequests();
         const parsedIssues = await parser.parseIssues();
 
         logger.info(
-          `📄 Parsed ${parsedPRs.length} PRs, ${parsedIssues.length} issues from markdown files`
+          `[PARSED] Loaded ${parsedPRs.length} PRs, ${parsedIssues.length} issues from markdown files`
         );
         const mergedCount = parsedPRs.filter((pr: any) => pr.mergedAt).length;
-        logger.info(`🔀 Found ${mergedCount} merged PRs`);
+        logger.info(`[MERGED] Found ${mergedCount} merged PRs`);
         logger.debug(`  → Activity analytics will use ALL ${parsedPRs.length} PRs for metrics`);
 
         // Convert parsed data to match GitHub API format
@@ -208,16 +208,16 @@ export class AnalyticsProcessor {
           author: { login: issue.author },
         }));
       } else {
-        // Fetch PRs for merge rate calculation
+        // Fetch PRs for merge rate calculation with increased limit
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,state,mergedAt,closedAt,createdAt,author,title`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,state,mergedAt,closedAt,createdAt,author,title`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
-        // Fetch issues for resolution time calculation
+        // Fetch issues for resolution time calculation with increased limit
         issues = await execGhJson<any[]>(
-          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,createdAt,closedAt,state,title,author`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,createdAt,closedAt,state,title,author`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
 
@@ -259,9 +259,10 @@ export class AnalyticsProcessor {
       let commits: any[] = [];
       if (!this.options.offline) {
         const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
+        // Use --paginate to fetch ALL commits since the date (not just first 100)
         commits = await execGhJson<any[]>(
-          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100 --paginate`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
         // In offline mode, we can't get commit data from markdown files
@@ -362,9 +363,10 @@ export class AnalyticsProcessor {
 
       if (!this.options.offline) {
         const sinceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
+        // Use --paginate to fetch ALL commits since the date (not just first 100)
         commits = await execGhJson<any[]>(
-          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `api repos/${this.options.repository.owner}/${this.options.repository.name}/commits?since=${sinceDate.toISOString()}&per_page=100 --paginate`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
 
@@ -392,9 +394,10 @@ export class AnalyticsProcessor {
       // Fetch PRs to count PRs and reviews per contributor
       let prs: any[] = [];
       if (!this.options.offline) {
+        // Use increased limit and let GitHub CLI handle pagination
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,author,reviewDecision,createdAt`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,author,reviewDecision,createdAt`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
         // In offline mode, use parsed data
@@ -515,16 +518,16 @@ export class AnalyticsProcessor {
       let prs: any[] = [];
 
       if (!this.options.offline) {
-        // Fetch issues with labels
+        // Fetch issues with labels with increased limit
         issues = await execGhJson<any[]>(
-          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,state,title,author`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `issue list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,labels,createdAt,closedAt,state,title,author`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
-        // Fetch PRs with labels
+        // Fetch PRs with labels with increased limit
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,labels,createdAt,closedAt,title,author`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,labels,createdAt,closedAt,title,author`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
         // In offline mode, use parsed data
@@ -683,10 +686,10 @@ export class AnalyticsProcessor {
       let releases: any[] = [];
 
       if (!this.options.offline) {
-        // Fetch PRs to analyze review coverage and PR size
+        // Fetch PRs to analyze review coverage and PR size with increased limit
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 500 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `pr list --repo ${this.options.repository.owner}/${this.options.repository.name} --state all --limit 2000 --json number,reviewDecision,additions,deletions,createdAt,updatedAt,author,title`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
         // Fetch releases to analyze deployment frequency
@@ -826,13 +829,13 @@ export class AnalyticsProcessor {
 
       // Export as PDF (Markdown → HTML → PDF pipeline)
       if (format === 'pdf') {
-        logger.info('Starting PDF generation pipeline: Markdown → HTML → PDF');
+        logger.info('Starting PDF generation pipeline: Markdown -> HTML -> PDF');
 
         // Step 1: Generate markdown
         const markdownContent = await this.generateMarkdownReport(report);
         const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
         await writeFile(markdownPath, markdownContent, 'utf8');
-        logger.info(`✓ Markdown report generated: ${markdownPath}`);
+        logger.info(`[OK] Markdown report generated: ${markdownPath}`);
 
         // Step 2: Convert markdown to styled HTML
         const htmlGenerator = new HtmlReportGenerator();
@@ -842,13 +845,13 @@ export class AnalyticsProcessor {
         );
         const htmlPath = join(outputPath, `${repoIdentifier}-analytics.html`);
         await writeFile(htmlPath, htmlContent, 'utf8');
-        logger.info(`✓ HTML report generated: ${htmlPath}`);
+        logger.info(`[OK] HTML report generated: ${htmlPath}`);
 
         // Step 3: Convert HTML to PDF using Puppeteer
         const pdfConverter = new PuppeteerPdfConverter();
         const pdfPath = join(outputPath, `${repoIdentifier}-analytics.pdf`);
         await pdfConverter.convertHtmlToPdf(htmlContent, pdfPath);
-        logger.info(`✓ PDF report generated: ${pdfPath}`);
+        logger.info(`[OK] PDF report generated: ${pdfPath}`);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
