@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2025-11-28
+
+### Added
+- **Electron GUI Application**: Complete graphical user interface built with Electron
+  - Interactive repository selector with auto-complete
+  - Real-time export progress tracking with visual feedback
+  - Advanced filtering options (date range, contributor filters)
+  - Multi-format export support (Markdown, JSON, PDF)
+  - Dark/Light theme support with persistent user preferences
+  - Custom cross-platform titlebar with window controls
+  - Dropdown menu for reload and dev tools access
+  - Fully responsive design for various screen sizes
+- **Custom UI Components**: Professional, theme-aware GUI elements
+  - Auto-build and launch system (no manual build required)
+  - Theme-aware scrollbar styling that matches app theme
+  - System menu with reload and dev tools options
+  - Real-time data validation and completeness checks
+- **Data Completeness Validation**: New validation system ensuring consistent reports
+  - `DataCompletenessValidator` checks for required data types
+  - Warnings when partial exports are detected
+  - Prevents analytics generation from incomplete data
+  - User-friendly status messages explaining data gaps
+- **Enhanced Export Limits**: Increased default data capture limits
+  - PRs: 500 → 1000 items
+  - Issues: 500 → 1000 items  
+  - Commits: 100 → 500 items (with auto-pagination)
+  - Centralized limit configuration in `config/export-limits.ts`
+- **Improved Report Consistency**: Reports are now complete and accurate regardless of export type
+  - Full analytics generated for full backups
+  - Partial analytics with warnings for filtered exports
+  - Consistent metrics across all export scenarios
+  - Debug logging to track metric calculations
+
+### Changed
+- **Architecture Refactoring**: Major improvements to codebase organization
+  - Separated renderer UI logic from main process logic
+  - Modular component structure with dedicated CSS files
+  - Clear separation of concerns across CLI and GUI code
+  - Better code organization for maintainability
+- **Export Validation**: Enhanced validator behavior
+  - Changed from warnings to errors on validation failure
+  - Throws exception instead of continuing with inconsistent data
+  - Provides actionable error messages to users
+- **Markdown Parser Extensions**: Added support for parsing additional data types
+  - `parseCommits()` method for extracting commit information
+  - `parseBranches()` method for branch data extraction
+  - Both methods with proper TypeScript interfaces
+
+### Fixed
+- **Windows PowerShell Compatibility**: Fixed titlebar menu button rendering
+  - Menu button (hamburguesa icon) displays correctly on Windows
+  - Reload button SVG fixed with valid path syntax
+  - Dev Tools button properly toggles dev tools open/close
+  - Cross-platform compatibility verified for Windows, macOS, Linux
+- **PDF Report Generation**: Fixed Unicode character handling
+  - Previously failed on Unicode symbols (emojis, special chars)
+  - Now properly handles all Unicode characters in reports
+- **Linux Support**: Verified GUI works on Linux (tested on Nobara/Fedora)
+  - Custom titlebar works cross-platform
+  - Window controls functional on all platforms
+
+### Technical
+- **Electron Integration**:
+  - IPC communication between main and renderer processes
+  - Window controls (minimize, maximize, close)
+  - Dev tools toggle for debugging
+  - File system access for folder selection
+- **Theme System**:
+  - CSS variables for dark/light theme switching
+  - Real-time theme updates without reload
+  - Theme preference persistence
+- **UI/UX Improvements**:
+  - Custom scrollbar styling with theme awareness
+  - Professional icon system with SVGs
+  - Smooth transitions and hover effects
+  - Accessible color contrast ratios
+
+### CI/CD Changes
+- Removed skipped workflow jobs from GitHub Actions
+  - Removed: Performance Benchmarks (placeholder)
+  - Removed: CodeQL Analysis (requires special setup)
+  - Removed: Dependency Review (requires special setup)
+  - Removed: OSSF Scorecard (requires special setup)
+  - Removed: Snyk Security Scan (requires API token)
+  - Reason: These are future enhancements, not needed for current releases
+
 ## [0.9.2] - 2025-11-23
 
 ### Fixed
