@@ -21,7 +21,7 @@ export async function selectRepository(repositories: Repository[]): Promise<Repo
     })),
     {
       value: null,
-      label: '📝 Enter a repository manually',
+      label: '[*] Enter a repository manually',
       hint: 'Type owner/repo (e.g., facebook/react)',
     },
   ];
@@ -78,7 +78,7 @@ export async function selectExportType(): Promise<ExportType | 'batch-export'> {
       },
       {
         value: 'batch-export',
-        label: '🔄 Batch Export',
+        label: '[>>] Batch Export',
         hint: 'Export from multiple repositories',
       },
     ],
@@ -97,8 +97,8 @@ export async function selectExportFormat(): Promise<ExportFormat> {
     message: 'Select output format:',
     options: [
       { value: 'markdown', label: 'Markdown', hint: 'Human-readable .md files' },
-      { value: 'json', label: 'JSON', hint: 'Machine-readable .json files' },
-      { value: 'both', label: 'Both', hint: 'Export in both formats' },
+      { value: 'json', label: 'JSON', hint: 'Machine-readable .json files + report in .md' },
+      { value: 'pdf', label: 'PDF', hint: 'Report as PDF (generated from markdown)' },
     ],
   });
 
@@ -129,22 +129,11 @@ export async function selectOutputPath(defaultPath: string): Promise<string> {
   return outputPath;
 }
 
-export async function confirmAction(message: string): Promise<boolean> {
-  const confirmed = await clack.confirm({
-    message,
-  });
-
-  if (clack.isCancel(confirmed)) {
-    clack.cancel('Operation cancelled');
-    process.exit(0);
-  }
-
-  return confirmed;
-}
-
-export function showError(message: string) {
+function showError(message: string) {
   clack.log.error(chalk.red(message));
 }
+
+export { showError };
 
 export function showSuccess(message: string) {
   clack.log.success(chalk.green(message));
@@ -152,10 +141,6 @@ export function showSuccess(message: string) {
 
 export function showInfo(message: string) {
   clack.log.info(chalk.cyan(message));
-}
-
-export function showWarning(message: string) {
-  clack.log.warn(chalk.yellow(message));
 }
 
 export function showOutro(message: string) {
@@ -176,7 +161,7 @@ export async function selectBatchRepositories(repositories: Repository[]): Promi
     })),
     {
       value: MANUAL_ENTRY,
-      label: '📝 Enter public repository manually',
+      label: '[*] Enter public repository manually',
       hint: 'Add repos not listed above',
     },
   ];

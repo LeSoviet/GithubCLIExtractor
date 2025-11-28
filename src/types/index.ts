@@ -75,7 +75,7 @@ export interface ReleaseAsset {
   downloadUrl: string;
 }
 
-export type ExportFormat = 'markdown' | 'json' | 'both';
+export type ExportFormat = 'markdown' | 'json' | 'pdf';
 
 export type ExportType = 'prs' | 'commits' | 'branches' | 'issues' | 'releases' | 'full-backup';
 

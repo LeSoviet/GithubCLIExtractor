@@ -1,0 +1,21 @@
+@echo off
+
+echo 🚀 Installing GitHub Extractor with GUI...
+echo.
+
+REM Install dependencies
+echo 📦 Installing dependencies...
+call npm install
+
+echo.
+echo ✅ Installation complete!
+echo.
+echo Available commands:
+echo   npm run dev:gui      - Launch GUI application
+echo   npm run dev          - Run CLI (original mode)
+echo   npm run build:gui    - Build GUI for production
+echo.
+echo Quick start: npm run dev:gui
+echo.
+
+pause

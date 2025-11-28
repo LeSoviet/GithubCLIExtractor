@@ -111,12 +111,11 @@ describe('AnalyticsExporterFactory', () => {
       expect(exporters[0]).toBeInstanceOf(JsonAnalyticsExporter);
     });
 
-    it('should create both exporters for both format', () => {
-      const exporters = AnalyticsExporterFactory.createExporters('both');
+    it('should create markdown exporter for pdf format', () => {
+      const exporters = AnalyticsExporterFactory.createExporters('pdf');
 
-      expect(exporters).toHaveLength(2);
+      expect(exporters).toHaveLength(1);
       expect(exporters[0]).toBeInstanceOf(MarkdownAnalyticsExporter);
-      expect(exporters[1]).toBeInstanceOf(JsonAnalyticsExporter);
     });
 
     it('should throw error for unknown format', () => {

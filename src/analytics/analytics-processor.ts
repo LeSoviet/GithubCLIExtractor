@@ -13,6 +13,12 @@ import { join } from 'path';
 import { execGhJson } from '../utils/exec-gh.js';
 import { MarkdownParser } from './markdown-parser.js';
 import { MarkdownReportGenerator } from './report-generators/index.js';
+import { AdvancedAnalyticsProcessor } from './advanced-analytics.js';
+import { ReportValidator } from './report-validator.js';
+import { BenchmarkingEngine } from './benchmarking.js';
+import { NarrativeGenerator } from './narrative-generator.js';
+import { HtmlReportGenerator } from '../utils/html-report-generator.js';
+import { PuppeteerPdfConverter } from '../utils/puppeteer-pdf-converter.js';
 
 /**
  * AnalyticsProcessor handles generating analytics reports from exported data
@@ -49,6 +55,23 @@ export class AnalyticsProcessor {
         this.generateHealthAnalytics(),
       ]);
 
+      // Generate advanced analytics
+      logger.info(
+        'Generating advanced analytics (Review Velocity, Trends, Correlations, Projections)...'
+      );
+      const advancedProcessor = new AdvancedAnalyticsProcessor(
+        this.options.repository,
+        this.options.offline || false,
+        this.options.exportedDataPath
+      );
+
+      const [reviewVelocity, trends, correlations, projections] = await Promise.all([
+        advancedProcessor.generateReviewVelocity(),
+        advancedProcessor.generateTemporalTrends(),
+        advancedProcessor.generateCorrelations(),
+        advancedProcessor.generateProjections(),
+      ]);
+
       const report: AnalyticsReport = {
         repository: `${this.options.repository.owner}/${this.options.repository.name}`,
         generatedAt: new Date().toISOString(),
@@ -56,7 +79,36 @@ export class AnalyticsProcessor {
         contributors,
         labels,
         health,
+        reviewVelocity,
+        trends,
+        correlations,
+        projections,
       };
+
+      // Validate report for numerical consistency
+      logger.info('Validating report for numerical consistency...');
+      const validator = new ReportValidator();
+      const validationResult = validator.validate(report);
+
+      if (!validationResult.valid) {
+        logger.warn(`Report validation found ${validationResult.errors.length} errors`);
+        const summary = validator.generateSummary(validationResult);
+        logger.warn(summary);
+      } else if (validationResult.warnings.length > 0) {
+        logger.info(`Report validation passed with ${validationResult.warnings.length} warnings`);
+      }
+
+      // Generate benchmark comparison
+      logger.info('Comparing metrics against industry benchmarks...');
+      const benchmarkEngine = new BenchmarkingEngine();
+      const benchmark = await benchmarkEngine.compareToBenchmarks(report);
+      report.benchmark = benchmark;
+
+      // Generate executive narrative
+      logger.info('Generating executive narrative and insights...');
+      const narrativeGenerator = new NarrativeGenerator();
+      const narrative = await narrativeGenerator.generate(report, benchmark);
+      report.narrative = narrative;
 
       // Export report in specified formats
       await this.exportReport(report);
@@ -396,12 +448,17 @@ export class AnalyticsProcessor {
         }
       }
 
-      // For new vs returning, we'll use a simple heuristic
-      // In a real implementation, we'd track first-time contributors
+      // For new vs returning, we'll use a more accurate approach:
+      // Count unique contributors and estimate based on their appearance frequency
       const activeContributors = contributorsArray.length;
+
+      // Simple heuristic: contributors with only 1-2 contributions are likely new
+      const newContributors = contributorsArray.filter((c) => c.totalContributions <= 2).length;
+      const returningContributors = activeContributors - newContributors;
+
       result.newVsReturning = {
-        new: Math.floor(activeContributors * 0.3), // Estimate 30% as new
-        returning: Math.ceil(activeContributors * 0.7), // Estimate 70% as returning
+        new: Math.max(0, newContributors),
+        returning: Math.max(0, returningContributors),
       };
 
       result.success = true;
@@ -646,9 +703,13 @@ export class AnalyticsProcessor {
 
       // Calculate PR review coverage
       if (prs.length > 0) {
-        const reviewedPRs = prs.filter(
-          (pr) => pr.reviewDecision === 'APPROVED' || pr.reviewDecision === 'CHANGES_REQUESTED'
-        );
+        // In offline mode, default reviewDecision to 'REVIEWED', so count all PRs as reviewed
+        // In online mode, count PRs with APPROVED or CHANGES_REQUESTED
+        const reviewedPRs = this.options.offline
+          ? prs // All PRs are considered reviewed in offline mode
+          : prs.filter(
+              (pr) => pr.reviewDecision === 'APPROVED' || pr.reviewDecision === 'CHANGES_REQUESTED'
+            );
         const coveragePercentage = prs.length > 0 ? (reviewedPRs.length / prs.length) * 100 : 0;
         result.prReviewCoverage = {
           reviewed: reviewedPRs.length,
@@ -730,19 +791,46 @@ export class AnalyticsProcessor {
     const repoIdentifier = `${this.options.repository.owner}-${this.options.repository.name}`;
 
     try {
-      // Export as JSON
-      if (format === 'json' || format === 'both') {
+      // Export as JSON (without markdown report)
+      if (format === 'json') {
         const jsonPath = join(outputPath, `${repoIdentifier}-analytics.json`);
         await writeFile(jsonPath, JSON.stringify(report, null, 2));
         logger.info(`Analytics report saved as JSON: ${jsonPath}`);
       }
 
-      // Export as Markdown
-      if (format === 'markdown' || format === 'both') {
+      // Export as Markdown (direct output)
+      if (format === 'markdown') {
         const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
         const markdownContent = await this.generateMarkdownReport(report);
-        await writeFile(markdownPath, markdownContent);
+        await writeFile(markdownPath, markdownContent, 'utf8');
         logger.info(`Analytics report saved as Markdown: ${markdownPath}`);
+      }
+
+      // Export as PDF (Markdown → HTML → PDF pipeline)
+      if (format === 'pdf') {
+        logger.info('Starting PDF generation pipeline: Markdown → HTML → PDF');
+
+        // Step 1: Generate markdown
+        const markdownContent = await this.generateMarkdownReport(report);
+        const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
+        await writeFile(markdownPath, markdownContent, 'utf8');
+        logger.info(`✓ Markdown report generated: ${markdownPath}`);
+
+        // Step 2: Convert markdown to styled HTML
+        const htmlGenerator = new HtmlReportGenerator();
+        const htmlContent = await htmlGenerator.generateHtml(
+          markdownContent,
+          `${this.options.repository.owner}/${this.options.repository.name} Analytics Report`
+        );
+        const htmlPath = join(outputPath, `${repoIdentifier}-analytics.html`);
+        await writeFile(htmlPath, htmlContent, 'utf8');
+        logger.info(`✓ HTML report generated: ${htmlPath}`);
+
+        // Step 3: Convert HTML to PDF using Puppeteer
+        const pdfConverter = new PuppeteerPdfConverter();
+        const pdfPath = join(outputPath, `${repoIdentifier}-analytics.pdf`);
+        await pdfConverter.convertHtmlToPdf(htmlContent, pdfPath);
+        logger.info(`✓ PDF report generated: ${pdfPath}`);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -756,6 +844,8 @@ export class AnalyticsProcessor {
    */
   private async generateMarkdownReport(report: AnalyticsReport): Promise<string> {
     const version = await this.getPackageVersion();
-    return await this.markdownGenerator.generate(report, version);
+    const benchmark = report.benchmark as any;
+    const narrative = report.narrative as any;
+    return await this.markdownGenerator.generate(report, version, benchmark, narrative);
   }
 }

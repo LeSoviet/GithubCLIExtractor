@@ -1,9 +1,8 @@
-import { join } from 'path';
 import { BaseExporter } from './base-exporter.js';
 import { execGhJson } from '../utils/exec-gh.js';
-import { writeMarkdown, writeJson, generateFilename } from '../utils/output.js';
-import { decodeUnicode } from '../utils/sanitize.js';
-import { format } from 'date-fns';
+import { decodeUnicode, sanitizeUnicode } from '../utils/sanitize.js';
+import { convertIssue } from '../utils/converters.js';
+import { logger } from '../utils/logger.js';
 import type { Issue } from '../types/index.js';
 
 /**
@@ -24,56 +23,46 @@ export class IssueExporter extends BaseExporter<Issue> {
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
-      let convertedIssues = issues.map((issue) => this.convertIssue(issue));
+      let convertedIssues = issues.map((issue) => convertIssue(issue));
 
-      // Filter by date if diff mode is enabled
-      if (this.isDiffMode()) {
-        const since = this.getDiffModeSince();
-        if (since) {
-          const sinceDate = new Date(since);
-          convertedIssues = convertedIssues.filter((issue) => {
-            const updatedAt = new Date(issue.updatedAt);
-            return updatedAt > sinceDate;
-          });
-          console.log(
-            `[INFO] Diff mode: filtered to ${convertedIssues.length} issues updated since ${sinceDate.toLocaleString()}`
-          );
-        }
-      }
+      // Apply user filter and diff mode filtering
+      convertedIssues = await this.applyFilters(convertedIssues, {
+        authorField: 'author',
+        dateField: 'updatedAt',
+      });
 
       return convertedIssues;
     } catch (error) {
-      throw new Error(`Failed to fetch issues: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      // Log the error but don't throw - allow export to continue with other data types
+      if (errorMsg.includes('disabled issues')) {
+        logger.warn(`Issues export skipped: issues are disabled for ${repoId}`);
+      } else {
+        logger.warn(`Failed to fetch issues: ${errorMsg}`);
+      }
+      return [];
     }
   }
 
   protected async exportItem(issue: Issue): Promise<void> {
-    const shouldExportMarkdown = this.format === 'markdown' || this.format === 'both';
-    const shouldExportJson = this.format === 'json' || this.format === 'both';
-
-    if (shouldExportMarkdown) {
-      const markdown = this.toMarkdown(issue);
-      const filename = generateFilename('ISSUE', issue.number, 'md');
-      const filepath = join(this.outputPath, filename);
-      await writeMarkdown(filepath, markdown);
-    }
-
-    if (shouldExportJson) {
-      const json = this.toJson(issue);
-      const filename = generateFilename('ISSUE', issue.number, 'json');
-      const filepath = join(this.outputPath, filename);
-      await writeJson(filepath, json);
-    }
+    await this.exportItemTemplate(issue, this.outputPath, {
+      prefix: 'ISSUE',
+      identifier: issue.number,
+      toMarkdown: (item) => this.toMarkdown(item),
+      toJson: (item) => this.toJson(item),
+    });
   }
 
   protected toMarkdown(issue: Issue): string {
     const labels =
-      issue.labels.length > 0 ? issue.labels.map((l) => `\`${l}\``).join(', ') : 'None';
+      issue.labels.length > 0
+        ? issue.labels.map((l) => `\`${sanitizeUnicode(l)}\``).join(', ')
+        : 'None';
     const body = issue.body ? decodeUnicode(issue.body) : '*No description provided*';
 
-    let markdown = `# Issue #${issue.number}: ${issue.title}\n\n`;
+    let markdown = `# Issue #${issue.number}: ${sanitizeUnicode(issue.title)}\n\n`;
     markdown += `## Metadata\n\n`;
-    markdown += `- **Author:** ${issue.author}\n`;
+    markdown += `- **Author:** ${sanitizeUnicode(issue.author)}\n`;
     markdown += `- **State:** ${issue.state.toUpperCase()}\n`;
     markdown += `- **Created:** ${this.formatDate(issue.createdAt)}\n`;
     markdown += `- **Updated:** ${this.formatDate(issue.updatedAt)}\n`;
@@ -96,34 +85,5 @@ export class IssueExporter extends BaseExporter<Issue> {
 
   protected getExportType(): string {
     return 'issues';
-  }
-
-  /**
-   * Convert GitHub API Issue to our format
-   */
-  private convertIssue(ghIssue: any): Issue {
-    return {
-      number: ghIssue.number,
-      title: ghIssue.title,
-      body: ghIssue.body || undefined,
-      author: ghIssue.author?.login || 'unknown',
-      state: ghIssue.state as 'open' | 'closed',
-      createdAt: ghIssue.createdAt,
-      updatedAt: ghIssue.updatedAt,
-      closedAt: ghIssue.closedAt || undefined,
-      labels: ghIssue.labels.map((l: any) => l.name),
-      url: ghIssue.url,
-    };
-  }
-
-  /**
-   * Format date for display
-   */
-  private formatDate(dateString: string): string {
-    try {
-      return format(new Date(dateString), 'PPpp');
-    } catch {
-      return dateString;
-    }
   }
 }

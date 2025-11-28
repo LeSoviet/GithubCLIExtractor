@@ -63,7 +63,7 @@ export class JsonAnalyticsExporter implements AnalyticsExporter {
 /**
  * Export format options
  */
-export type ExportFormat = 'markdown' | 'json' | 'both';
+export type ExportFormat = 'markdown' | 'json' | 'pdf';
 
 /**
  * Factory for creating analytics report exporters
@@ -71,7 +71,7 @@ export type ExportFormat = 'markdown' | 'json' | 'both';
 export class AnalyticsExporterFactory {
   /**
    * Create exporter(s) for the specified format
-   * @param format - Export format ('markdown', 'json', or 'both')
+   * @param format - Export format ('markdown' or 'json')
    * @returns Array of exporters matching the requested format
    */
   static createExporters(format: ExportFormat): AnalyticsExporter[] {
@@ -80,8 +80,9 @@ export class AnalyticsExporterFactory {
         return [new MarkdownAnalyticsExporter()];
       case 'json':
         return [new JsonAnalyticsExporter()];
-      case 'both':
-        return [new MarkdownAnalyticsExporter(), new JsonAnalyticsExporter()];
+      case 'pdf':
+        // PDF format: generate markdown, then convert to PDF externally
+        return [new MarkdownAnalyticsExporter()];
       default:
         throw new Error(`Unknown export format: ${format}`);
     }
@@ -91,7 +92,7 @@ export class AnalyticsExporterFactory {
    * Create a single exporter for the specified format
    * @param format - Export format ('markdown' or 'json')
    * @returns Single exporter matching the requested format
-   * @throws Error if 'both' is specified (use createExporters instead)
+   * @throws Error if unsupported format is specified
    */
   static createExporter(format: 'markdown' | 'json'): AnalyticsExporter {
     const exporters = this.createExporters(format);

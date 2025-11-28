@@ -28,7 +28,7 @@ class Logger {
 
   success(message: string, ...args: unknown[]) {
     if (this.level <= LogLevel.INFO) {
-      console.log(chalk.green(`✔ ${message}`), ...args);
+      console.log(chalk.green(`[OK] ${message}`), ...args);
     }
   }
 

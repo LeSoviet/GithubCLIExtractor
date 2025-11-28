@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "es2022",
+    "target": "es2022",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./electron/renderer/src"
+    ]
+  },
+  "include": [
+    "electron/**/*",
+    "electron/renderer/src/types.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "out"
+  ]
+}

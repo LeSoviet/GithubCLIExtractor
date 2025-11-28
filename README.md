@@ -40,6 +40,50 @@ gh auth login
 ghextractor
 ```
 
+You'll see an interactive menu:
+
+```
+🚀 GitHub Extractor
+
+Choose your interface:
+  1) CLI - Command Line Interface (original)
+  2) GUI - Graphical User Interface (with filters)
+  q) Quit
+
+Your choice (1/2/q):
+```
+
+### Direct Access
+
+**Launch CLI directly:**
+```bash
+ghextractor --cli
+# or use any CLI arguments
+ghextractor --help
+ghextractor --version
+```
+
+**Launch GUI directly:**
+```bash
+ghextractor --gui
+```
+
+### GUI Features
+
+The GUI mode includes:
+- 📅 **Date Filters**: Last week, last month, custom range, or all time
+- 👤 **User Filters**: Filter by specific contributors
+- 📦 **Multi-Export**: Select multiple data types at once
+- 📊 **Progress Tracking**: Real-time export progress
+- 🎨 **Modern UI**: Beautiful, user-friendly interface
+
+**Example Use Case**: Your PM asks *"What did Daniel do last week?"*
+1. Run `ghextractor --gui`
+2. Select repository
+3. Choose "Last Week" + "Daniel" from filters
+4. Export PRs, Commits, Issues
+5. Get instant report!
+
 
 
 
@@ -53,8 +97,10 @@ cd GithubCLIExtractor
 npm install
 
 # Development scripts
-npm run dev          # Run in development mode
-npm run build        # Build for production
+npm run dev          # Run CLI in development mode
+npm run dev:gui      # Run GUI in development mode (with hot-reload)
+npm run build        # Build CLI for production
+npm run build:gui    # Build GUI for production
 npm run test         # Run tests
 npm run test:coverage # Run tests with coverage
 ```
@@ -76,6 +122,10 @@ Production Ready - All core features implemented and tested:
 - ✅ Enhanced version command to properly read package version from multiple paths
 - ✅ Improved StateManager to use actual package version instead of hardcoded values
 - ✅ Added comprehensive tests to prevent future regressions
+- ✅ **NEW**: Desktop GUI with Electron + React
+- ✅ **NEW**: Date range filters (last week, last month, custom)
+- ✅ **NEW**: User-specific filters for PRs, commits, and issues
+- ✅ **NEW**: Unified entry point - choose CLI or GUI on launch
 
 ## License
 

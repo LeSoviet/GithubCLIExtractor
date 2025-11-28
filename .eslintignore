@@ -1,2 +1,11 @@
 # Ignore bin directory as it contains simple JS entry point files
 bin/
+dist/
+out/
+node_modules/
+coverage/
+electron/
+electron.vite.config.ts
+
+# Ignore test utility scripts
+test-analytics-scenarios.js

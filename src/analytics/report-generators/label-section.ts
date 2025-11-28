@@ -51,13 +51,34 @@ export class LabelSectionGenerator implements SectionGenerator {
     }
 
     let md = `\n### Label Distribution\n\n`;
-    md += `| Label | Count | Percentage |\n`;
-    md += `|-------|-------|------------|\n`;
 
-    for (const label of report.labels.labelDistribution.slice(0, 10)) {
-      md += `| ${label.label} | ${label.count} | ${label.percentage.toFixed(1)}% |\n`;
+    // Filter out automatic/noise labels
+    const automatedLabels = ['release-notes', 'github_actions', 'dependencies', 'auto'];
+    const meaningfulLabels = report.labels.labelDistribution.filter(
+      (l) => !automatedLabels.some((auto) => l.label.toLowerCase().includes(auto))
+    );
+
+    if (meaningfulLabels.length > 0) {
+      md += `| Label | Count | Percentage |\n`;
+      md += `|-------|-------|------------|\n`;
+
+      for (const label of meaningfulLabels.slice(0, 10)) {
+        md += `| ${label.label} | ${label.count} | ${label.percentage.toFixed(1)}% |\n`;
+      }
+      md += `\n`;
     }
-    md += `\n`;
+
+    // Show automated labels separately if they exist
+    const autoLabels = report.labels.labelDistribution.filter((l) =>
+      automatedLabels.some((auto) => l.label.toLowerCase().includes(auto))
+    );
+
+    if (autoLabels.length > 0) {
+      const totalAuto = autoLabels.reduce((sum, l) => sum + l.count, 0);
+      const totalAll = report.labels.labelDistribution.reduce((sum, l) => sum + l.count, 0);
+      const autoPercentage = (totalAuto / totalAll) * 100;
+      md += `*Note: ${autoPercentage.toFixed(1)}% of labels are automated (${autoLabels.map((l) => l.label).join(', ')}) and excluded from analysis*\n\n`;
+    }
 
     // Insights about labeling quality
     const unlabeledItems = report.labels.labelDistribution

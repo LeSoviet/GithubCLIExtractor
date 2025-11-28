@@ -42,6 +42,7 @@ import type {
   Issue,
   Release,
   ExportFormat,
+  ExportResult,
 } from './types/index.js';
 import type { BatchConfig } from './types/batch.js';
 import type { BaseExporter } from './exporters/base-exporter.js';
@@ -434,7 +435,7 @@ async function main() {
 
     // Create export options
     const exportOptions: ExportOptions = {
-      format: exportFormat as 'markdown' | 'json' | 'both',
+      format: exportFormat as 'markdown' | 'json' | 'pdf',
       outputPath,
       repository: selectedRepo,
       type: exportType,
@@ -573,7 +574,7 @@ async function executeFullBackup(
   diffModeEnabled: boolean = false
 ): Promise<void> {
   const types: SingleExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
-  const results = [];
+  const results: { type: string; result: ExportResult }[] = [];
   const stateManager = getStateManager();
 
   showInfo('Starting full repository backup...');
@@ -622,9 +623,9 @@ async function executeFullBackup(
   progress.stop(); // Ensure spinner is stopped
   console.log();
   showInfo('Full backup summary:');
-  results.forEach(({ type, result }) => {
-    const status = result.success ? '✔' : '✖';
-    console.log(`  ${status} ${type}: ${result.itemsExported} items`);
+  results.forEach(({ type, result: exportResult }) => {
+    const status = exportResult.success ? '✔' : '✖';
+    console.log(`  ${status} ${type}: ${exportResult.itemsExported} items`);
   });
 
   if (diffModeEnabled) {
