@@ -692,10 +692,10 @@ export class AnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
-        // Fetch releases to analyze deployment frequency
+        // Fetch releases to analyze deployment frequency with increased limit
         releases = await execGhJson<any[]>(
-          `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 100 --json tagName,createdAt,publishedAt`,
-          { timeout: 30000, useRateLimit: false, useRetry: false }
+          `release list --repo ${this.options.repository.owner}/${this.options.repository.name} --limit 500 --json tagName,createdAt,publishedAt`,
+          { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
         // In offline mode, use parsed data

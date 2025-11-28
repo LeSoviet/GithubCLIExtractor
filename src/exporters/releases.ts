@@ -17,10 +17,10 @@ export class ReleaseExporter extends BaseExporter<Release> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      // Fetch releases with ONLY available fields - limit to 300 for better coverage
+      // Fetch releases with ONLY available fields - use configured limit
       const releases = await execGhJson<any[]>(
-        `release list --repo ${repoId} --limit 300 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
-        { timeout: 15000, useRateLimit: false, useRetry: false }
+        `release list --repo ${repoId} --limit 500 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
+        { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
       if (!releases || releases.length === 0) {

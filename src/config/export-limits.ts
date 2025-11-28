@@ -16,50 +16,49 @@
 export const EXPORT_LIMITS = {
   /**
    * Pull Requests
-   * Default: 1000 (covers most repos; facebook/react has ~500 merged PRs)
-   * Increased from 500 in v0.9.2
+   * Default: 2000 (comprehensive coverage for most repos)
+   * Increased from 1000 in v0.9.5 for better analytics
    */
-  prs: 1000,
+  prs: 2000,
 
   /**
    * Issues
-   * Default: 1000
-   * Increased from 500 in v0.9.2
+   * Default: 2000 (comprehensive coverage)
+   * Increased from 1000 in v0.9.5 for better analytics
    */
-  issues: 1000,
+  issues: 2000,
 
   /**
    * Commits
-   * Default: 500 (per_page=100 with automatic pagination)
-   * Note: Commits endpoint uses per_page parameter
-   * GitHub CLI will automatically paginate through all results
+   * Uses --paginate for unlimited retrieval with date filters
+   * Will fetch ALL commits since specified date via GitHub API
    */
-  commits: 500,
+  commits: 0, // 0 means unlimited (uses --paginate)
 
   /**
    * Branches
-   * Default: 100
-   * Most repos have < 100 branches
+   * Default: 500 (most repos have < 500 branches)
+   * Increased from 100 in v0.9.5
    */
-  branches: 100,
+  branches: 500,
 
   /**
    * Releases
-   * Default: 100
-   * Most repos have < 100 releases
+   * Default: 500 (comprehensive coverage for most projects)
+   * Increased from 100 in v0.9.5
    */
-  releases: 100,
+  releases: 500,
 } as const;
 
 /**
  * Export limit descriptions for user feedback
  */
 export const LIMIT_DESCRIPTIONS = {
-  prs: `Pull Requests limit: ${EXPORT_LIMITS.prs} items (increased for completeness)`,
-  issues: `Issues limit: ${EXPORT_LIMITS.issues} items (increased for completeness)`,
-  commits: `Commits limit: ${EXPORT_LIMITS.commits} items with automatic pagination`,
-  branches: `Branches limit: ${EXPORT_LIMITS.branches} items (typical repos have fewer)`,
-  releases: `Releases limit: ${EXPORT_LIMITS.releases} items`,
+  prs: `Pull Requests limit: ${EXPORT_LIMITS.prs} items (comprehensive coverage)`,
+  issues: `Issues limit: ${EXPORT_LIMITS.issues} items (comprehensive coverage)`,
+  commits: `Commits: unlimited with date filters (uses GitHub API pagination)`,
+  branches: `Branches limit: ${EXPORT_LIMITS.branches} items (most repos have fewer)`,
+  releases: `Releases limit: ${EXPORT_LIMITS.releases} items (comprehensive coverage)`,
 } as const;
 
 /**

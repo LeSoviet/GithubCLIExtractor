@@ -17,13 +17,13 @@ export class BranchExporter extends BaseExporter<Branch> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      // Fetch branches with aggressive timeout and no retry
+      // Fetch branches with pagination to get all branches
       const branches = await execGhJson<GitHubBranch[]>(
-        `api repos/${repoId}/branches?per_page=20`,
+        `api repos/${repoId}/branches?per_page=100 --paginate`,
         {
-          timeout: 10000, // 10 second timeout
+          timeout: 60000, // Increased timeout for pagination
           useRetry: false, // Disable retry for faster failure
-          useRateLimit: true,
+          useRateLimit: false,
         }
       );
 

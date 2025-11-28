@@ -523,17 +523,17 @@ export class AdvancedAnalyticsProcessor {
 
       if (!this.offline) {
         prs = await execGhJson<any[]>(
-          `pr list --repo ${this.repository.owner}/${this.repository.name} --state all --limit 500 --json mergedAt,createdAt`,
+          `pr list --repo ${this.repository.owner}/${this.repository.name} --state all --limit 2000 --json mergedAt,createdAt`,
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
         issues = await execGhJson<any[]>(
-          `issue list --repo ${this.repository.owner}/${this.repository.name} --state all --limit 500 --json createdAt,closedAt,state`,
+          `issue list --repo ${this.repository.owner}/${this.repository.name} --state all --limit 2000 --json createdAt,closedAt,state`,
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
 
         releases = await execGhJson<any[]>(
-          `release list --repo ${this.repository.owner}/${this.repository.name} --limit 50 --json publishedAt`,
+          `release list --repo ${this.repository.owner}/${this.repository.name} --limit 500 --json publishedAt`,
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
