@@ -158,7 +158,7 @@ jobs:
   benchmark:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: false # Disabled - benchmark tests not yet implemented
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
