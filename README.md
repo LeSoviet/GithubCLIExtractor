@@ -8,8 +8,9 @@ A cross-platform CLI and GUI tool to extract GitHub data (PRs, commits, issues, 
 ## What is it?
 
 GitHub Extractor is a comprehensive tool that extracts and analyzes GitHub repository data including:
+
 - **Data Extraction**: Pull Requests, Issues, Commits, Branches, and Release notes
-- **Multiple Interfaces**: 
+- **Multiple Interfaces**:
   - CLI (Command Line Interface) for automation and scripting
   - GUI (Graphical User Interface) with Electron for interactive use
 - **Export Formats**: Markdown, JSON, and PDF (with charts and visualizations)
@@ -61,6 +62,7 @@ Your choice (1/2/q):
 ### Direct Access
 
 **Launch CLI directly:**
+
 ```bash
 ghextractor --cli
 # or use any CLI arguments
@@ -69,6 +71,7 @@ ghextractor --version
 ```
 
 **Launch GUI directly:**
+
 ```bash
 ghextractor --gui
 ```
@@ -76,22 +79,20 @@ ghextractor --gui
 ### GUI Features
 
 The GUI mode includes:
+
 - 📅 **Date Filters**: Last week, last month, custom range, or all time
 - 👤 **User Filters**: Filter by specific contributors
 - 📦 **Multi-Export**: Select multiple data types at once
 - 📊 **Progress Tracking**: Real-time export progress
 - 🎨 **Modern UI**: Beautiful, user-friendly interface
 
-**Example Use Case**: Your PM asks *"What did Daniel do last week?"*
+**Example Use Case**: Your PM asks _"What did Daniel do last week?"_
+
 1. Run `ghextractor --gui`
 2. Select repository
 3. Choose "Last Week" + "Daniel" from filters
 4. Export PRs, Commits, Issues
 5. Get instant report!
-
-
-
-
 
 ## Development
 
@@ -113,6 +114,7 @@ npm run test:coverage # Run tests with coverage
 ## Status
 
 Production Ready - All core features implemented and tested:
+
 - GitHub CLI integration and authentication
 - Complete data extraction (PRs, Issues, Commits, Branches, Releases)
 - Incremental exports (80-95% faster)
@@ -123,6 +125,7 @@ Production Ready - All core features implemented and tested:
 - Cross-platform support
 
 **Latest (v0.9.3)**:
+
 - ✅ Full Electron GUI with dark/light theme support
 - ✅ Custom cross-platform titlebar with window controls
 - ✅ Theme-aware UI components (scrollbar, buttons, menus)
@@ -135,6 +138,7 @@ Production Ready - All core features implemented and tested:
 - ✅ Production-ready with full documentation
 
 **Planned Enhancements**:
+
 - Performance benchmarking and optimization
 - Advanced security scanning integration
 - Custom report templates and theming
