@@ -2,6 +2,7 @@ import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { safePercentageDelta, safeTimeDelta } from './data-validator.js';
 import { ChartGenerator } from '../../utils/chart-generator.js';
+import { formatPercentage, formatHours, formatDays } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Temporal Trends section of the markdown report
@@ -36,7 +37,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
     // PR Merge Rate
     const mergeRate = trends.prMergeRate;
     const mergeIcon = this.getTrendIcon(mergeRate.trend);
-    md += `| PR Merge Rate | ${mergeRate.current.toFixed(1)}% | ${mergeRate.previous.toFixed(1)}% | ${this.formatDelta(mergeRate.delta)} | ${mergeIcon} ${mergeRate.trend === 'improving' ? 'Improving' : mergeRate.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
+    md += `| PR Merge Rate | ${formatPercentage(mergeRate.current)} | ${formatPercentage(mergeRate.previous)} | ${this.formatDelta(mergeRate.delta)} | ${mergeIcon} ${mergeRate.trend === 'improving' ? 'Improving' : mergeRate.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
 
     // Time to Review
     const timeToReview = trends.timeToReview;
@@ -46,7 +47,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
 
     // Only show if we have valid data
     if (currentReviewHours > 0 && isFinite(currentReviewHours)) {
-      md += `| Time to Review | ${currentReviewHours.toFixed(1)}h | ${previousReviewHours.toFixed(1)}h | ${this.formatTimeDelta(timeToReview.delta)} | ${reviewIcon} ${timeToReview.trend === 'improving' ? 'Improving' : timeToReview.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
+      md += `| Time to Review | ${formatHours(currentReviewHours)} | ${formatHours(previousReviewHours)} | ${this.formatTimeDelta(timeToReview.delta)} | ${reviewIcon} ${timeToReview.trend === 'improving' ? 'Improving' : timeToReview.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
     }
 
     // Active Contributors
@@ -59,7 +60,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
     const resIcon = this.getTrendIcon(resolution.trend);
     const currentDays = resolution.current / 24;
     const previousDays = resolution.previous / 24;
-    md += `| Issue Resolution | ${currentDays.toFixed(1)}d | ${previousDays.toFixed(1)}d | ${this.formatDaysDelta(resolution.delta / 24)} | ${resIcon} ${resolution.trend === 'improving' ? 'Improving' : resolution.trend === 'declining' ? 'Declining' : 'Stable'} |\n\n`;
+    md += `| Issue Resolution | ${formatDays(currentDays)} | ${formatDays(previousDays)} | ${this.formatDaysDelta(resolution.delta / 24)} | ${resIcon} ${resolution.trend === 'improving' ? 'Improving' : resolution.trend === 'declining' ? 'Declining' : 'Stable'} |\n\n`;
 
     return md;
   }
@@ -67,11 +68,11 @@ export class TrendsSectionGenerator implements SectionGenerator {
   private getTrendIcon(trend: 'improving' | 'declining' | 'stable'): string {
     switch (trend) {
       case 'improving':
-        return '📈';
+        return 'Improving';
       case 'declining':
-        return '📉';
+        return 'Declining';
       case 'stable':
-        return '→';
+        return 'Stable';
     }
   }
 
@@ -88,7 +89,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
       return '0d';
     }
     const sign = delta > 0 ? '+' : '';
-    return `${sign}${delta.toFixed(1)}d`;
+    return `${sign}${formatDays(delta)}`;
   }
 
   private formatDeltaInt(delta: number): string {
@@ -116,7 +117,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
     const lastWeek = mergedPRs[mergedPRs.length - 1] || 1;
     const trendPercentageNum = ((lastWeek - firstWeek) / firstWeek) * 100;
     const trendDirection = lastWeek > firstWeek ? 'increasing' : 'decreasing';
-    const insight = `Velocity is ${trendDirection}: ${Math.abs(trendPercentageNum).toFixed(0)}% change over 12 weeks (${firstWeek} → ${lastWeek} PRs/week)`;
+    const insight = `Velocity is ${trendDirection}: ${formatPercentage(Math.abs(trendPercentageNum))} change over 12 weeks (${firstWeek} Stable ${lastWeek} PRs/week)`;
 
     let md = `### 12-Week Velocity Trend\n\n`;
     md += `*${insight}*\n\n`;

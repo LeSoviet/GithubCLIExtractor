@@ -83,6 +83,8 @@ export class AnalyticsProcessor {
         trends,
         correlations,
         projections,
+        isPartialData: this.options.allowPartialAnalytics,
+        missingDataTypes: this.options.missingDataTypes,
       };
 
       // Validate report for numerical consistency with context-aware thresholds
@@ -172,6 +174,43 @@ export class AnalyticsProcessor {
   /**
    * Generate activity analytics
    */
+  /**
+   * Calculate the analysis period from actual data dates
+   * @param items - Array of items with createdAt dates
+   * @returns Object with start and end ISO date strings
+   */
+  private calculateAnalysisPeriod(items: any[]): { start: string; end: string } {
+    if (items.length === 0) {
+      // Fallback to last 30 days if no data
+      return {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString(),
+      };
+    }
+
+    // Find earliest and latest dates from the data
+    const dates = items
+      .filter((item) => item.createdAt)
+      .map((item) => new Date(item.createdAt).getTime())
+      .filter((time) => !isNaN(time));
+
+    if (dates.length === 0) {
+      // Fallback if no valid dates
+      return {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString(),
+      };
+    }
+
+    const earliestDate = Math.min(...dates);
+    const latestDate = Math.max(...dates);
+
+    return {
+      start: new Date(earliestDate).toISOString(),
+      end: new Date(latestDate).toISOString(),
+    };
+  }
+
   private async generateActivityAnalytics(): Promise<ActivityAnalytics> {
     const startTime = Date.now();
     const result: ActivityAnalytics = {
@@ -180,7 +219,7 @@ export class AnalyticsProcessor {
       errors: [],
       repository: `${this.options.repository.owner}/${this.options.repository.name}`,
       period: {
-        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Temporary, will be updated
         end: new Date().toISOString(),
       },
       commitsOverTime: {
@@ -250,6 +289,10 @@ export class AnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
+
+      // Calculate analysis period from actual data
+      const allItems = [...prs, ...issues];
+      result.period = this.calculateAnalysisPeriod(allItems);
 
       // Calculate PR merge rate
       const mergedPRs = prs.filter((pr) => pr.mergedAt);
@@ -734,11 +777,11 @@ export class AnalyticsProcessor {
         const parsedReleases = await parser.parseReleases();
 
         // Convert parsed data to match GitHub API format
-        // Note: All parsed PRs from markdown are considered reviewed in offline mode
-        // because offline mode doesn't have reviewDecision data
+        // Note: Offline mode doesn't have reviewDecision data from markdown files
+        // We leave reviewDecision undefined to indicate data is not available
         prs = parsedPRs.map((pr: any) => ({
           number: pr.number,
-          reviewDecision: 'REVIEWED', // Default to REVIEWED in offline mode (all PRs counted)
+          reviewDecision: undefined, // Not available in markdown files
           additions: 0, // Not available in markdown files
           deletions: 0, // Not available in markdown files
           createdAt: pr.createdAt,
@@ -756,19 +799,24 @@ export class AnalyticsProcessor {
 
       // Calculate PR review coverage
       if (prs.length > 0) {
-        // In offline mode, default reviewDecision to 'REVIEWED', so count all PRs as reviewed
-        // In online mode, count PRs with APPROVED or CHANGES_REQUESTED
-        const reviewedPRs = this.options.offline
-          ? prs // All PRs are considered reviewed in offline mode
-          : prs.filter(
-              (pr) => pr.reviewDecision === 'APPROVED' || pr.reviewDecision === 'CHANGES_REQUESTED'
-            );
+        // In offline mode, review data is not available from markdown files
+        // Count PRs with valid reviewDecision (APPROVED or CHANGES_REQUESTED)
+        const reviewedPRs = prs.filter(
+          (pr) => pr.reviewDecision === 'APPROVED' || pr.reviewDecision === 'CHANGES_REQUESTED'
+        );
         const coveragePercentage = prs.length > 0 ? (reviewedPRs.length / prs.length) * 100 : 0;
         result.prReviewCoverage = {
           reviewed: reviewedPRs.length,
           total: prs.length,
           coveragePercentage: isNaN(coveragePercentage) ? 0 : coveragePercentage,
         };
+
+        // Log warning if in offline mode and no review data available
+        if (this.options.offline && reviewedPRs.length === 0 && prs.length > 0) {
+          logger.warn(
+            '[OFFLINE] Review coverage data not available in markdown files. Coverage reported as 0%.'
+          );
+        }
       }
 
       // Calculate average PR size

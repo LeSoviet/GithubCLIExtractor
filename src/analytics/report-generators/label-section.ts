@@ -1,12 +1,13 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
+import { formatPercentage, formatDecimal } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Label Analytics section of the markdown report
  */
 export class LabelSectionGenerator implements SectionGenerator {
   generate(report: AnalyticsReport): string {
-    let md = `## 🏷️ Label Analytics\n\n`;
+    let md = `## Label Analytics\n\n`;
     md += this.generateIssueVsPRBalance(report);
     md += this.generateIssueLifecycle(report);
     md += this.generateMostCommonLabels(report);
@@ -30,8 +31,8 @@ export class LabelSectionGenerator implements SectionGenerator {
     }
 
     let md = `\n### Issue Lifecycle\n\n`;
-    md += `- **Average Time Open:** ${report.labels.issueLifecycle.averageOpenDays.toFixed(1)} days\n`;
-    md += `- **Median Time Open:** ${report.labels.issueLifecycle.medianOpenDays.toFixed(1)} days\n`;
+    md += `- **Average Time Open:** ${formatDecimal(report.labels.issueLifecycle.averageOpenDays)} days\n`;
+    md += `- **Median Time Open:** ${formatDecimal(report.labels.issueLifecycle.medianOpenDays)} days\n`;
     return md;
   }
 
@@ -63,7 +64,7 @@ export class LabelSectionGenerator implements SectionGenerator {
       md += `|-------|-------|------------|\n`;
 
       for (const label of meaningfulLabels.slice(0, 10)) {
-        md += `| ${label.label} | ${label.count} | ${label.percentage.toFixed(1)}% |\n`;
+        md += `| ${label.label} | ${label.count} | ${formatPercentage(label.percentage)} |\n`;
       }
       md += `\n`;
     }
@@ -77,7 +78,7 @@ export class LabelSectionGenerator implements SectionGenerator {
       const totalAuto = autoLabels.reduce((sum, l) => sum + l.count, 0);
       const totalAll = report.labels.labelDistribution.reduce((sum, l) => sum + l.count, 0);
       const autoPercentage = (totalAuto / totalAll) * 100;
-      md += `*Note: ${autoPercentage.toFixed(1)}% of labels are automated (${autoLabels.map((l) => l.label).join(', ')}) and excluded from analysis*\n\n`;
+      md += `*Note: ${formatPercentage(autoPercentage)} of labels are automated (${autoLabels.map((l) => l.label).join(', ')}) and excluded from analysis*\n\n`;
     }
 
     // Insights about labeling quality
@@ -90,7 +91,7 @@ export class LabelSectionGenerator implements SectionGenerator {
     if (unlabeledItems > 0) {
       const totalItems = report.labels.labelDistribution.reduce((sum, l) => sum + l.count, 0);
       const unlabeledPercentage = (unlabeledItems / totalItems) * 100;
-      md += `**Labeling Quality**: ${unlabeledPercentage.toFixed(1)}% of items are unlabeled, which may impact project organization.\n\n`;
+      md += `**Labeling Quality**: ${formatPercentage(unlabeledPercentage)} of items are unlabeled, which may impact project organization.\n\n`;
     }
 
     return md;

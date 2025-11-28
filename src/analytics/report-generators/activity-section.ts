@@ -1,12 +1,13 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
+import { formatPercentage, formatCount } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Activity Analytics section of the markdown report
  */
 export class ActivitySectionGenerator implements SectionGenerator {
   generate(report: AnalyticsReport): string {
-    let md = `## 📈 Activity Analytics\n\n`;
+    let md = `## Activity Analytics\n\n`;
     md += `**Analysis Period:** ${new Date(report.activity.period.start).toLocaleDateString()} to ${new Date(report.activity.period.end).toLocaleDateString()}\n\n`;
 
     md += this.generatePRMetrics(report);
@@ -19,7 +20,7 @@ export class ActivitySectionGenerator implements SectionGenerator {
 
   private generatePRMetrics(report: AnalyticsReport): string {
     let md = `### Pull Request Metrics\n\n`;
-    md += `- **Merge Rate:** ${report.activity.prMergeRate.mergeRate.toFixed(1)}%\n`;
+    md += `- **Merge Rate:** ${formatPercentage(report.activity.prMergeRate.mergeRate)}\n`;
     md += `- **Merged PRs:** ${report.activity.prMergeRate.merged}\n`;
     md += `- **Closed (not merged):** ${report.activity.prMergeRate.closed}\n`;
     md += `- **Total PRs:** ${report.activity.prMergeRate.merged + report.activity.prMergeRate.closed}\n\n`;
@@ -32,8 +33,8 @@ export class ActivitySectionGenerator implements SectionGenerator {
     if (report.activity.issueResolutionTime.averageHours > 0) {
       const avgDays = (report.activity.issueResolutionTime.averageHours / 24).toFixed(1);
       const medianDays = (report.activity.issueResolutionTime.medianHours / 24).toFixed(1);
-      md += `- **Average Resolution Time:** ${avgDays} days (${report.activity.issueResolutionTime.averageHours.toFixed(0)} hours)\n`;
-      md += `- **Median Resolution Time:** ${medianDays} days (${report.activity.issueResolutionTime.medianHours.toFixed(0)} hours)\n`;
+      md += `- **Average Resolution Time:** ${avgDays} days (${formatCount(report.activity.issueResolutionTime.averageHours)} hours)\n`;
+      md += `- **Median Resolution Time:** ${medianDays} days (${formatCount(report.activity.issueResolutionTime.medianHours)} hours)\n`;
     } else {
       md += `- **Resolution Time:** No closed issues found in analysis period\n`;
     }

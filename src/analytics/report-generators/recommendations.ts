@@ -1,5 +1,6 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
+import { formatPercentage, formatDecimal } from '../../utils/format-helpers.js';
 
 /**
  * Generates insights and recommendations section based on analytics data
@@ -7,7 +8,7 @@ import type { SectionGenerator } from './types.js';
 export class RecommendationsGenerator implements SectionGenerator {
   generate(report: AnalyticsReport): string {
     let md = `\n---\n\n`;
-    md += `## 💡 Insights & Recommendations\n\n`;
+    md += `## Insights & Recommendations\n\n`;
 
     const recommendations: string[] = [];
 
@@ -22,7 +23,7 @@ export class RecommendationsGenerator implements SectionGenerator {
         md += `### ${i + 1}. ${rec}\n\n`;
       });
     } else {
-      md += `✅ All metrics are within healthy ranges. Continue current practices!\n\n`;
+      md += `**All metrics are within healthy ranges. Continue current practices!**\n\n`;
     }
 
     return md;
@@ -34,7 +35,7 @@ export class RecommendationsGenerator implements SectionGenerator {
 
     if (mergeRate < 40) {
       insights.push(
-        `🗔 **Low PR Merge Rate (${mergeRate.toFixed(1)}%)**
+        `**Low PR Merge Rate (${formatPercentage(mergeRate)})**
    - Note: Different projects have different expected merge rates based on quality standards
    - Review PR approval process for blockers
    - Check if PRs are stalling after approval (merge bottleneck vs review bottleneck)
@@ -45,7 +46,7 @@ export class RecommendationsGenerator implements SectionGenerator {
       );
     } else if (mergeRate < 50) {
       insights.push(
-        `🟡 **Moderate PR Merge Rate (${mergeRate.toFixed(1)}%)**
+        `**Moderate PR Merge Rate (${formatPercentage(mergeRate)})**
    - Note: Some high-quality projects maintain merge rates in 25-40% range by design
    - If above benchmark: maintain current standards
    - If trending down: investigate recent process changes
@@ -53,7 +54,7 @@ export class RecommendationsGenerator implements SectionGenerator {
       );
     } else if (mergeRate >= 75) {
       insights.push(
-        `🟢 **Excellent PR Merge Rate (${mergeRate.toFixed(1)}%)**
+        `**Excellent PR Merge Rate (${formatPercentage(mergeRate)})**
    - Indicates healthy contribution workflow
    - Fast decision-making on PRs
    - Maintain current review standards`
@@ -71,7 +72,7 @@ export class RecommendationsGenerator implements SectionGenerator {
 
     if (coverage < 70) {
       insights.push(
-        `🟡 **Review Coverage Needs Improvement (${coverage.toFixed(1)}%)**
+        `**Review Coverage Needs Improvement (${formatPercentage(coverage)})**
    - **Action**: ${unreviewed} PRs were merged without review
    - **Next Steps**:
      - Enable "Require approvals" in branch protection
@@ -80,7 +81,7 @@ export class RecommendationsGenerator implements SectionGenerator {
       );
     } else if (coverage >= 90) {
       insights.push(
-        `🟢 **Excellent Review Coverage (${coverage.toFixed(1)}%)**\n   - Strong code quality practices in place\n   - Continue maintaining current review standards`
+        `**Excellent Review Coverage (${formatPercentage(coverage)})**\n   - Strong code quality practices in place\n   - Continue maintaining current review standards`
       );
     }
 
@@ -95,8 +96,8 @@ export class RecommendationsGenerator implements SectionGenerator {
 
     if (busFactor <= 2) {
       insights.push(
-        `🔴 **Critical: Low Bus Factor (${busFactor})**
-   - **Risk**: ${topContributor?.login || 'Top contributor'} accounts for ${topPercentage.toFixed(1)}% of contributions
+        `**Critical: Low Bus Factor (${busFactor})**
+   - **Risk**: ${topContributor?.login || 'Top contributor'} accounts for ${formatPercentage(topPercentage)} of contributions
    - **Immediate Actions**:
      - Document critical systems and processes
      - Implement pair programming sessions
@@ -105,7 +106,7 @@ export class RecommendationsGenerator implements SectionGenerator {
       );
     } else if (busFactor >= 5) {
       insights.push(
-        `🟢 **Healthy Bus Factor (${busFactor})**\n   - Well-distributed knowledge across team\n   - Low project continuity risk`
+        `**Healthy Bus Factor (${busFactor})**\n   - Well-distributed knowledge across team\n   - Low project continuity risk`
       );
     }
 
@@ -119,7 +120,7 @@ export class RecommendationsGenerator implements SectionGenerator {
       const topPercentage = report.contributors.contributionDistribution[0]?.percentage || 0;
       if (topPercentage > 50) {
         insights.push(
-          `🟡 **High Contribution Concentration (${topPercentage.toFixed(1)}%)**\n   - Top contributor dominates contributions\n   - Risk of knowledge silos\n   - Encourage broader participation`
+          `**High Contribution Concentration (${formatPercentage(topPercentage)})**\n   - Top contributor dominates contributions\n   - Risk of knowledge silos\n   - Encourage broader participation`
         );
       }
     }
@@ -135,11 +136,11 @@ export class RecommendationsGenerator implements SectionGenerator {
 
       if (avgDays > 30) {
         insights.push(
-          `🟡 **Slow Issue Resolution (${avgDays.toFixed(1)} days avg)**\n   - Consider triaging issues more frequently\n   - Set up issue templates for clarity\n   - Prioritize critical issues`
+          `**Slow Issue Resolution (${formatDecimal(avgDays)} days avg)**\n   - Consider triaging issues more frequently\n   - Set up issue templates for clarity\n   - Prioritize critical issues`
         );
       } else if (avgDays < 7) {
         insights.push(
-          `🟢 **Fast Issue Resolution (${avgDays.toFixed(1)} days avg)**\n   - Excellent responsiveness\n   - Maintain current triage process`
+          `**Fast Issue Resolution (${formatDecimal(avgDays)} days avg)**\n   - Excellent responsiveness\n   - Maintain current triage process`
         );
       }
     }

@@ -490,7 +490,11 @@ async function executeExport(
         const completeness = await validateExportedData(exportPath);
         displayDataCompletenessStatus(completeness);
 
-        if (completeness.isComplete) {
+        // Generate analytics if data is complete OR partial analytics is allowed
+        const shouldGenerateAnalytics =
+          completeness.isComplete || completeness.missingTypes.length < 5;
+
+        if (shouldGenerateAnalytics) {
           const analyticsOptions = {
             enabled: true,
             format: options.format,
@@ -498,12 +502,14 @@ async function executeExport(
             repository: options.repository,
             offline: true, // Use offline mode - parse exported files
             exportedDataPath: exportPath,
+            allowPartialAnalytics: !completeness.isComplete,
+            missingDataTypes: completeness.missingTypes,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
           await analyticsProcessor.generateReport();
         } else {
-          showInfo('\u23ed\ufe0f  Analytics report skipped (some data types are missing)');
+          showInfo('\u23ed\ufe0f  Analytics report skipped (insufficient data types)');
         }
       } catch (analyticsError) {
         console.warn(
@@ -533,7 +539,11 @@ async function executeExport(
         const completeness = await validateExportedData(exportPath);
         displayDataCompletenessStatus(completeness);
 
-        if (completeness.isComplete) {
+        // Generate analytics if data is complete OR partial analytics is allowed
+        const shouldGenerateAnalytics =
+          completeness.isComplete || completeness.missingTypes.length < 5;
+
+        if (shouldGenerateAnalytics) {
           const analyticsOptions = {
             enabled: true,
             format: options.format,
@@ -541,6 +551,8 @@ async function executeExport(
             repository: options.repository,
             offline: true, // Use offline mode - parse exported files
             exportedDataPath: exportPath,
+            allowPartialAnalytics: !completeness.isComplete,
+            missingDataTypes: completeness.missingTypes,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);

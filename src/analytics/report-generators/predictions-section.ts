@@ -2,6 +2,7 @@ import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { hasValidData, safeMax } from './data-validator.js';
 import { ChartGenerator } from '../../utils/chart-generator.js';
+import { formatPercentage } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Predictions and Projections section of the markdown report
@@ -30,7 +31,7 @@ export class PredictionsSectionGenerator implements SectionGenerator {
       pred.prsToMerge.confidence !== 'low' && pred.openIssuesAtEndOfPeriod.confidence !== 'low';
 
     if (!hasReliableConfidence) {
-      return `🔴 **Insufficient data for reliable projections.**
+      return ` **Insufficient data for reliable projections.**
 
 Historical patterns are too limited to forecast accurately. Collect more data over time to enable predictive analysis.
 
@@ -52,7 +53,7 @@ Historical patterns are too limited to forecast accurately. Collect more data ov
     if (pred.releasesProbability > 20) {
       const releaseProbability = pred.releasesProbability;
       const releaseConfidenceEmoji =
-        releaseProbability > 70 ? '🟢' : releaseProbability > 40 ? '🟡' : '🔴';
+        releaseProbability > 70 ? '' : releaseProbability > 40 ? '' : '';
       md += `| Probability of release | ${releaseProbability}% | — | ${releaseConfidenceEmoji} ${releaseProbability > 70 ? 'Likely' : releaseProbability > 40 ? 'Possible' : 'Unlikely'} |\n`;
     }
 
@@ -62,7 +63,7 @@ Historical patterns are too limited to forecast accurately. Collect more data ov
     const hasLowConfidence =
       pred.prsToMerge.confidence === 'low' || pred.openIssuesAtEndOfPeriod.confidence === 'low';
     if (hasLowConfidence) {
-      md += `> ⚠️ **Note:** Some predictions have low confidence due to limited historical data. Treat as estimates only.\n\n`;
+      md += `>  **Note:** Some predictions have low confidence due to limited historical data. Treat as estimates only.\n\n`;
     }
 
     return md;
@@ -106,12 +107,12 @@ Historical patterns are too limited to forecast accurately. Collect more data ov
     const percentChange = (change / currentProjected) * 100;
 
     if (Math.abs(percentChange) < 5) {
-      md += `→ **Backlog is projected to remain stable** (±${Math.abs(percentChange).toFixed(0)}%).\n\n`;
+      md += `Stable **Backlog is projected to remain stable** (±${formatPercentage(Math.abs(percentChange))}).\n\n`;
     } else if (percentChange > 5) {
-      md += `⚠️ **At current velocity, backlog will grow ${percentChange.toFixed(0)}% by end of period.**\n`;
-      md += `💡 **Recommendation:** Increase team capacity or reduce issue intake.\n\n`;
+      md += ` **At current velocity, backlog will grow ${formatPercentage(percentChange)} by end of period.**\n`;
+      md += ` **Recommendation:** Increase team capacity or reduce issue intake.\n\n`;
     } else {
-      md += `✅ **Backlog is on track to decrease by ${Math.abs(percentChange).toFixed(0)}% by end of period.**\n\n`;
+      md += ` **Backlog is on track to decrease by ${formatPercentage(Math.abs(percentChange))} by end of period.**\n\n`;
     }
 
     return md;
@@ -120,11 +121,11 @@ Historical patterns are too limited to forecast accurately. Collect more data ov
   private getConfidenceEmoji(confidence: 'high' | 'medium' | 'low'): string {
     switch (confidence) {
       case 'high':
-        return '🟢';
+        return '';
       case 'medium':
-        return '🟡';
+        return '';
       case 'low':
-        return '🔴';
+        return '';
     }
   }
 

@@ -21,6 +21,12 @@ export interface AnalyticsOptions {
 
   /** Path to exported data (required for offline mode) */
   exportedDataPath?: string;
+
+  /** Allow generating analytics with incomplete data (partial exports) */
+  allowPartialAnalytics?: boolean;
+
+  /** List of missing data types (for partial analytics disclaimer) */
+  missingDataTypes?: string[];
 }
 
 /**
@@ -252,4 +258,6 @@ export interface AnalyticsReport {
   projections?: Projections;
   benchmark?: any; // BenchmarkComparison type from benchmarking.ts
   narrative?: any; // ExecutiveNarrative type from narrative-generator.ts
+  isPartialData?: boolean; // Indicates if analytics was generated from incomplete data
+  missingDataTypes?: string[]; // List of missing data types
 }

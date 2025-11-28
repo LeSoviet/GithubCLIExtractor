@@ -2,6 +2,13 @@ import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import type { BenchmarkComparison } from '../benchmarking.js';
 import { ChartGenerator } from '../../utils/chart-generator.js';
+import {
+  formatPercentage,
+  formatHours,
+  formatDays,
+  formatCount,
+  formatDecimal,
+} from '../../utils/format-helpers.js';
 
 /**
  * Generates the Benchmark Comparison section of the markdown report
@@ -30,44 +37,44 @@ export class BenchmarksSectionGenerator implements SectionGenerator {
     // PR Merge Rate
     const mergeEmoji = this.getRatingEmoji(metrics.prMergeRate.rating);
     const mergeInterpretation = this.getPercentileInterpretation(metrics.prMergeRate.percentile);
-    md += `| PR Merge Rate | ${metrics.prMergeRate.value.toFixed(1)}% | ${metrics.prMergeRate.median.toFixed(1)}% | ${mergeEmoji} ${metrics.prMergeRate.percentile}th | ${mergeInterpretation} |\n`;
+    md += `| PR Merge Rate | ${formatPercentage(metrics.prMergeRate.value)} | ${formatPercentage(metrics.prMergeRate.median)} | ${mergeEmoji} ${metrics.prMergeRate.percentile}th | ${mergeInterpretation} |\n`;
 
     // Time to First Review
     const reviewEmoji = this.getRatingEmoji(metrics.timeToFirstReview.rating);
     const reviewDisplay =
       metrics.timeToFirstReview.value > 0
-        ? `${metrics.timeToFirstReview.value.toFixed(1)}h`
+        ? `${formatHours(metrics.timeToFirstReview.value)}`
         : 'N/A';
     const reviewInterpretation = this.getPercentileInterpretation(
       metrics.timeToFirstReview.percentile
     );
-    md += `| Time to First Review | ${reviewDisplay} | ${metrics.timeToFirstReview.median.toFixed(1)}h | ${reviewEmoji} ${metrics.timeToFirstReview.percentile}th | ${reviewInterpretation} |\n`;
+    md += `| Time to First Review | ${reviewDisplay} | ${formatHours(metrics.timeToFirstReview.median)} | ${reviewEmoji} ${metrics.timeToFirstReview.percentile}th | ${reviewInterpretation} |\n`;
 
     // Review Coverage
     const coverageEmoji = this.getRatingEmoji(metrics.reviewCoverage.rating);
     const coverageInterpretation = this.getPercentileInterpretation(
       metrics.reviewCoverage.percentile
     );
-    md += `| Review Coverage | ${metrics.reviewCoverage.value.toFixed(1)}% | ${metrics.reviewCoverage.median.toFixed(1)}% | ${coverageEmoji} ${metrics.reviewCoverage.percentile}th | ${coverageInterpretation} |\n`;
+    md += `| Review Coverage | ${formatPercentage(metrics.reviewCoverage.value)} | ${formatPercentage(metrics.reviewCoverage.median)} | ${coverageEmoji} ${metrics.reviewCoverage.percentile}th | ${coverageInterpretation} |\n`;
 
     // Bus Factor
     const busFactorEmoji = this.getRatingEmoji(metrics.busFactor.rating);
     const busFactorInterpretation = this.getPercentileInterpretation(metrics.busFactor.percentile);
-    md += `| Bus Factor | ${metrics.busFactor.value.toFixed(0)} | ${metrics.busFactor.median.toFixed(0)} | ${busFactorEmoji} ${metrics.busFactor.percentile}th | ${busFactorInterpretation} |\n`;
+    md += `| Bus Factor | ${formatCount(metrics.busFactor.value)} | ${formatCount(metrics.busFactor.median)} | ${busFactorEmoji} ${metrics.busFactor.percentile}th | ${busFactorInterpretation} |\n`;
 
     // Issue Resolution
     const resolutionEmoji = this.getRatingEmoji(metrics.issueResolution.rating);
     const resolutionInterpretation = this.getPercentileInterpretation(
       metrics.issueResolution.percentile
     );
-    md += `| Issue Resolution | ${metrics.issueResolution.value.toFixed(1)}d | ${metrics.issueResolution.median.toFixed(1)}d | ${resolutionEmoji} ${metrics.issueResolution.percentile}th | ${resolutionInterpretation} |\n`;
+    md += `| Issue Resolution | ${formatDays(metrics.issueResolution.value)} | ${formatDays(metrics.issueResolution.median)} | ${resolutionEmoji} ${metrics.issueResolution.percentile}th | ${resolutionInterpretation} |\n`;
 
     // Deployment Frequency
     const deploymentEmoji = this.getRatingEmoji(metrics.deploymentFrequency.rating);
     const deploymentInterpretation = this.getPercentileInterpretation(
       metrics.deploymentFrequency.percentile
     );
-    md += `| Deployment Frequency | ${metrics.deploymentFrequency.value.toFixed(1)}/mo | ${metrics.deploymentFrequency.median.toFixed(1)}/mo | ${deploymentEmoji} ${metrics.deploymentFrequency.percentile}th | ${deploymentInterpretation} |\n\n`;
+    md += `| Deployment Frequency | ${formatDecimal(metrics.deploymentFrequency.value)}/mo | ${formatDecimal(metrics.deploymentFrequency.median)}/mo | ${deploymentEmoji} ${metrics.deploymentFrequency.percentile}th | ${deploymentInterpretation} |\n\n`;
 
     md += `**Overall Score: ${benchmark.overallScore}/100**\n\n`;
 
@@ -143,15 +150,15 @@ export class BenchmarksSectionGenerator implements SectionGenerator {
   private getRatingEmoji(rating: string): string {
     switch (rating) {
       case 'excellent':
-        return '🟢';
+        return '';
       case 'good':
-        return '🟡';
+        return '';
       case 'average':
         return '⚪';
       case 'below_average':
-        return '🟠';
+        return '';
       case 'poor':
-        return '🔴';
+        return '';
       default:
         return '⚪';
     }

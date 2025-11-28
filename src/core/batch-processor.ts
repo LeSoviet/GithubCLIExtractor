@@ -17,10 +17,9 @@ import { showInfo, showSuccess, showError } from '../cli/prompts.js';
 import type { Repository, SingleExportType } from '../types/index.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { AdaptiveRetry } from './adaptive-retry.js';
+import { logger } from '../utils/logger.js';
 
-/**
- * BatchProcessor handles exporting multiple repositories in parallel
- */
 export class BatchProcessor {
   private config: BatchConfig;
   private startTime: number = 0;
@@ -393,5 +392,61 @@ export class BatchProcessor {
       chunks.push(array.slice(i, i + chunkSize));
     }
     return chunks;
+  }
+
+  /**
+   * Execute export with adaptive retry for large datasets
+   * Used when data size exceeds 2000 items to ensure robustness
+   */
+  async executeWithAdaptiveRetry<T>(
+    fn: () => Promise<T>,
+    datasetSize: number,
+    exportType: string
+  ): Promise<T> {
+    const adaptiveRetry = new AdaptiveRetry({
+      datasetSize,
+      onProgress: (processed, total) => {
+        const percent = Math.round((processed / total) * 100);
+        logger.debug(`${exportType}: ${processed}/${total} items (${percent}%)`);
+      },
+      onRetry: (attempt, error, nextDelay) => {
+        logger.warn(
+          `${exportType} retry ${attempt}: ${error.message}. Next attempt in ${nextDelay}ms`
+        );
+      },
+    });
+
+    try {
+      const result = await adaptiveRetry.executeWithPartialRecovery(
+        async () => {
+          const data = await fn();
+          return Array.isArray(data) ? data : [data];
+        },
+        (error) => {
+          // Retry on network errors and timeouts
+          return (
+            error.message.toLowerCase().includes('timeout') ||
+            error.message.toLowerCase().includes('connection') ||
+            error.message.toLowerCase().includes('econnreset') ||
+            error.message.toLowerCase().includes('rate limit')
+          );
+        }
+      );
+
+      if (!result.success && result.data && result.data.length > 0) {
+        logger.warn(
+          `Partial success for ${exportType}: ${result.itemsProcessed}/${datasetSize} items recovered after ${result.totalAttempts} attempts`
+        );
+      }
+
+      if (!result.data) {
+        throw result.errors[result.errors.length - 1] || new Error('Export failed');
+      }
+
+      return result.data as unknown as T;
+    } catch (error) {
+      logger.error(`Failed to export ${exportType}: ${error}`);
+      throw error;
+    }
   }
 }

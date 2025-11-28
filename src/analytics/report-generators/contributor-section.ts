@@ -1,6 +1,7 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { statusHelpers } from './status-helpers.js';
+import { formatPercentage } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Contributor Analytics section of the markdown report
@@ -76,7 +77,7 @@ export class ContributorSectionGenerator implements SectionGenerator {
     if (report.contributors.contributionDistribution.length > 0) {
       const topContributorPercentage =
         report.contributors.contributionDistribution[0]?.percentage || 0;
-      md += `**Concentration of Contributions**: The top contributor accounts for ${topContributorPercentage.toFixed(1)}% of all contributions.\n\n`;
+      md += `**Concentration of Contributions**: The top contributor accounts for ${formatPercentage(topContributorPercentage)} of all contributions.\n\n`;
     }
 
     return md;

@@ -1,6 +1,7 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { statusHelpers } from './status-helpers.js';
+import { formatPercentage } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Code Health Metrics section of the markdown report
@@ -8,7 +9,7 @@ import { statusHelpers } from './status-helpers.js';
 export class HealthSectionGenerator implements SectionGenerator {
   generate(report: AnalyticsReport): string {
     let md = `---\n\n`;
-    md += `## 💊 Code Health Metrics\n\n`;
+    md += `## Code Health Metrics\n\n`;
     md += this.generateReviewProcess(report);
     md += this.generatePRSizeAnalysis(report);
     md += this.generateDeploymentActivity(report);
@@ -17,7 +18,7 @@ export class HealthSectionGenerator implements SectionGenerator {
 
   private generateReviewProcess(report: AnalyticsReport): string {
     let md = `### Review Process\n\n`;
-    md += `- **Review Coverage:** ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)}\n`;
+    md += `- **Review Coverage:** ${formatPercentage(report.health.prReviewCoverage.coveragePercentage)} ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)}\n`;
     md += `- **Reviewed PRs:** ${report.health.prReviewCoverage.reviewed} / ${report.health.prReviewCoverage.total}\n\n`;
     return md;
   }
@@ -35,9 +36,9 @@ export class HealthSectionGenerator implements SectionGenerator {
 
     // Add PR size recommendation
     if (report.health.averagePrSize.total > 500) {
-      md += `> ⚠️ **Consideration:** Average PR size is large (>500 lines). Breaking changes into smaller PRs improves review efficiency.\n\n`;
+      md += `> **Consideration:** Average PR size is large (>500 lines). Breaking changes into smaller PRs can improve review efficiency.\n\n`;
     } else if (report.health.averagePrSize.total < 100) {
-      md += `> 🟢 **Healthy Practice:** Small PR sizes (avg <100 lines) enable faster reviews and reduce merge conflicts.\n\n`;
+      md += `> **Healthy Practice:** Small PR sizes (avg <100 lines) enable faster reviews and reduce merge conflicts.\n\n`;
     }
 
     return md;

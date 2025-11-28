@@ -120,11 +120,11 @@ export class NarrativeSectionGenerator implements SectionGenerator {
   private getConfidenceEmoji(confidence: 'high' | 'medium' | 'low'): string {
     switch (confidence) {
       case 'high':
-        return '🟢';
+        return '';
       case 'medium':
-        return '🟡';
+        return '';
       case 'low':
-        return '🔴';
+        return '';
     }
   }
 }

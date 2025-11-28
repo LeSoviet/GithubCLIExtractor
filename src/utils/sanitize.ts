@@ -35,51 +35,25 @@ export function decodeUnicode(str: string): string {
 
 /**
  * Sanitize Unicode characters that cause PDF encoding issues
- * Replaces problematic emoji and Unicode with ASCII alternatives
+ * Preserves UTF-8 encoding for international characters while handling PDF-problematic chars
  */
 export function sanitizeUnicode(text: string): string {
   if (!text) return '';
 
-  // Map of problematic Unicode characters to safe ASCII replacements
+  // Map of problematic characters that cause PDF rendering issues
+  // Keep this minimal - only characters that actually break PDF encoding
   const replacements: { [key: string]: string } = {
-    // Emojis commonly causing WinAnsi errors
-    '🔀': '[Merged]',
-    '📄': '[Document]',
-    '✅': '[Done]',
-    '❌': '[Failed]',
-    '⏱️': '[Time]',
-    '🔓': '[Open]',
-    '📌': '[Pin]',
-    '💬': '[Comment]',
-    '👤': '[User]',
-    '📊': '[Chart]',
-    '👥': '[Users]',
-    '🏷️': '[Label]',
-    '❤️': '[Health]',
-    '🎯': '[Goal]',
-    '🐛': '[Bug]',
-    '✨': '[Feature]',
-    '🚀': '[Release]',
-    '💡': '[Idea]',
-    // Arrows
+    // PDF-problematic arrows (use ASCII alternatives)
     '→': '->',
     '←': '<-',
-    '↑': '^^',
-    '↓': 'vv',
+    '↑': '^',
+    '↓': 'v',
     '⇒': '=>',
     '⇐': '<=',
-    // Bullets and symbols
+    // Bullets that may cause issues
     '•': '-',
     '○': 'o',
     '●': '*',
-    '■': '[Box]',
-    '□': '[Empty]',
-    // Math and other
-    '±': '+/-',
-    '÷': '/',
-    '×': 'x',
-    '∞': '[Infinity]',
-    '√': '[Root]',
   };
 
   let result = text;
@@ -87,9 +61,10 @@ export function sanitizeUnicode(text: string): string {
     result = result.split(unicode).join(ascii);
   }
 
-  // Remove any remaining characters that are not ASCII printable
+  // Only remove control characters, preserve UTF-8 printable characters
+  // This allows international characters (é, ñ, 中文, etc.) while removing problematic control chars
   // eslint-disable-next-line no-control-regex
-  result = result.replace(/[^\x20-\x7E\n\r\t]/g, '?');
+  result = result.replace(/[\x00-\x1F\x7F]/g, '');
 
   return result;
 }

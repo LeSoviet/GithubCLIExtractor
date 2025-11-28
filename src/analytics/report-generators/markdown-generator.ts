@@ -13,6 +13,7 @@ import { BenchmarksSectionGenerator } from './benchmarks-section.js';
 import { NarrativeSectionGenerator } from './narrative-section.js';
 import { StaleItemsSectionGenerator } from './stale-items-section.js';
 import { statusHelpers } from './status-helpers.js';
+import { formatPercentage } from '../../utils/format-helpers.js';
 
 /**
  * Main class for generating markdown analytics reports
@@ -86,9 +87,20 @@ export class MarkdownReportGenerator {
    */
   private generateHeader(report: AnalyticsReport): string {
     const now = new Date(report.generatedAt);
-    let md = `# 📊 Analytics Report\n\n`;
+    let md = `# Analytics Report\n\n`;
     md += `## ${report.repository}\n\n`;
     md += `**Generated:** ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at ${now.toLocaleTimeString()}\n\n`;
+
+    // Add partial data disclaimer if applicable
+    if (report.isPartialData && report.missingDataTypes && report.missingDataTypes.length > 0) {
+      md += `\n> **NOTE: Partial Analytics Report**\n>\n`;
+      md += `> This report was generated from incomplete data. The following data types are missing:\n>\n`;
+      report.missingDataTypes.forEach((type) => {
+        md += `> - ${type}\n`;
+      });
+      md += `>\n> For comprehensive analytics, export all data types using "Full Repository Backup".\n\n`;
+    }
+
     md += `---\n\n`;
     return md;
   }
@@ -97,7 +109,7 @@ export class MarkdownReportGenerator {
    * Generate executive summary with key metrics
    */
   private generateExecutiveSummary(report: AnalyticsReport): string {
-    let md = `## 📋 Executive Summary
+    let md = `## Executive Summary
 
 `;
     md += `This analytics report provides data-driven insights into repository health, team dynamics, and development velocity.
@@ -115,10 +127,10 @@ export class MarkdownReportGenerator {
 
     const mergeRate = report.activity.prMergeRate.mergeRate;
     const prsInPeriod = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
-    md += `| **PR Merge Rate** | ${mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged}/${prsInPeriod} in period) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
+    md += `| **PR Merge Rate** | ${formatPercentage(mergeRate)} (${report.activity.prMergeRate.merged}/${prsInPeriod} in period) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
 `;
 
-    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed}/${report.health.prReviewCoverage.total} total) | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |
+    md += `| **Review Coverage** | ${formatPercentage(report.health.prReviewCoverage.coveragePercentage)} (${report.health.prReviewCoverage.reviewed}/${report.health.prReviewCoverage.total} total) | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |
 `;
     md += `| **Active Contributors** | ${report.activity.activeContributors[0]?.contributors || 0} | ${statusHelpers.getContributorStatus(report.activity.activeContributors[0]?.contributors || 0)} |
 `;
@@ -131,17 +143,17 @@ export class MarkdownReportGenerator {
     // Add critical alerts section
     const alerts: string[] = [];
     if (report.contributors.busFactor <= 2) {
-      alerts.push('⚠️ **Critical Risk**: Low bus factor indicates project vulnerability');
+      alerts.push('**Critical Risk**: Low bus factor indicates project vulnerability');
     }
     if (mergeRate < 40) {
-      alerts.push('⚠️ **Attention Needed**: Low PR merge rate may indicate process bottlenecks');
+      alerts.push('**Attention Needed**: Low PR merge rate may indicate process bottlenecks');
     }
     if (report.health.prReviewCoverage.coveragePercentage < 50) {
-      alerts.push('⚠️ **Quality Risk**: More than half of PRs lack code review');
+      alerts.push('**Quality Risk**: More than half of PRs lack code review');
     }
 
     if (alerts.length > 0) {
-      md += `### ⚠️ Critical Alerts
+      md += `### Critical Alerts
 
 `;
       alerts.forEach((alert) => (md += `${alert}\n`));

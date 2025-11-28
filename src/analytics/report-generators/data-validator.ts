@@ -3,6 +3,8 @@
  * Prevents NaN, Infinity, and other invalid values from appearing in reports
  */
 
+import { formatPercentage, formatDecimal, formatHours } from '../../utils/format-helpers.js';
+
 /**
  * Safe division with fallback
  */
@@ -26,7 +28,7 @@ export function safePercentage(value: number, total: number): string {
   if (result === undefined || !isFinite(result as number)) {
     return '0%';
   }
-  return `${((result as number) * 100).toFixed(1)}%`;
+  return `${formatPercentage((result as number) * 100)}`;
 }
 
 /**
@@ -40,7 +42,7 @@ export function safeMultiplier(numerator: number, denominator: number): string {
   if (!isFinite(result) || result < 0) {
     return 'Insufficient data';
   }
-  return `${result.toFixed(1)}x`;
+  return `${formatDecimal(result)}x`;
 }
 
 /**
@@ -51,7 +53,7 @@ export function safePercentageDelta(delta: number): string {
     return '0%';
   }
   const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta.toFixed(1)}%`;
+  return `${sign}${formatPercentage(delta)}`;
 }
 
 /**
@@ -62,7 +64,7 @@ export function safeTimeDelta(delta: number): string {
     return '0h';
   }
   const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta.toFixed(1)}h`;
+  return `${sign}${formatHours(delta)}`;
 }
 
 /**

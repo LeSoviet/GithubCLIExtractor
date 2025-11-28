@@ -1,6 +1,7 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { safeMax, safeMultiplier, hasValidData } from './data-validator.js';
+import { formatDecimal, formatHours } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Metric Correlations section of the markdown report
@@ -77,14 +78,14 @@ export class CorrelationsSectionGenerator implements SectionGenerator {
     // Summary table
     md += `| PR Size | Avg Lines | Avg Days | Category |\n`;
     md += `|---------|-----------|----------|----------|\n`;
-    md += `| Small | ${Math.round(data.smallPRs.avgLines)} | ${data.smallPRs.avgDays.toFixed(1)} | 📗 Optimal |\n`;
-    md += `| Medium | ${Math.round(data.mediumPRs.avgLines)} | ${data.mediumPRs.avgDays.toFixed(1)} | 📙 Acceptable |\n`;
-    md += `| Large | ${Math.round(data.largePRs.avgLines)} | ${data.largePRs.avgDays.toFixed(1)} | 📕 Slow |\n\n`;
+    md += `| Small | ${Math.round(data.smallPRs.avgLines)} | ${formatDecimal(data.smallPRs.avgDays)} | 📗 Optimal |\n`;
+    md += `| Medium | ${Math.round(data.mediumPRs.avgLines)} | ${formatDecimal(data.mediumPRs.avgDays)} | 📙 Acceptable |\n`;
+    md += `| Large | ${Math.round(data.largePRs.avgLines)} | ${formatDecimal(data.largePRs.avgDays)} | 📕 Slow |\n\n`;
 
     // Correlation interpretation with safe division
     const speedup = safeMultiplier(data.largePRs.avgDays, data.smallPRs.avgDays);
-    md += `📊 **Finding:** ${speedup === 'Insufficient data' ? 'Insufficient data for comparison.' : `Large PRs take ${speedup} longer to merge than small PRs.`}\n`;
-    md += `💡 **Recommendation:** Encourage smaller, focused PRs to reduce review and merge time.\n\n`;
+    md += ` **Finding:** ${speedup === 'Insufficient data' ? 'Insufficient data for comparison.' : `Large PRs take ${speedup} longer to merge than small PRs.`}\n`;
+    md += ` **Recommendation:** Encourage smaller, focused PRs to reduce review and merge time.\n\n`;
 
     return md;
   }
@@ -128,12 +129,12 @@ export class CorrelationsSectionGenerator implements SectionGenerator {
 
       let impact = '';
       if (isWorstDay) {
-        impact = '⚠️ Slowest';
+        impact = ' Slowest';
       } else if (isBestDay) {
-        impact = '✅ Fastest';
+        impact = ' Fastest';
       }
 
-      const hours = day.avgResponseHours < 1 ? '<1h' : `${day.avgResponseHours.toFixed(1)}h`;
+      const hours = day.avgResponseHours < 1 ? '<1h' : `${formatHours(day.avgResponseHours)}`;
       md += `| ${day.day.padEnd(9)} | ${hours.padStart(12)} | ${String(day.prsSubmitted).padStart(13)} | ${impact} |\n`;
     }
 
@@ -154,8 +155,8 @@ export class CorrelationsSectionGenerator implements SectionGenerator {
 
     const slowdownFactor = safeMultiplier(worstDay.avgResponseHours, bestDay.avgResponseHours);
 
-    md += `⚠️ **Insight:** ${slowdownFactor === 'Insufficient data' ? 'Insufficient data for comparison.' : `${worstDay.day} has ${slowdownFactor} slower response times than ${bestDay.day}.`}\n`;
-    md += `💡 **Recommendation:** Adjust review scheduling and team availability for weekend/off-peak submissions.\n\n`;
+    md += ` **Insight:** ${slowdownFactor === 'Insufficient data' ? 'Insufficient data for comparison.' : `${worstDay.day} has ${slowdownFactor} slower response times than ${bestDay.day}.`}\n`;
+    md += ` **Recommendation:** Adjust review scheduling and team availability for weekend/off-peak submissions.\n\n`;
 
     return md;
   }

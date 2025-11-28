@@ -145,7 +145,7 @@ describe('AnalyticsExporterFactory', () => {
       const exporter = new MarkdownAnalyticsExporter();
       const result = await exporter.export(mockReport, '1.0.0');
 
-      expect(result).toContain('# 📊 Analytics Report');
+      expect(result).toContain('# Analytics Report');
       expect(result).toContain('test/repo');
       expect(result).toContain('Executive Summary');
     });
