@@ -154,19 +154,20 @@ describe('ExportOrchestrator', () => {
       expect(mockExecuteExport).toHaveBeenCalledTimes(1);
     });
 
-    it('should export report in json format', async () => {
-      // Mock the executeExport method to return a successful result
+    it('should export report in pdf format', async () => {
+      // Mock the executeExport method to return successful results
       const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
-      mockExecuteExport.mockResolvedValue({
-        format: 'json',
-        filePath: './test-output/test-repo-analytics.json',
+      mockExecuteExport.mockResolvedValueOnce({
+        format: 'pdf',
+        filePath: './test-output/test-repo-analytics.pdf',
         success: true,
       });
 
       const result = await orchestrator.export(mockReport, {
-        format: 'json',
+        format: 'pdf',
         outputPath: './test-output',
         baseFilename: 'test-repo-analytics',
+        packageVersion: '1.0.0',
       });
 
       expect(result.success).toBe(true);
@@ -174,21 +175,16 @@ describe('ExportOrchestrator', () => {
       expect(result.successfulExports).toBe(1);
       expect(result.failedExports).toBe(0);
       expect(result.exports).toHaveLength(1);
-      expect(result.exports[0].format).toBe('json');
-      expect(result.exports[0].success).toBe(true);
-      expect(result.exports[0].filePath).toContain('test-repo-analytics.json');
+
+      expect(result.exports[0].format).toBe('pdf');
+      expect(result.exports[0].filePath).toContain('.pdf');
 
       expect(mockExecuteExport).toHaveBeenCalledTimes(1);
     });
 
-    it('should export report in both formats', async () => {
+    it('should export report in json format', async () => {
       // Mock the executeExport method to return successful results
       const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
-      mockExecuteExport.mockResolvedValueOnce({
-        format: 'markdown',
-        filePath: './test-output/test-repo-analytics.md',
-        success: true,
-      });
       mockExecuteExport.mockResolvedValueOnce({
         format: 'json',
         filePath: './test-output/test-repo-analytics.json',
@@ -196,31 +192,57 @@ describe('ExportOrchestrator', () => {
       });
 
       const result = await orchestrator.export(mockReport, {
-        format: 'both',
+        format: 'json',
         outputPath: './test-output',
         baseFilename: 'test-repo-analytics',
         packageVersion: '1.0.0',
       });
 
       expect(result.success).toBe(true);
-      expect(result.totalExports).toBe(2);
-      expect(result.successfulExports).toBe(2);
+      expect(result.totalExports).toBe(1);
+      expect(result.successfulExports).toBe(1);
       expect(result.failedExports).toBe(0);
-      expect(result.exports).toHaveLength(2);
+      expect(result.exports).toHaveLength(1);
+
+      expect(result.exports[0].format).toBe('json');
+      expect(result.exports[0].filePath).toContain('.json');
+
+      expect(mockExecuteExport).toHaveBeenCalledTimes(1);
+    });
+
+    it('should export report in pdf format', async () => {
+      // Mock the executeExport method to return successful results
+      const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
+      mockExecuteExport.mockResolvedValueOnce({
+        format: 'markdown',
+        filePath: './test-output/test-repo-analytics.pdf',
+        success: true,
+      });
+
+      const result = await orchestrator.export(mockReport, {
+        format: 'pdf',
+        outputPath: './test-output',
+        baseFilename: 'test-repo-analytics',
+        packageVersion: '1.0.0',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.totalExports).toBe(1);
+      expect(result.successfulExports).toBe(1);
+      expect(result.failedExports).toBe(0);
+      expect(result.exports).toHaveLength(1);
 
       expect(result.exports[0].format).toBe('markdown');
-      expect(result.exports[0].filePath).toContain('.md');
-      expect(result.exports[1].format).toBe('json');
-      expect(result.exports[1].filePath).toContain('.json');
+      expect(result.exports[0].filePath).toContain('.pdf');
 
-      expect(mockExecuteExport).toHaveBeenCalledTimes(2);
+      expect(mockExecuteExport).toHaveBeenCalledTimes(1);
     });
 
     it('should handle directory creation failure', async () => {
       vi.mocked(output.ensureDirectory).mockRejectedValueOnce(new Error('Permission denied'));
 
       const result = await orchestrator.export(mockReport, {
-        format: 'markdown',
+        format: 'pdf',
         outputPath: './test-output',
         baseFilename: 'test-repo-analytics',
       });
@@ -234,37 +256,9 @@ describe('ExportOrchestrator', () => {
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should handle file write failure', async () => {
-      // Mock the executeExport method to return a failed result
+    it('should handle json format failure', async () => {
+      // Mock the executeExport method to return failure
       const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
-      mockExecuteExport.mockResolvedValue({
-        format: 'markdown',
-        filePath: './test-output/test-repo-analytics.md',
-        success: false,
-        error: 'Disk full',
-      });
-
-      const result = await orchestrator.export(mockReport, {
-        format: 'markdown',
-        outputPath: './test-output',
-        baseFilename: 'test-repo-analytics',
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.totalExports).toBe(1);
-      expect(result.successfulExports).toBe(0);
-      expect(result.failedExports).toBe(1);
-      expect(result.exports[0].error).toContain('Disk full');
-    });
-
-    it('should handle partial failure in both format', async () => {
-      // Mock the executeExport method to return one success and one failure
-      const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
-      mockExecuteExport.mockResolvedValueOnce({
-        format: 'markdown',
-        filePath: './test-output/test-repo-analytics.md',
-        success: true,
-      });
       mockExecuteExport.mockResolvedValueOnce({
         format: 'json',
         filePath: './test-output/test-repo-analytics.json',
@@ -273,31 +267,24 @@ describe('ExportOrchestrator', () => {
       });
 
       const result = await orchestrator.export(mockReport, {
-        format: 'both',
+        format: 'json',
         outputPath: './test-output',
         baseFilename: 'test-repo-analytics',
       });
 
       expect(result.success).toBe(false);
-      expect(result.totalExports).toBe(2);
-      expect(result.successfulExports).toBe(1);
+      expect(result.totalExports).toBe(1);
+      expect(result.successfulExports).toBe(0);
       expect(result.failedExports).toBe(1);
 
-      expect(result.exports[0].success).toBe(true);
-      expect(result.exports[0].format).toBe('markdown');
-      expect(result.exports[1].success).toBe(false);
-      expect(result.exports[1].format).toBe('json');
-      expect(result.exports[1].error).toBe('JSON write failed');
+      expect(result.exports[0].success).toBe(false);
+      expect(result.exports[0].format).toBe('json');
+      expect(result.exports[0].error).toBe('JSON write failed');
     });
 
-    it('should use correct file paths', async () => {
+    it('should use correct file path for json', async () => {
       // Mock the executeExport method to return successful results
       const mockExecuteExport = vi.spyOn(orchestrator as any, 'executeExport');
-      mockExecuteExport.mockResolvedValueOnce({
-        format: 'markdown',
-        filePath: './custom/path/my-report.md',
-        success: true,
-      });
       mockExecuteExport.mockResolvedValueOnce({
         format: 'json',
         filePath: './custom/path/my-report.json',
@@ -305,22 +292,14 @@ describe('ExportOrchestrator', () => {
       });
 
       await orchestrator.export(mockReport, {
-        format: 'both',
+        format: 'json',
         outputPath: './custom/path',
         baseFilename: 'my-report',
       });
 
-      expect(mockExecuteExport).toHaveBeenCalledTimes(2);
+      expect(mockExecuteExport).toHaveBeenCalledTimes(1);
       expect(mockExecuteExport).toHaveBeenNthCalledWith(
         1,
-        mockReport,
-        expect.anything(),
-        './custom/path',
-        'my-report',
-        undefined
-      );
-      expect(mockExecuteExport).toHaveBeenNthCalledWith(
-        2,
         mockReport,
         expect.anything(),
         './custom/path',
@@ -336,8 +315,8 @@ describe('ExportOrchestrator', () => {
         success: true,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: true,
           },
         ],
@@ -347,8 +326,8 @@ describe('ExportOrchestrator', () => {
       };
 
       const message = ExportOrchestrator.getSummaryMessage(result);
-      expect(message).toContain('markdown');
-      expect(message).toContain('./output/report.md');
+      expect(message).toContain('pdf');
+      expect(message).toContain('./output/report.pdf');
     });
 
     it('should return success message for multiple exports', () => {
@@ -356,8 +335,8 @@ describe('ExportOrchestrator', () => {
         success: true,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: true,
           },
           {
@@ -373,7 +352,7 @@ describe('ExportOrchestrator', () => {
 
       const message = ExportOrchestrator.getSummaryMessage(result);
       expect(message).toContain('2 formats');
-      expect(message).toContain('markdown');
+      expect(message).toContain('pdf');
       expect(message).toContain('json');
     });
 
@@ -382,8 +361,8 @@ describe('ExportOrchestrator', () => {
         success: false,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: false,
             error: 'Write failed',
           },
@@ -395,7 +374,6 @@ describe('ExportOrchestrator', () => {
 
       const message = ExportOrchestrator.getSummaryMessage(result);
       expect(message).toContain('Export failed');
-      expect(message).toContain('markdown');
       expect(message).toContain('Write failed');
     });
 
@@ -404,10 +382,10 @@ describe('ExportOrchestrator', () => {
         success: false,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: false,
-            error: 'MD write failed',
+            error: 'PDF write failed',
           },
           {
             format: 'json',
@@ -423,7 +401,7 @@ describe('ExportOrchestrator', () => {
 
       const message = ExportOrchestrator.getSummaryMessage(result);
       expect(message).toContain('Export failed');
-      expect(message).toContain('MD write failed');
+      expect(message).toContain('PDF write failed');
       expect(message).toContain('JSON write failed');
     });
   });
@@ -434,8 +412,8 @@ describe('ExportOrchestrator', () => {
         success: true,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: true,
           },
           {
@@ -450,7 +428,7 @@ describe('ExportOrchestrator', () => {
       };
 
       const files = ExportOrchestrator.getExportedFiles(result);
-      expect(files).toEqual(['./output/report.md', './output/report.json']);
+      expect(files).toEqual(['./output/report.pdf', './output/report.json']);
     });
 
     it('should filter out failed exports', () => {
@@ -458,8 +436,8 @@ describe('ExportOrchestrator', () => {
         success: false,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: true,
           },
           {
@@ -475,7 +453,7 @@ describe('ExportOrchestrator', () => {
       };
 
       const files = ExportOrchestrator.getExportedFiles(result);
-      expect(files).toEqual(['./output/report.md']);
+      expect(files).toEqual(['./output/report.pdf']);
     });
 
     it('should return empty array when all exports fail', () => {
@@ -483,8 +461,8 @@ describe('ExportOrchestrator', () => {
         success: false,
         exports: [
           {
-            format: 'markdown',
-            filePath: './output/report.md',
+            format: 'pdf',
+            filePath: './output/report.pdf',
             success: false,
             error: 'Write failed',
           },

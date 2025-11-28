@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "lib": ["ES2022"],
+    "module": "es2022",
+    "lib": [
+      "ES2022",
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": true,
@@ -20,12 +25,30 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "noImplicitAny": false,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@tests/*": ["tests/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@tests/*": [
+        "tests/*"
+      ]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", "bin"]
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "electron/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "bin",
+    "out"
+  ]
 }

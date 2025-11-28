@@ -1,9 +1,17 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
+import type { BenchmarkComparison } from '../benchmarking.js';
+import type { ExecutiveNarrative } from '../narrative-generator.js';
 import { ActivitySectionGenerator } from './activity-section.js';
 import { ContributorSectionGenerator } from './contributor-section.js';
 import { LabelSectionGenerator } from './label-section.js';
 import { HealthSectionGenerator } from './health-section.js';
 import { RecommendationsGenerator } from './recommendations.js';
+import { TrendsSectionGenerator } from './trends-section.js';
+import { CorrelationsSectionGenerator } from './correlations-section.js';
+import { PredictionsSectionGenerator } from './predictions-section.js';
+import { BenchmarksSectionGenerator } from './benchmarks-section.js';
+import { NarrativeSectionGenerator } from './narrative-section.js';
+import { StaleItemsSectionGenerator } from './stale-items-section.js';
 import { statusHelpers } from './status-helpers.js';
 
 /**
@@ -16,6 +24,12 @@ export class MarkdownReportGenerator {
   private labelGenerator: LabelSectionGenerator;
   private healthGenerator: HealthSectionGenerator;
   private recommendationsGenerator: RecommendationsGenerator;
+  private trendsGenerator: TrendsSectionGenerator;
+  private correlationsGenerator: CorrelationsSectionGenerator;
+  private predictionsGenerator: PredictionsSectionGenerator;
+  private benchmarksGenerator: BenchmarksSectionGenerator;
+  private narrativeGenerator: NarrativeSectionGenerator;
+  private staleItemsGenerator: StaleItemsSectionGenerator;
 
   constructor() {
     this.activityGenerator = new ActivitySectionGenerator();
@@ -23,12 +37,23 @@ export class MarkdownReportGenerator {
     this.labelGenerator = new LabelSectionGenerator();
     this.healthGenerator = new HealthSectionGenerator();
     this.recommendationsGenerator = new RecommendationsGenerator();
+    this.trendsGenerator = new TrendsSectionGenerator();
+    this.correlationsGenerator = new CorrelationsSectionGenerator();
+    this.predictionsGenerator = new PredictionsSectionGenerator();
+    this.benchmarksGenerator = new BenchmarksSectionGenerator();
+    this.narrativeGenerator = new NarrativeSectionGenerator();
+    this.staleItemsGenerator = new StaleItemsSectionGenerator();
   }
 
   /**
    * Generate a complete markdown report from analytics data
    */
-  async generate(report: AnalyticsReport, packageVersion: string = 'unknown'): Promise<string> {
+  async generate(
+    report: AnalyticsReport,
+    packageVersion: string = 'unknown',
+    benchmark?: BenchmarkComparison,
+    narrative?: ExecutiveNarrative
+  ): Promise<string> {
     let md = '';
 
     md += this.generateHeader(report);
@@ -37,9 +62,21 @@ export class MarkdownReportGenerator {
     md += this.contributorGenerator.generate(report);
     md += this.labelGenerator.generate(report);
     md += this.healthGenerator.generate(report);
+
+    // Add advanced analytics sections
+    md += this.trendsGenerator.generate(report);
+    md += this.correlationsGenerator.generate(report);
+    md += this.predictionsGenerator.generate(report);
+    md += this.benchmarksGenerator.generate(report, benchmark);
+    md += this.narrativeGenerator.generate(report, narrative);
+    md += this.staleItemsGenerator.generate(report);
+
     md += this.recommendationsGenerator.generate(report);
     md += this.generateMetadata(report, packageVersion);
     md += this.generateSummaryStats(report);
+
+    // Normalize excessive whitespace
+    md = this.normalizeWhitespace(md);
 
     return md;
   }
@@ -60,20 +97,60 @@ export class MarkdownReportGenerator {
    * Generate executive summary with key metrics
    */
   private generateExecutiveSummary(report: AnalyticsReport): string {
-    let md = `## 📋 Executive Summary\n\n`;
-    md += `This comprehensive analytics report analyzes repository activity, contributor patterns, labeling practices, and code health metrics to provide actionable insights.\n\n`;
+    let md = `## 📋 Executive Summary
 
-    // Quick stats box
-    md += `### Key Metrics at a Glance\n\n`;
-    md += `| Metric | Value | Status |\n`;
-    md += `|--------|-------|--------|\n`;
-    md += `| **PR Merge Rate** | ${report.activity.prMergeRate.mergeRate.toFixed(1)}% | ${statusHelpers.getHealthStatus(report.activity.prMergeRate.mergeRate, 50, 80)} |\n`;
-    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |\n`;
-    md += `| **Active Contributors** | ${report.activity.activeContributors[0]?.contributors || 0} | ${statusHelpers.getContributorStatus(report.activity.activeContributors[0]?.contributors || 0)} |\n`;
-    md += `| **Bus Factor** | ${report.contributors.busFactor} | ${statusHelpers.getBusFactorStatus(report.contributors.busFactor)} |\n`;
-    md += `| **Deployment Frequency** | ${report.health.deploymentFrequency.releases} releases | ${statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases)} |\n\n`;
-    md += `---\n\n`;
+`;
+    md += `This analytics report provides data-driven insights into repository health, team dynamics, and development velocity.
 
+`;
+
+    // Quick stats box with cleaner data
+    md += `### Key Metrics Overview
+
+`;
+    md += `| Metric | Current Value | Interpretation |
+`;
+    md += `|--------|--------------|----------------|
+`;
+
+    const mergeRate = report.activity.prMergeRate.mergeRate;
+    const totalPRs = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+    md += `| **PR Merge Rate** | ${mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged}/${totalPRs} PRs) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
+`;
+
+    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed}/${report.health.prReviewCoverage.total}) | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |
+`;
+    md += `| **Active Contributors** | ${report.activity.activeContributors[0]?.contributors || 0} | ${statusHelpers.getContributorStatus(report.activity.activeContributors[0]?.contributors || 0)} |
+`;
+    md += `| **Bus Factor** | ${report.contributors.busFactor} | ${statusHelpers.getBusFactorStatus(report.contributors.busFactor)} |
+`;
+    md += `| **Deployment Frequency** | ${report.health.deploymentFrequency.releases} releases | ${statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases)} |
+
+`;
+
+    // Add critical alerts section
+    const alerts: string[] = [];
+    if (report.contributors.busFactor <= 2) {
+      alerts.push('⚠️ **Critical Risk**: Low bus factor indicates project vulnerability');
+    }
+    if (mergeRate < 40) {
+      alerts.push('⚠️ **Attention Needed**: Low PR merge rate may indicate process bottlenecks');
+    }
+    if (report.health.prReviewCoverage.coveragePercentage < 50) {
+      alerts.push('⚠️ **Quality Risk**: More than half of PRs lack code review');
+    }
+
+    if (alerts.length > 0) {
+      md += `### ⚠️ Critical Alerts
+
+`;
+      alerts.forEach((alert) => (md += `${alert}\n`));
+      md += `\n`;
+    }
+
+    md += `---
+
+`;
     return md;
   }
 
@@ -82,7 +159,7 @@ export class MarkdownReportGenerator {
    */
   private generateMetadata(report: AnalyticsReport, packageVersion: string): string {
     let md = `---\n\n`;
-    md += `## 📚 Report Metadata\n\n`;
+    md += `## Report Metadata\n\n`;
     md += `- **Analysis Duration:**\n`;
     md += `  - Activity: ${(report.activity.duration / 1000).toFixed(2)}s\n`;
     md += `  - Contributors: ${(report.contributors.duration / 1000).toFixed(2)}s\n`;
@@ -94,25 +171,31 @@ export class MarkdownReportGenerator {
   }
 
   /**
-   * Generate summary statistics section
+   * Generate summary statistics section - REMOVED to avoid redundancy
+   * Data is already in Executive Summary
    */
-  private generateSummaryStats(report: AnalyticsReport): string {
-    let md = `\n---\n\n`;
-    md += `## 📊 Summary Stats\n\n`;
-    md += `- **${report.health.prReviewCoverage.total} PRs processed**\n`;
-    md += `- **${report.health.prReviewCoverage.reviewed} PRs reviewed**\n`;
-    md += `- **${report.health.deploymentFrequency.releases} releases**\n`;
-    md += `- **${report.activity.activeContributors[0]?.contributors || 0} active contributors**\n`;
+  private generateSummaryStats(_report: AnalyticsReport): string {
+    // Summary stats removed as they duplicate executive summary
+    // Keeping method for backward compatibility
+    return ``;
+  }
 
-    // Calculate percentage of release-notes labels if available
-    const releaseNotesLabel = report.labels.labelDistribution.find(
-      (l) => l.label === 'release-notes'
-    );
-    if (releaseNotesLabel && report.labels.labelDistribution.length > 0) {
-      const totalLabels = report.labels.labelDistribution.reduce((sum, l) => sum + l.count, 0);
-      const percentage = (releaseNotesLabel.count / totalLabels) * 100;
-      md += `- **${percentage.toFixed(1)}% of labels are release-notes**\n`;
-    }
+  /**
+   * Normalize excessive whitespace in markdown
+   * Prevents large blank sections in PDF output
+   */
+  private normalizeWhitespace(md: string): string {
+    // Replace 4+ consecutive newlines with 2 newlines (max one blank line)
+    md = md.replace(/(\n){4,}/g, '\n\n');
+
+    // Remove trailing whitespace from lines
+    md = md
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .join('\n');
+
+    // Trim leading/trailing whitespace from entire document
+    md = md.trim();
 
     return md;
   }

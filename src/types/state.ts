@@ -18,7 +18,7 @@ export interface ExportState {
   lastCount: number;
 
   /** Export format used */
-  format: 'markdown' | 'json' | 'both';
+  format: 'markdown' | 'json' | 'pdf';
 
   /** Output path used */
   outputPath: string;

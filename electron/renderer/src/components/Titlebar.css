@@ -1,0 +1,194 @@
+.titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    padding: 0 12px;
+    border-bottom: 1px solid;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+}
+
+/* Dark theme */
+.titlebar-dark {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border-bottom-color: #2d2d2d;
+}
+
+/* Light theme */
+.titlebar-light {
+    background-color: #ffffff;
+    color: #1a1a1a;
+    border-bottom-color: #e0e0e0;
+}
+
+.titlebar-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 500;
+    gap: 1rem;
+}
+
+.menu-button-wrapper {
+    position: relative;
+}
+
+.menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s;
+    -webkit-app-region: no-drag;
+}
+
+.menu-button svg {
+    width: 18px;
+    height: 18px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.titlebar-dark .menu-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.titlebar-light .menu-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 32px;
+    left: 0;
+    min-width: 180px;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    -webkit-app-region: no-drag;
+}
+
+.dropdown-menu-dark {
+    background-color: #242a33;
+    border: 1px solid #2d3540;
+}
+
+.dropdown-menu-light {
+    background-color: #ffffff;
+    border: 1px solid #e0e4e9;
+}
+
+.menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    color: inherit;
+    text-align: left;
+    font-family: inherit;
+}
+
+.menu-item:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.menu-item:last-child {
+    border-radius: 0 0 6px 6px;
+}
+
+.dropdown-menu-dark .menu-item:hover {
+    background-color: #2d3540;
+}
+
+.dropdown-menu-light .menu-item:hover {
+    background-color: #f5f7fa;
+}
+
+.menu-item svg {
+    width: 16px;
+    height: 16px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.titlebar-title {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.titlebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    -webkit-app-region: no-drag;
+}
+
+.titlebar-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s;
+}
+
+.titlebar-button svg {
+    width: 16px;
+    height: 16px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Dark theme button hover */
+.titlebar-dark .titlebar-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.titlebar-dark .titlebar-button.close:hover {
+    background-color: #e81828;
+    color: #ffffff;
+}
+
+/* Light theme button hover */
+.titlebar-light .titlebar-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.titlebar-light .titlebar-button.close:hover {
+    background-color: #e81828;
+    color: #ffffff;
+}
+
+.titlebar-button.close:hover {
+    background-color: #e81828;
+    color: #ffffff;
+}
+
+/* macOS-specific styles */
+@supports (-webkit-app-region: drag) {
+    .titlebar-controls {
+        margin-left: 8px;
+    }
+}

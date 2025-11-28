@@ -39,6 +39,24 @@ export interface ParsedRelease {
 }
 
 /**
+ * Parsed Commit data from exported markdown files
+ */
+export interface ParsedCommit {
+  hash: string;
+  author: string;
+  createdAt: string;
+  title: string;
+}
+
+/**
+ * Parsed Branch data from exported markdown files
+ */
+export interface ParsedBranch {
+  name: string;
+  isProtected: boolean;
+}
+
+/**
  * Parse exported markdown files to extract analytics data
  */
 export class MarkdownParser {
@@ -224,6 +242,134 @@ export class MarkdownParser {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       logger.debug(`Exception parsing Issue: ${errorMsg}`);
+      return null;
+    }
+  }
+
+  /**
+   * Parse all Commit markdown files
+   */
+  async parseCommits(): Promise<ParsedCommit[]> {
+    try {
+      const commitDir = join(this.exportPath, 'Commits');
+      const files = await readdir(commitDir);
+      const commitFiles = files.filter((f) => f.startsWith('COMMIT-') && f.endsWith('.md'));
+
+      const commits: ParsedCommit[] = [];
+      for (const file of commitFiles) {
+        try {
+          const content = await readFile(join(commitDir, file), 'utf-8');
+          const commit = this.parseCommit(content);
+          if (commit) {
+            commits.push(commit);
+          }
+        } catch (error) {
+          // Skip files that can't be parsed
+          logger.debug(`Failed to parse Commit file: ${file}`);
+        }
+      }
+
+      return commits;
+    } catch (error) {
+      logger.debug('No Commits directory found');
+      return [];
+    }
+  }
+
+  /**
+   * Parse a single Commit markdown file
+   */
+  private parseCommit(content: string): ParsedCommit | null {
+    try {
+      // Extract hash from title (e.g., "# Commit abc123: Title")
+      const titleMatch = content.match(/^# Commit\s+([a-f0-9]+):\s*(.+?)\s*$/m);
+      if (!titleMatch) return null;
+
+      const hash = titleMatch[1];
+      const title = titleMatch[2].trim();
+
+      // FIX: Improved Regex for the Metadata section.
+      const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
+      if (!metadataMatch) return null;
+
+      const metadata = metadataMatch[1];
+
+      // Extract fields
+      const author = this.extractField(metadata, 'Author');
+      const createdAt = this.extractField(metadata, 'Created');
+
+      if (!author || !createdAt) {
+        return null;
+      }
+
+      return {
+        hash,
+        author,
+        createdAt,
+        title,
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Parse all Branch markdown files
+   */
+  async parseBranches(): Promise<ParsedBranch[]> {
+    try {
+      const branchDir = join(this.exportPath, 'Branches');
+      const files = await readdir(branchDir);
+      const branchFiles = files.filter((f) => f.startsWith('BRANCH-') && f.endsWith('.md'));
+
+      const branches: ParsedBranch[] = [];
+      for (const file of branchFiles) {
+        try {
+          const content = await readFile(join(branchDir, file), 'utf-8');
+          const branch = this.parseBranch(content);
+          if (branch) {
+            branches.push(branch);
+          }
+        } catch (error) {
+          // Skip files that can't be parsed
+          logger.debug(`Failed to parse Branch file: ${file}`);
+        }
+      }
+
+      return branches;
+    } catch (error) {
+      logger.debug('No Branches directory found');
+      return [];
+    }
+  }
+
+  /**
+   * Parse a single Branch markdown file
+   */
+  private parseBranch(content: string): ParsedBranch | null {
+    try {
+      // Extract name from title (e.g., "# Branch main")
+      const titleMatch = content.match(/^# Branch\s+(.+?)\s*$/m);
+      if (!titleMatch) return null;
+
+      const name = titleMatch[1];
+
+      // FIX: Improved Regex for the Metadata section.
+      const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
+      if (!metadataMatch) return null;
+
+      const metadata = metadataMatch[1];
+
+      // Extract protected status
+      const protected_str = this.extractField(metadata, 'Protected');
+      const isProtected =
+        protected_str.toLowerCase() === 'true' || protected_str.toLowerCase() === 'yes';
+
+      return {
+        name,
+        isProtected,
+      };
+    } catch (error) {
       return null;
     }
   }

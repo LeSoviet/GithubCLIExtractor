@@ -1,9 +1,7 @@
-import { join } from 'path';
 import { BaseExporter } from './base-exporter.js';
 import { execGhJson } from '../utils/exec-gh.js';
-import { writeMarkdown, writeJson } from '../utils/output.js';
-import { sanitizeFilename } from '../utils/sanitize.js';
-import { format } from 'date-fns';
+import { sanitizeFilename, sanitizeUnicode } from '../utils/sanitize.js';
+import { convertBranch } from '../utils/converters.js';
 import type { Branch } from '../types/index.js';
 import type { GitHubBranch } from '../types/github.js';
 
@@ -19,8 +17,6 @@ export class BranchExporter extends BaseExporter<Branch> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      console.log('[INFO] Fetching branches (timeout: 10s)...');
-
       // Fetch branches with aggressive timeout and no retry
       const branches = await execGhJson<GitHubBranch[]>(
         `api repos/${repoId}/branches?per_page=20`,
@@ -32,14 +28,11 @@ export class BranchExporter extends BaseExporter<Branch> {
       );
 
       if (!branches || !Array.isArray(branches)) {
-        console.log('[INFO] No branches found or invalid response');
         return [];
       }
 
-      console.log(`[INFO] Successfully fetched ${branches.length} branches`);
-
       // Convert branches
-      let convertedBranches = branches.map((branch) => this.convertBranch(branch));
+      let convertedBranches = branches.map((branch) => convertBranch(branch));
 
       // Filter by last commit date if diff mode is enabled
       if (this.isDiffMode()) {
@@ -50,54 +43,36 @@ export class BranchExporter extends BaseExporter<Branch> {
             const lastCommitDate = new Date(branch.lastCommit.date);
             return lastCommitDate > sinceDate;
           });
-          console.log(
-            `[INFO] Diff mode: filtered to ${convertedBranches.length} branches with commits since ${sinceDate.toLocaleString()}`
-          );
         }
       }
 
       return convertedBranches;
     } catch (error: any) {
-      console.log(`[INFO] Branch fetch failed: ${error.message} - Skipping branches`);
       return []; // Return empty array to allow export to continue
     }
   }
 
   protected async exportItem(branch: Branch): Promise<void> {
-    try {
-      const shouldExportMarkdown = this.format === 'markdown' || this.format === 'both';
-      const shouldExportJson = this.format === 'json' || this.format === 'both';
-
-      const safeName = sanitizeFilename(branch.name);
-
-      if (shouldExportMarkdown) {
-        const markdown = this.toMarkdown(branch);
-        const filepath = join(this.outputPath, `BRANCH-${safeName}.md`);
-        await writeMarkdown(filepath, markdown);
-      }
-
-      if (shouldExportJson) {
-        const json = this.toJson(branch);
-        const filepath = join(this.outputPath, `BRANCH-${safeName}.json`);
-        await writeJson(filepath, json);
-      }
-    } catch (error: any) {
-      console.log(`[INFO] Failed to export branch ${branch.name}: ${error.message}`);
-      throw error;
-    }
+    const safeName = sanitizeFilename(branch.name);
+    await this.exportItemTemplate(branch, this.outputPath, {
+      prefix: 'BRANCH',
+      identifier: safeName,
+      toMarkdown: (item) => this.toMarkdown(item),
+      toJson: (item) => this.toJson(item),
+    });
   }
 
   protected toMarkdown(branch: Branch): string {
-    const protection = branch.isProtected ? '🔒 Protected' : '🔓 Not Protected';
+    const protection = branch.isProtected ? '[Protected]' : '[Not Protected]';
 
-    let markdown = `# Branch: ${branch.name}\n\n`;
+    let markdown = `# Branch: ${sanitizeUnicode(branch.name)}\n\n`;
     markdown += `## Metadata\n\n`;
-    markdown += `- **Name:** \`${branch.name}\`\n`;
+    markdown += `- **Name:** \`${sanitizeUnicode(branch.name)}\`\n`;
     markdown += `- **Protection:** ${protection}\n\n`;
 
     markdown += `## Last Commit\n\n`;
     markdown += `- **SHA:** \`${branch.lastCommit.sha.substring(0, 7)}\`\n`;
-    markdown += `- **Message:** ${branch.lastCommit.message.split('\n')[0]}\n`;
+    markdown += `- **Message:** ${sanitizeUnicode(branch.lastCommit.message.split('\n')[0])}\n`;
     markdown += `- **Date:** ${this.formatDate(branch.lastCommit.date)}\n\n`;
 
     markdown += `---\n\n`;
@@ -108,25 +83,5 @@ export class BranchExporter extends BaseExporter<Branch> {
 
   protected getExportType(): string {
     return 'branches';
-  }
-
-  private convertBranch(ghBranch: GitHubBranch): Branch {
-    return {
-      name: ghBranch.name || 'unknown',
-      lastCommit: {
-        sha: ghBranch.commit?.sha || '',
-        message: ghBranch.commit?.commit?.message || 'No message',
-        date: ghBranch.commit?.commit?.author?.date || new Date().toISOString(),
-      },
-      isProtected: ghBranch.protected || false,
-    };
-  }
-
-  private formatDate(dateString: string): string {
-    try {
-      return format(new Date(dateString), 'PPpp');
-    } catch {
-      return dateString;
-    }
   }
 }

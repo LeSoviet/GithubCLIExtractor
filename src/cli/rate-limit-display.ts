@@ -33,7 +33,7 @@ export function displayRateLimit(rateLimit: RateLimitInfo): void {
         `${rateLimit.remaining}/${rateLimit.limit} requests remaining (${percentRemaining.toFixed(1)}%)`
       )
   );
-  console.log(chalk.cyan(`🔄 Resets at: ${resetTime}`));
+  console.log(chalk.magenta(`🔄 Resets at: ${resetTime}`));
   console.log(chalk.gray('─'.repeat(50)));
   console.log();
 }

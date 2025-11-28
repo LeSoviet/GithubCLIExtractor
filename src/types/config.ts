@@ -1,5 +1,5 @@
 export interface ConfigFile {
-  defaultFormat?: 'markdown' | 'json' | 'both';
+  defaultFormat?: 'markdown' | 'json';
   outputPath?: string;
   excludeLabels?: string[];
   excludeBranches?: string[];

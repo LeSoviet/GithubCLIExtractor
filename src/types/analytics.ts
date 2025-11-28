@@ -8,7 +8,7 @@ export interface AnalyticsOptions {
   enabled: boolean;
 
   /** Output format for analytics report */
-  format: 'markdown' | 'json' | 'both';
+  format: 'markdown' | 'json' | 'pdf';
 
   /** Output path for analytics report */
   outputPath: string;
@@ -131,6 +131,111 @@ export interface HealthAnalytics extends AnalyticsResult {
 }
 
 /**
+ * Review Velocity metrics - Time-based review analytics
+ */
+export interface ReviewVelocityAnalytics extends AnalyticsResult {
+  repository: string;
+  timeToFirstReview: {
+    averageHours: number;
+    medianHours: number;
+    p90Hours: number; // 90th percentile
+  };
+  timeToApproval: {
+    averageDays: number;
+    medianDays: number;
+  };
+  reviewBottlenecks: {
+    prNumber: number;
+    title: string;
+    author: string;
+    waitingDays: number;
+    status: 'no_reviewers' | 'changes_requested' | 'approved_pending_merge' | 'unknown';
+  }[];
+  reviewerLoadDistribution: {
+    reviewer: string;
+    reviewCount: number;
+    averageResponseHours: number;
+  }[];
+}
+
+/**
+ * Temporal trends - Compare current period with previous period
+ */
+export interface TemporalTrends extends AnalyticsResult {
+  repository: string;
+  comparisonPeriod: {
+    current: { start: string; end: string };
+    previous: { start: string; end: string };
+  };
+  trends: {
+    prMergeRate: {
+      current: number;
+      previous: number;
+      delta: number;
+      trend: 'improving' | 'declining' | 'stable';
+    };
+    timeToReview: {
+      current: number;
+      previous: number;
+      delta: number;
+      trend: 'improving' | 'declining' | 'stable';
+    };
+    activeContributors: {
+      current: number;
+      previous: number;
+      delta: number;
+      trend: 'improving' | 'declining' | 'stable';
+    };
+    issueResolution: {
+      current: number;
+      previous: number;
+      delta: number;
+      trend: 'improving' | 'declining' | 'stable';
+    };
+  };
+  velocityTrend: {
+    week: number;
+    mergedPRs: number;
+  }[];
+}
+
+/**
+ * Correlations between metrics
+ */
+export interface MetricCorrelations extends AnalyticsResult {
+  repository: string;
+  prSizeVsTimeToMerge: {
+    smallPRs: { avgLines: number; avgDays: number };
+    mediumPRs: { avgLines: number; avgDays: number };
+    largePRs: { avgLines: number; avgDays: number };
+    correlation: number; // correlation coefficient
+  };
+  dayOfWeekImpact: {
+    day: string;
+    avgResponseHours: number;
+    prsSubmitted: number;
+  }[];
+}
+
+/**
+ * Projections and predictions
+ */
+export interface Projections extends AnalyticsResult {
+  repository: string;
+  projectionPeriod: string; // e.g., "next 30 days"
+  predictions: {
+    prsToMerge: { min: number; max: number; confidence: 'high' | 'medium' | 'low' };
+    openIssuesAtEndOfPeriod: { min: number; max: number; confidence: 'high' | 'medium' | 'low' };
+    releasesProbability: number; // percentage
+  };
+  backlogBurndown: {
+    week: number;
+    projectedOpenIssues: number;
+    idealOpenIssues: number;
+  }[];
+}
+
+/**
  * Combined analytics report
  */
 export interface AnalyticsReport {
@@ -140,4 +245,10 @@ export interface AnalyticsReport {
   contributors: ContributorAnalytics;
   labels: LabelAnalytics;
   health: HealthAnalytics;
+  reviewVelocity?: ReviewVelocityAnalytics;
+  trends?: TemporalTrends;
+  correlations?: MetricCorrelations;
+  projections?: Projections;
+  benchmark?: any; // BenchmarkComparison type from benchmarking.ts
+  narrative?: any; // ExecutiveNarrative type from narrative-generator.ts
 }

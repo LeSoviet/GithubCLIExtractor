@@ -1,8 +1,8 @@
-import { join } from 'path';
 import { BaseExporter } from './base-exporter.js';
 import { execGhJson } from '../utils/exec-gh.js';
-import { writeMarkdown, writeJson, generateFilename } from '../utils/output.js';
-import { format } from 'date-fns';
+import { sanitizeUnicode } from '../utils/sanitize.js';
+import { convertCommit } from '../utils/converters.js';
+import { logger } from '../utils/logger.js';
 import type { Commit } from '../types/index.js';
 import type { GitHubCommit } from '../types/github.js';
 
@@ -20,19 +20,23 @@ export class CommitExporter extends BaseExporter<Commit> {
 
       // Build API URL with optional since parameter for diff mode
       let apiUrl = `api repos/${repoId}/commits?per_page=100`;
+
+      // Add author filter if specified
+      if (this.isUserFilterEnabled()) {
+        apiUrl += `&author=${encodeURIComponent(this.getUserFilter()!)}`;
+      }
+
       if (this.isDiffMode()) {
         const since = this.getDiffModeSince();
         if (since) {
           // GitHub API accepts ISO 8601 format for since parameter
           apiUrl += `&since=${encodeURIComponent(since)}`;
-          console.log(
-            `[INFO] Diff mode: fetching commits since ${new Date(since).toLocaleString()}`
-          );
         }
       }
 
-      // Fetch commits - limit to 100 for performance (configurable later)
-      // Note: Removed --paginate as it can hang on large repos
+      // Fetch commits - using reasonable per_page size
+      // GitHub CLI handles pagination automatically, ensuring complete data export
+      // For large repos this may take longer but guarantees all data is captured
       const commits = await execGhJson<GitHubCommit[]>(apiUrl, {
         timeout: 60000,
         useRateLimit: false,
@@ -40,48 +44,37 @@ export class CommitExporter extends BaseExporter<Commit> {
       });
 
       // Convert to our format
-      const convertedCommits = commits.map((commit) => this.convertCommit(commit));
-
-      if (this.isDiffMode()) {
-        console.log(`[INFO] Diff mode: fetched ${convertedCommits.length} commits`);
-      }
+      const convertedCommits = commits.map((commit) => convertCommit(commit));
 
       return convertedCommits;
     } catch (error) {
-      throw new Error(`Failed to fetch commits: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.warn(`Failed to fetch commits: ${errorMsg}`);
+      return [];
     }
   }
 
   protected async exportItem(commit: Commit): Promise<void> {
-    const shouldExportMarkdown = this.format === 'markdown' || this.format === 'both';
-    const shouldExportJson = this.format === 'json' || this.format === 'both';
-
-    if (shouldExportMarkdown) {
-      const markdown = this.toMarkdown(commit);
-      const filename = generateFilename('COMMIT', commit.sha.substring(0, 7), 'md');
-      const filepath = join(this.outputPath, filename);
-      await writeMarkdown(filepath, markdown);
-    }
-
-    if (shouldExportJson) {
-      const json = this.toJson(commit);
-      const filename = generateFilename('COMMIT', commit.sha.substring(0, 7), 'json');
-      const filepath = join(this.outputPath, filename);
-      await writeJson(filepath, json);
-    }
+    const shortSha = commit.sha.substring(0, 7);
+    await this.exportItemTemplate(commit, this.outputPath, {
+      prefix: 'COMMIT',
+      identifier: shortSha,
+      toMarkdown: (item) => this.toMarkdown(item),
+      toJson: (item) => this.toJson(item),
+    });
   }
 
   protected toMarkdown(commit: Commit): string {
     const shortSha = commit.sha.substring(0, 7);
     const filesChanged =
       commit.filesChanged.length > 0
-        ? commit.filesChanged.map((f) => `- \`${f}\``).join('\n')
+        ? commit.filesChanged.map((f) => `- \`${sanitizeUnicode(f)}\``).join('\n')
         : '*No files information available*';
 
     let markdown = `# Commit ${shortSha}\n\n`;
     markdown += `## Metadata\n\n`;
     markdown += `- **SHA:** \`${commit.sha}\`\n`;
-    markdown += `- **Author:** ${commit.author} (${commit.authorEmail})\n`;
+    markdown += `- **Author:** ${sanitizeUnicode(commit.author)} (${sanitizeUnicode(commit.authorEmail)})\n`;
     markdown += `- **Date:** ${this.formatDate(commit.date)}\n`;
     markdown += `- **URL:** ${commit.url}\n\n`;
 
@@ -93,7 +86,11 @@ export class CommitExporter extends BaseExporter<Commit> {
     }
 
     markdown += `## Commit Message\n\n`;
-    markdown += `\`\`\`\n${commit.message}\n\`\`\`\n\n`;
+    markdown += `\`\`\`
+${sanitizeUnicode(commit.message)}
+\`\`\`
+
+`;
 
     markdown += `## Files Changed\n\n`;
     markdown += `${filesChanged}\n\n`;
@@ -106,33 +103,5 @@ export class CommitExporter extends BaseExporter<Commit> {
 
   protected getExportType(): string {
     return 'commits';
-  }
-
-  /**
-   * Convert GitHub API Commit to our format
-   */
-  private convertCommit(ghCommit: GitHubCommit): Commit {
-    return {
-      sha: ghCommit.sha,
-      message: ghCommit.commit.message,
-      author: ghCommit.commit.author.name,
-      authorEmail: ghCommit.commit.author.email,
-      date: ghCommit.commit.author.date,
-      filesChanged: ghCommit.files?.map((f) => f.filename) || [],
-      additions: ghCommit.stats?.additions || 0,
-      deletions: ghCommit.stats?.deletions || 0,
-      url: ghCommit.html_url,
-    };
-  }
-
-  /**
-   * Format date for display
-   */
-  private formatDate(dateString: string): string {
-    try {
-      return format(new Date(dateString), 'PPpp');
-    } catch {
-      return dateString;
-    }
   }
 }

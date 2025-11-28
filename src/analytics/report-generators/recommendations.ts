@@ -48,14 +48,21 @@ export class RecommendationsGenerator implements SectionGenerator {
   private generateReviewCoverageInsights(report: AnalyticsReport): string[] {
     const insights: string[] = [];
     const coverage = report.health.prReviewCoverage.coveragePercentage;
+    const unreviewed =
+      report.health.prReviewCoverage.total - report.health.prReviewCoverage.reviewed;
 
     if (coverage < 70) {
       insights.push(
-        `🟡 **Review Coverage Needs Improvement (${coverage.toFixed(1)}%)**\n   - Encourage more code reviews\n   - Consider requiring reviews before merge\n   - Set up CODEOWNERS file`
+        `🟡 **Review Coverage Needs Improvement (${coverage.toFixed(1)}%)**
+   - **Action**: ${unreviewed} PRs were merged without review
+   - **Next Steps**:
+     - Enable "Require approvals" in branch protection
+     - Set up CODEOWNERS file for automatic review assignment
+     - Schedule code review training session`
       );
-    } else {
+    } else if (coverage >= 90) {
       insights.push(
-        `🟢 **Strong Review Coverage (${coverage.toFixed(1)}%)**\n   - Excellent code quality practices\n   - Continue current review process`
+        `🟢 **Excellent Review Coverage (${coverage.toFixed(1)}%)**\n   - Strong code quality practices in place\n   - Continue maintaining current review standards`
       );
     }
 
@@ -65,14 +72,22 @@ export class RecommendationsGenerator implements SectionGenerator {
   private generateBusFactorInsights(report: AnalyticsReport): string[] {
     const insights: string[] = [];
     const busFactor = report.contributors.busFactor;
+    const topContributor = report.contributors.topContributors[0];
+    const topPercentage = report.contributors.contributionDistribution[0]?.percentage || 0;
 
     if (busFactor <= 2) {
       insights.push(
-        `🔴 **Critical: Low Bus Factor (${busFactor})**\n   - High project risk if key contributors leave\n   - Encourage knowledge sharing\n   - Document critical systems\n   - Onboard new contributors`
+        `🔴 **Critical: Low Bus Factor (${busFactor})**
+   - **Risk**: ${topContributor?.login || 'Top contributor'} accounts for ${topPercentage.toFixed(1)}% of contributions
+   - **Immediate Actions**:
+     - Document critical systems and processes
+     - Implement pair programming sessions
+     - Create onboarding documentation for new contributors
+     - Schedule knowledge transfer sessions`
       );
     } else if (busFactor >= 5) {
       insights.push(
-        `🟢 **Healthy Bus Factor (${busFactor})**\n   - Good distribution of knowledge\n   - Low project continuity risk`
+        `🟢 **Healthy Bus Factor (${busFactor})**\n   - Well-distributed knowledge across team\n   - Low project continuity risk`
       );
     }
 

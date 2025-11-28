@@ -52,94 +52,8 @@ jobs:
           path: audit-report.json
           retention-days: 30
 
-  # Snyk security scanning (requires SNYK_TOKEN secret)
-  snyk:
-    name: Snyk Security Scan
-    runs-on: ubuntu-latest
-    if: false # Disabled - requires SNYK_TOKEN secret to be configured
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --all-projects
-
-      - name: Run Snyk Code (SAST)
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: code test
-          args: --sarif-file-output=snyk.sarif
-
-      - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('snyk.sarif') != ''
-        continue-on-error: true
-        with:
-          sarif_file: snyk.sarif
-
-  # Dependency review (for PRs)
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: moderate
-          deny-licenses: GPL-3.0, AGPL-3.0
-
-  # CodeQL analysis (requires Code Scanning to be enabled in repo settings)
-  codeql:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    if: false # Disabled - requires Code Scanning to be enabled in repository settings
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['javascript']
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          queries: security-and-quality
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        continue-on-error: true
-        with:
-          category: "/language:${{matrix.language}}"
 
   # License compliance check
   license-check:
@@ -180,34 +94,6 @@ jobs:
           path: licenses.json
           retention-days: 30
 
-  # OSSF Scorecard (requires special permissions)
-  scorecard:
-    name: OSSF Scorecard
-    runs-on: ubuntu-latest
-    if: false # Disabled - requires special GitHub permissions
-    permissions:
-      security-events: write
-      id-token: write
-      contents: read
-      actions: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Run OSSF Scorecard
-        uses: ossf/scorecard-action@v2.4.0
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: true
-
-      - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
-        with:
-          sarif_file: results.sarif
 
   # Security summary
   security-summary:

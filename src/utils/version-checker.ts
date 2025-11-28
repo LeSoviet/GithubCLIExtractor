@@ -50,7 +50,7 @@ export async function checkForUpdates(): Promise<void> {
       console.log(
         chalk.yellow('│') +
           '  Run ' +
-          chalk.cyan.bold(updateCommand) +
+          chalk.magenta.bold(updateCommand) +
           ' to update' +
           ' '.repeat(70 - 12 - updateCommand.length - 10) +
           chalk.yellow('│')
@@ -64,7 +64,7 @@ export async function checkForUpdates(): Promise<void> {
         chalk.yellow('│') +
           '  ' +
           chalk.dim('Changelog: ') +
-          chalk.cyan.underline(changelogUrl) +
+          chalk.magenta.underline(changelogUrl) +
           ' '.repeat(Math.max(0, 70 - 14 - changelogUrl.length - 2)) +
           chalk.yellow('│')
       );

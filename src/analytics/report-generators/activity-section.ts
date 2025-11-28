@@ -46,12 +46,12 @@ export class ActivitySectionGenerator implements SectionGenerator {
       return '';
     }
 
-    let md = `\n### 🔥 Activity Hotspots\n\n`;
+    let md = `\n### Activity Hotspots\n\n`;
     md += `**Most Active Days:**\n\n`;
 
     report.activity.busiestDays.slice(0, 5).forEach((day, index) => {
-      const emoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📅';
-      md += `${emoji} **${day.day}:** ${day.count} commits\n`;
+      const indicator = index === 0 ? '#1' : index === 1 ? '#2' : index === 2 ? '#3' : '·';
+      md += `${indicator} **${day.day}:** ${day.count} commits\n`;
     });
 
     return md;

@@ -31,6 +31,10 @@ import { BranchExporter } from './exporters/branches.js';
 import { ReleaseExporter } from './exporters/releases.js';
 import { buildOutputPath } from './utils/output.js';
 import { AnalyticsProcessor } from './analytics/analytics-processor.js';
+import {
+  validateExportedData,
+  displayDataCompletenessStatus,
+} from './analytics/data-completeness-validator.js';
 import { checkForUpdates } from './utils/version-checker.js';
 import type {
   ExportOptions,
@@ -42,6 +46,7 @@ import type {
   Issue,
   Release,
   ExportFormat,
+  ExportResult,
 } from './types/index.js';
 import type { BatchConfig } from './types/batch.js';
 import type { BaseExporter } from './exporters/base-exporter.js';
@@ -434,7 +439,7 @@ async function main() {
 
     // Create export options
     const exportOptions: ExportOptions = {
-      format: exportFormat as 'markdown' | 'json' | 'both',
+      format: exportFormat as 'markdown' | 'json' | 'pdf',
       outputPath,
       repository: selectedRepo,
       type: exportType,
@@ -481,21 +486,28 @@ async function executeExport(
           options.repository.name
         );
 
-        const analyticsOptions = {
-          enabled: true,
-          format: options.format,
-          outputPath: options.outputPath,
-          repository: options.repository,
-          offline: true, // Use offline mode - parse exported files
-          exportedDataPath: exportPath,
-        };
+        // Validate data completeness before generating analytics
+        const completeness = await validateExportedData(exportPath);
+        displayDataCompletenessStatus(completeness);
 
-        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
-        await analyticsProcessor.generateReport();
-        showInfo('📊 Analytics report generated automatically');
+        if (completeness.isComplete) {
+          const analyticsOptions = {
+            enabled: true,
+            format: options.format,
+            outputPath: options.outputPath,
+            repository: options.repository,
+            offline: true, // Use offline mode - parse exported files
+            exportedDataPath: exportPath,
+          };
+
+          const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+          await analyticsProcessor.generateReport();
+        } else {
+          showInfo('\u23ed\ufe0f  Analytics report skipped (some data types are missing)');
+        }
       } catch (analyticsError) {
         console.warn(
-          '⚠️  Failed to generate analytics report:',
+          '\u26a0\ufe0f  Failed to generate analytics report:',
           analyticsError instanceof Error ? analyticsError.message : 'Unknown error'
         );
       }
@@ -517,18 +529,27 @@ async function executeExport(
           options.repository.name
         );
 
-        const analyticsOptions = {
-          enabled: true,
-          format: options.format,
-          outputPath: options.outputPath,
-          repository: options.repository,
-          offline: true, // Use offline mode - parse exported files
-          exportedDataPath: exportPath,
-        };
+        // Validate data completeness before generating analytics
+        const completeness = await validateExportedData(exportPath);
+        displayDataCompletenessStatus(completeness);
 
-        const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
-        await analyticsProcessor.generateReport();
-        showInfo('📊 Analytics report generated automatically');
+        if (completeness.isComplete) {
+          const analyticsOptions = {
+            enabled: true,
+            format: options.format,
+            outputPath: options.outputPath,
+            repository: options.repository,
+            offline: true, // Use offline mode - parse exported files
+            exportedDataPath: exportPath,
+          };
+
+          const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
+          await analyticsProcessor.generateReport();
+        } else {
+          showInfo(
+            '⏭️  Analytics report skipped (use Full Repository Backup for complete analysis)'
+          );
+        }
       } catch (analyticsError) {
         console.warn(
           '⚠️  Failed to generate analytics report:',
@@ -573,7 +594,7 @@ async function executeFullBackup(
   diffModeEnabled: boolean = false
 ): Promise<void> {
   const types: SingleExportType[] = ['prs', 'issues', 'commits', 'branches', 'releases'];
-  const results = [];
+  const results: { type: string; result: ExportResult }[] = [];
   const stateManager = getStateManager();
 
   showInfo('Starting full repository backup...');
@@ -622,9 +643,9 @@ async function executeFullBackup(
   progress.stop(); // Ensure spinner is stopped
   console.log();
   showInfo('Full backup summary:');
-  results.forEach(({ type, result }) => {
-    const status = result.success ? '✔' : '✖';
-    console.log(`  ${status} ${type}: ${result.itemsExported} items`);
+  results.forEach(({ type, result: exportResult }) => {
+    const status = exportResult.success ? '✔' : '✖';
+    console.log(`  ${status} ${type}: ${exportResult.itemsExported} items`);
   });
 
   if (diffModeEnabled) {

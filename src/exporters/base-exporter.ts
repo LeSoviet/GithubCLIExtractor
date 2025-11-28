@@ -1,6 +1,9 @@
 import type { Repository, ExportFormat, ExportResult } from '../types/index.js';
 import { ensureDirectory } from '../utils/output.js';
 import { logger } from '../utils/logger.js';
+import { formatDate } from '../utils/date-formatter.js';
+import { writeMarkdown, writeJson } from '../utils/output.js';
+import { join } from 'path';
 import type { DiffModeOptions } from '../types/state.js';
 
 export interface ExporterOptions {
@@ -8,6 +11,7 @@ export interface ExporterOptions {
   outputPath: string;
   format: ExportFormat;
   diffMode?: DiffModeOptions;
+  userFilter?: string; // Filter by specific user
 }
 
 /**
@@ -18,6 +22,7 @@ export abstract class BaseExporter<T> {
   protected outputPath: string;
   protected format: ExportFormat;
   protected diffMode?: DiffModeOptions;
+  protected userFilter?: string;
   protected startTime: number = 0;
   protected apiCalls: number = 0;
   protected cacheHits: number = 0;
@@ -27,6 +32,7 @@ export abstract class BaseExporter<T> {
     this.outputPath = options.outputPath;
     this.format = options.format;
     this.diffMode = options.diffMode;
+    this.userFilter = options.userFilter;
   }
 
   /**
@@ -161,6 +167,114 @@ export abstract class BaseExporter<T> {
       logger.info(
         `📅 Diff mode enabled: exporting items updated since ${new Date(this.diffMode.since).toLocaleString()}`
       );
+    }
+  }
+
+  /**
+   * Get user filter
+   */
+  protected getUserFilter(): string | undefined {
+    return this.userFilter;
+  }
+
+  /**
+   * Check if user filter is enabled
+   */
+  protected isUserFilterEnabled(): boolean {
+    return this.userFilter !== undefined && this.userFilter !== '';
+  }
+
+  /**
+   * Protected helper method to format dates for export
+   */
+  protected formatDate(dateString: string | Date): string {
+    return formatDate(dateString);
+  }
+
+  /**
+   * Apply filters (user filter + diff mode) to items
+   * Should be called after conversion in fetchData implementations
+   */
+  protected async applyFilters<T extends Record<string, any>>(
+    items: T[],
+    options?: {
+      authorField?: string;
+      dateField?: string;
+      log?: boolean;
+    }
+  ): Promise<T[]> {
+    let filtered = items;
+    const authorField = options?.authorField || 'author';
+    const dateField = options?.dateField || 'updatedAt';
+    const shouldLog = options?.log !== false;
+
+    // Apply user filter
+    if (this.isUserFilterEnabled()) {
+      const userFilter = this.getUserFilter()!;
+      filtered = filtered.filter((item) => {
+        const author = item[authorField];
+        return author && String(author).toLowerCase() === userFilter.toLowerCase();
+      });
+      if (shouldLog) {
+        this.logFilteringAction(`user filter: ${filtered.length} items by user '${userFilter}'`);
+      }
+    }
+
+    // Apply diff mode filter
+    if (this.isDiffMode()) {
+      const since = this.getDiffModeSince();
+      if (since) {
+        const sinceDate = new Date(since);
+        filtered = filtered.filter((item) => {
+          const itemDate = item[dateField];
+          return itemDate && new Date(String(itemDate)) > sinceDate;
+        });
+        if (shouldLog) {
+          this.logFilteringAction(
+            `diff mode: ${filtered.length} items updated since ${sinceDate.toLocaleString()}`
+          );
+        }
+      }
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Log filtering action
+   */
+  private logFilteringAction(message: string): void {
+    logger.info(message);
+  }
+
+  /**
+   * Template method for exporting items with markdown + optional JSON
+   * Child classes should override toMarkdown() and can optionally override toJson()
+   */
+  protected async exportItemTemplate<T>(
+    item: T,
+    outputPath: string,
+    options: {
+      prefix: string;
+      identifier: string | number;
+      toMarkdown: (item: T) => string;
+      toJson?: (item: T) => string;
+    }
+  ): Promise<void> {
+    const { prefix, identifier, toMarkdown: mdFn, toJson: jsonFn } = options;
+
+    // Always export as markdown
+    const markdown = mdFn(item);
+    const filename = `${prefix}-${identifier}.md`;
+    const filepath = join(outputPath, filename);
+    await writeMarkdown(filepath, markdown);
+
+    // Export as JSON only if format is 'json'
+    if (this.format === 'json') {
+      const json = jsonFn ? jsonFn(item) : JSON.stringify(item, null, 2);
+      const jsonFilename = `${prefix}-${identifier}.json`;
+      const jsonFilepath = join(outputPath, jsonFilename);
+      await writeJson(jsonFilepath, json);
     }
   }
 }

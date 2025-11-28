@@ -82,7 +82,7 @@ export class StateManager {
     repository: string,
     type: SingleExportType,
     count: number,
-    format: 'markdown' | 'json' | 'both',
+    format: 'markdown' | 'json' | 'pdf',
     outputPath: string
   ): Promise<void> {
     const state = await this.load();

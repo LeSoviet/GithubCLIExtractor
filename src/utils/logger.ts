@@ -22,13 +22,13 @@ class Logger {
 
   info(message: string, ...args: unknown[]) {
     if (this.level <= LogLevel.INFO) {
-      console.log(chalk.cyan(`[INFO] ${message}`), ...args);
+      console.log(chalk.magenta(`[INFO] ${message}`), ...args);
     }
   }
 
   success(message: string, ...args: unknown[]) {
     if (this.level <= LogLevel.INFO) {
-      console.log(chalk.green(`✔ ${message}`), ...args);
+      console.log(chalk.green(`[OK] ${message}`), ...args);
     }
   }
 
