@@ -72,26 +72,9 @@ async function launchGUI() {
 
   // Check if GUI is built (both main and renderer must exist)
   if (!fs.existsSync(mainPath) || !fs.existsSync(rendererPath)) {
-    console.log('\n⏳ GUI not built yet. Building now...\n');
-
-    try {
-      const isWindows = process.platform === 'win32';
-      const npmCmd = isWindows ? 'npm.cmd' : 'npm';
-
-      // Show building message
-      console.log('🔨 Building GUI...');
-
-      execSync(`${npmCmd} run build:gui`, {
-        stdio: 'inherit',
-        cwd: join(__dirname, '..')
-      });
-
-      console.log('\n✅ GUI built successfully!\n');
-      // Continue to launch GUI
-    } catch (err) {
-      console.error('\n❌ Build failed. Please try again.\n');
-      process.exit(1);
-    }
+    console.error('\n❌ GUI files not found. This may indicate an installation issue.\n');
+    console.error('Please try reinstalling: npm uninstall -g ghextractor && npm install -g ghextractor\n');
+    process.exit(1);
   }
 
   try {

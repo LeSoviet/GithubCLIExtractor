@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2025-11-28
+
+### Fixed
+- **NPM Global Installation**: Fixed GUI not being pre-built in npm package
+  - `prepublishOnly` script now runs `npm run build:all` to build both CLI and GUI before publishing
+  - GUI files (out/ directory) are now included in npm tarball
+  - Global installations now have pre-built GUI - no build tools required
+  - Better error handling when GUI files are missing (clear reinstall instructions)
+- **Graceful GUI Startup**: Improved error messages for GUI launch failures
+  - Clear instructions to reinstall if GUI files are missing
+  - No longer attempts to build GUI when globally installed (no dev dependencies)
+
 ## [0.9.3] - 2025-11-28
 
 ### Added
