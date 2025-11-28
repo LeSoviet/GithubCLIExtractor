@@ -100,3 +100,9 @@ social/
 # Note: Uncomment if you want to omit lock files
 # package-lock.json
 # yarn.lock
+
+# Coverage output files
+.coverage*
+coverage_result.txt
+coverage2.txt
+test-output.txt
