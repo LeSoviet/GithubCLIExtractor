@@ -32,7 +32,7 @@ function showMenu() {
 
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
   rl.question('Your choice (1/2/q): ', async (answer) => {
@@ -58,10 +58,12 @@ function showMenu() {
 }
 
 function launchCLI() {
-  import('../dist/index.js').catch(() => import('../dist/index.cjs')).catch((err) => {
-    console.error('Failed to launch CLI:', err.message);
-    process.exit(1);
-  });
+  import('../dist/index.js')
+    .catch(() => import('../dist/index.cjs'))
+    .catch((err) => {
+      console.error('Failed to launch CLI:', err.message);
+      process.exit(1);
+    });
 }
 
 async function launchGUI() {
@@ -73,7 +75,9 @@ async function launchGUI() {
   // Check if GUI is built (both main and renderer must exist)
   if (!fs.existsSync(mainPath) || !fs.existsSync(rendererPath)) {
     console.error('\n❌ GUI files not found. This may indicate an installation issue.\n');
-    console.error('Please try reinstalling: npm uninstall -g ghextractor && npm install -g ghextractor\n');
+    console.error(
+      'Please try reinstalling: npm uninstall -g ghextractor && npm install -g ghextractor\n'
+    );
     process.exit(1);
   }
 
@@ -84,7 +88,7 @@ async function launchGUI() {
 
     execSync(`${npmCmd} run preview:gui`, {
       stdio: 'inherit',
-      cwd: join(__dirname, '..')
+      cwd: join(__dirname, '..'),
     });
   } catch (err) {
     if (err.status) {
