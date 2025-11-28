@@ -338,7 +338,7 @@ export class PdfReportGenerator {
       // New page if needed
       page = this.pdfDoc!.addPage([this.pageWidth, this.pageHeight]);
       this.currentY = this.pageHeight - this.margin;
-      return;
+      // Continue to draw the divider on the new page
     }
 
     page.drawLine({
