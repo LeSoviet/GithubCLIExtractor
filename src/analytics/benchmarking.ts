@@ -331,12 +331,12 @@ export class BenchmarkingEngine {
     if (metrics.prMergeRate.percentile < 50) {
       const gap = Math.round(metrics.prMergeRate.median - metrics.prMergeRate.value);
       recommendations.push(
-        `🎯 Improve PR merge rate by ${gap}% to reach industry median. Current: ${metrics.prMergeRate.value.toFixed(1)}%, Target: ${metrics.prMergeRate.median}%`
+        `Improve PR merge rate by ${gap}% to reach industry median. Current: ${metrics.prMergeRate.value.toFixed(1)}%, Target: ${metrics.prMergeRate.median}%`
       );
 
       if (report.reviewVelocity && report.reviewVelocity.reviewBottlenecks.length > 0) {
         recommendations.push(
-          `   → Address ${report.reviewVelocity.reviewBottlenecks.length} stalled PRs to improve merge rate`
+          `   Address ${report.reviewVelocity.reviewBottlenecks.length} stalled PRs to improve merge rate`
         );
       }
     }
@@ -346,14 +346,14 @@ export class BenchmarkingEngine {
       const current = metrics.timeToFirstReview.value;
       const target = metrics.timeToFirstReview.median;
       recommendations.push(
-        `⏱️  Reduce time to first review from ${current.toFixed(1)}h to ${target}h (industry median)`
+        `Reduce time to first review from ${current.toFixed(1)}h to ${target}h (industry median)`
       );
 
       if (report.reviewVelocity) {
         const topReviewer = report.reviewVelocity.reviewerLoadDistribution[0];
         if (topReviewer && topReviewer.reviewCount > 15) {
           recommendations.push(
-            `   → Distribute review load: @${topReviewer.reviewer} handles ${topReviewer.reviewCount} reviews (potential bottleneck)`
+            `   Distribute review load: @${topReviewer.reviewer} handles ${topReviewer.reviewCount} reviews (potential bottleneck)`
           );
         }
       }
@@ -364,7 +364,7 @@ export class BenchmarkingEngine {
       const gap = Math.round(INDUSTRY_BENCHMARKS.reviewCoverage.p75 - metrics.reviewCoverage.value);
       if (gap > 0) {
         recommendations.push(
-          `👁️  Increase review coverage by ${gap}% to reach 75th percentile (${INDUSTRY_BENCHMARKS.reviewCoverage.p75}%)`
+          `Increase review coverage by ${gap}% to reach 75th percentile (${INDUSTRY_BENCHMARKS.reviewCoverage.p75}%)`
         );
       }
     }
@@ -372,10 +372,10 @@ export class BenchmarkingEngine {
     // Bus Factor recommendations
     if (metrics.busFactor.rating === 'poor' || metrics.busFactor.value < 3) {
       recommendations.push(
-        `🚨 CRITICAL: Bus factor is ${metrics.busFactor.value} (risky). Aim for at least 3-5 core contributors`
+        `CRITICAL: Bus factor is ${metrics.busFactor.value} (risky). Aim for at least 3-5 core contributors`
       );
       recommendations.push(
-        `   → ${report.contributors.topContributors[0]?.login || 'Top contributor'} contributes ${(report.contributors.contributionDistribution[0]?.percentage || 0).toFixed(0)}% of work`
+        `   ${report.contributors.topContributors[0]?.login || 'Top contributor'} contributes ${(report.contributors.contributionDistribution[0]?.percentage || 0).toFixed(0)}% of work`
       );
     }
 
@@ -384,12 +384,12 @@ export class BenchmarkingEngine {
       const currentDays = metrics.issueResolution.value;
       const targetDays = metrics.issueResolution.median;
       recommendations.push(
-        `📊 Reduce issue resolution time from ${currentDays.toFixed(1)} days to ${targetDays} days`
+        `Reduce issue resolution time from ${currentDays.toFixed(1)} days to ${targetDays} days`
       );
 
       if (report.labels && report.labels.labelDistribution.length > 0) {
         recommendations.push(
-          `   → Use labels to triage: ${report.labels.mostCommonLabels.slice(0, 3).join(', ')} are most common`
+          `   Use labels to triage: ${report.labels.mostCommonLabels.slice(0, 3).join(', ')} are most common`
         );
       }
     }
@@ -397,10 +397,10 @@ export class BenchmarkingEngine {
     // Deployment Frequency recommendations
     if (metrics.deploymentFrequency.percentile < 50) {
       recommendations.push(
-        `🚀 Increase deployment frequency to at least ${metrics.deploymentFrequency.median.toFixed(1)}/month`
+        `Increase deployment frequency to at least ${metrics.deploymentFrequency.median.toFixed(1)}/month`
       );
       recommendations.push(
-        `   → Consider automated releases for merged PRs or weekly release cadence`
+        `   Consider automated releases for merged PRs or weekly release cadence`
       );
     }
 
@@ -410,13 +410,13 @@ export class BenchmarkingEngine {
       metrics.timeToFirstReview.rating === 'excellent'
     ) {
       recommendations.push(
-        `🌟 Excellent review culture! Consider sharing your practices with the community`
+        `Excellent review culture! Consider sharing your practices with the community`
       );
     }
 
     if (recommendations.length === 0) {
       recommendations.push(
-        `✨ All metrics are above median. Focus on maintaining current quality standards`
+        `All metrics are above median. Focus on maintaining current quality standards`
       );
     }
 

@@ -128,7 +128,31 @@ export class NarrativeGenerator {
       });
     }
 
-    // Paradox 4: Trending worse despite high activity
+    // Paradox 4: Growing backlog - creation velocity >> merge velocity
+    if (report.trends) {
+      const prMergeTrend = report.trends.trends.prMergeRate;
+      const prCreationTrend =
+        report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+
+      // Check if merge rate is declining significantly AND we have stalled PRs
+      if (
+        prMergeTrend.trend === 'declining' &&
+        Math.abs(prMergeTrend.delta) > 15 &&
+        (report.reviewVelocity?.reviewBottlenecks.length ?? 0) > 5
+      ) {
+        paradoxes.push({
+          title: 'The Growing Backlog Paradox',
+          description: `PR creation velocity is high (${prCreationTrend} PRs in analysis period) but merge rate is declining (${Math.abs(prMergeTrend.delta).toFixed(0)}% drop). This creates a growing backlog of ${report.reviewVelocity?.reviewBottlenecks.length || 0} stalled PRs, frustrating contributors.`,
+          metrics: [
+            `Merge Rate Trend: ${prMergeTrend.previous.toFixed(0)}% → ${prMergeTrend.current.toFixed(0)}% (${prMergeTrend.delta > 0 ? '+' : ''}${prMergeTrend.delta.toFixed(0)}%)`,
+            `PRs in analysis period: ${prCreationTrend}`,
+            `Stalled PRs (>3 days): ${report.reviewVelocity?.reviewBottlenecks.length || 0}`,
+          ],
+        });
+      }
+    }
+
+    // Paradox 5: Trending worse despite high activity
     if (report.trends) {
       const decliningMetrics = Object.entries(report.trends.trends).filter(
         ([_, trend]) => trend.trend === 'declining'
@@ -221,7 +245,7 @@ export class NarrativeGenerator {
         hypothesis:
           'Manual release process or CI/CD pipeline may be bottleneck preventing frequent deployments',
         evidence: [
-          `Only ${deploymentFreq} releases in analysis period`,
+          `${deploymentFreq} releases in analysis period`,
           `${report.activity.prMergeRate.merged} PRs merged but not released`,
           `Potential ${(report.activity.prMergeRate.merged / Math.max(deploymentFreq, 1)).toFixed(0)} PRs per release`,
         ],
@@ -408,7 +432,7 @@ export class NarrativeGenerator {
   ): string {
     const repoName = report.repository.split('/')[1] || report.repository;
 
-    let summary = `# Executive Summary: ${repoName}\n\n`;
+    let summary = `### Executive Summary: ${repoName}\n\n`;
 
     if (paradoxes.length > 0) {
       const mainParadox = paradoxes[0];
@@ -482,8 +506,17 @@ export class NarrativeGenerator {
     if (actionPlan.some((a) => a.priority === 1)) {
       projection += `**If no action is taken:**\n\n`;
 
-      // Only project merge rate decline if we have high confidence trends data
-      if (report.trends && report.trends.trends.prMergeRate.trend === 'declining') {
+      // Only project merge rate decline if we have high confidence trends data AND projections are reliable
+      const projectionReliable =
+        report.projections &&
+        report.projections.predictions.prsToMerge.confidence !== 'low' &&
+        report.projections.predictions.openIssuesAtEndOfPeriod.confidence !== 'low';
+
+      if (
+        report.trends &&
+        report.trends.trends.prMergeRate.trend === 'declining' &&
+        projectionReliable
+      ) {
         const currentRate = report.trends.trends.prMergeRate.current;
         const delta = report.trends.trends.prMergeRate.delta;
 
@@ -492,6 +525,13 @@ export class NarrativeGenerator {
           const projectedRate = Math.max(0, currentRate + delta * 2); // Project 2 more periods
           projection += `- Merge rate will drop to ~${projectedRate.toFixed(0)}% within 60 days (from ${currentRate.toFixed(0)}%)\n`;
         }
+      } else if (
+        report.trends &&
+        report.trends.trends.prMergeRate.trend === 'declining' &&
+        !projectionReliable
+      ) {
+        // If trends show decline but projections unreliable, show cautious disclaimer
+        projection += `- Merge rate is showing a declining trend, but projection confidence is low. Monitor closely.\n`;
       }
 
       if (report.contributors.busFactor < 2) {

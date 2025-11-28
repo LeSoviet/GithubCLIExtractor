@@ -32,13 +32,31 @@ export class RecommendationsGenerator implements SectionGenerator {
     const insights: string[] = [];
     const mergeRate = report.activity.prMergeRate.mergeRate;
 
-    if (mergeRate < 50) {
+    if (mergeRate < 40) {
       insights.push(
-        `🔴 **Low PR Merge Rate (${mergeRate.toFixed(1)}%)**\n   - Review PR approval process\n   - Provide clearer contribution guidelines\n   - Consider implementing PR templates`
+        `🗔 **Low PR Merge Rate (${mergeRate.toFixed(1)}%)**
+   - Note: Different projects have different expected merge rates based on quality standards
+   - Review PR approval process for blockers
+   - Check if PRs are stalling after approval (merge bottleneck vs review bottleneck)
+   - Recommended actions:
+     - Implement auto-merge for approved PRs
+     - Review branch protection requirements
+     - Establish clear merge SLA`
       );
-    } else if (mergeRate > 80) {
+    } else if (mergeRate < 50) {
       insights.push(
-        `🟢 **Excellent PR Merge Rate (${mergeRate.toFixed(1)}%)**\n   - Indicates healthy contribution workflow\n   - Maintain current review standards`
+        `🟡 **Moderate PR Merge Rate (${mergeRate.toFixed(1)}%)**
+   - Note: Some high-quality projects maintain merge rates in 25-40% range by design
+   - If above benchmark: maintain current standards
+   - If trending down: investigate recent process changes
+   - Consider benchmark data: industry median is ${report.benchmark?.metrics.prMergeRate.median.toFixed(1) || '45'}%`
+      );
+    } else if (mergeRate >= 75) {
+      insights.push(
+        `🟢 **Excellent PR Merge Rate (${mergeRate.toFixed(1)}%)**
+   - Indicates healthy contribution workflow
+   - Fast decision-making on PRs
+   - Maintain current review standards`
       );
     }
 

@@ -114,11 +114,11 @@ export class MarkdownReportGenerator {
 `;
 
     const mergeRate = report.activity.prMergeRate.mergeRate;
-    const totalPRs = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
-    md += `| **PR Merge Rate** | ${mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged}/${totalPRs} PRs) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
+    const prsInPeriod = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+    md += `| **PR Merge Rate** | ${mergeRate.toFixed(1)}% (${report.activity.prMergeRate.merged}/${prsInPeriod} in period) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
 `;
 
-    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed}/${report.health.prReviewCoverage.total}) | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |
+    md += `| **Review Coverage** | ${report.health.prReviewCoverage.coveragePercentage.toFixed(1)}% (${report.health.prReviewCoverage.reviewed}/${report.health.prReviewCoverage.total} total) | ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)} |
 `;
     md += `| **Active Contributors** | ${report.activity.activeContributors[0]?.contributors || 0} | ${statusHelpers.getContributorStatus(report.activity.activeContributors[0]?.contributors || 0)} |
 `;

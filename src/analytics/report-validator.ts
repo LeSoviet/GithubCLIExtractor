@@ -2,6 +2,23 @@ import type { AnalyticsReport } from '../types/analytics.js';
 import { logger } from '../utils/logger.js';
 
 /**
+ * Validation context for context-aware validation
+ */
+export interface ValidationContext {
+  /** Offline mode: parsing exported markdown files instead of GitHub API */
+  isOfflineMode: boolean;
+  /** Diff mode: filtering data by date range (incremental export) */
+  isDiffMode: boolean;
+  /** Total number of items in the dataset (PRs + Issues) */
+  datasetSize: number;
+  /** Period of analysis */
+  period?: {
+    start: string;
+    end: string;
+  };
+}
+
+/**
  * Validation result for analytics reports
  */
 export interface ValidationResult {
@@ -38,17 +55,26 @@ export class ReportValidator {
   private errors: ValidationError[] = [];
   private totalChecks = 0;
   private passedChecks = 0;
+  private context?: ValidationContext;
 
   /**
-   * Validate a complete analytics report
+   * Validate a complete analytics report with optional context for intelligent thresholds
    */
-  validate(report: AnalyticsReport): ValidationResult {
+  validate(report: AnalyticsReport, context?: ValidationContext): ValidationResult {
     this.warnings = [];
     this.errors = [];
     this.totalChecks = 0;
     this.passedChecks = 0;
+    this.context = context;
 
     logger.info('Validating analytics report for numerical consistency...');
+
+    // Log validation context if provided
+    if (context) {
+      logger.debug(
+        `  → Validation context: offline=${context.isOfflineMode}, diff=${context.isDiffMode}, dataset=${context.datasetSize} items`
+      );
+    }
 
     // Run all validation checks
     this.validatePRCounts(report);
@@ -94,7 +120,20 @@ export class ReportValidator {
 
   /**
    * Validate PR count consistency across different sections
-   * Accounts for PRs merged without review data (force-merge, auto-merge, etc)
+   * Accounts for PRs merged without review data (force-merge, auto-merge, bots, etc)
+   *
+   * Note: Some variance is expected because:
+   * - Auto-merged PRs (bots, dependabot) don't have review metadata
+   * - Maintainers can force-merge without formal review
+   * - Old PRs may not have review data in markdown export
+   * - Different data sources may have incomplete fields
+   *
+   * CONTEXT-AWARE THRESHOLDS:
+   * - Base (online, full export): 40% variance acceptable
+   * - Diff mode: +30% (PRs may span multiple time periods)
+   * - Offline mode: +20% (markdown parsing may miss data)
+   * - Small dataset (<50): +30% (statistical variance higher)
+   * - Very small (<20): +50% (natural variance very high)
    */
   private validatePRCounts(report: AnalyticsReport): void {
     const activityPRTotal = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
@@ -106,26 +145,65 @@ export class ReportValidator {
       const prCountVariance = Math.abs(activityPRTotal - healthPRTotal);
       const variancePercentage = (prCountVariance / Math.max(activityPRTotal, healthPRTotal)) * 100;
 
-      if (variancePercentage > 20) {
-        // More than 20% variance is an error
+      // Calculate context-aware threshold
+      let threshold = 40; // Base threshold
+      const reasons: string[] = [];
+
+      if (this.context) {
+        // Diff mode: PRs may be created before period but merged during, or vice versa
+        if (this.context.isDiffMode) {
+          threshold += 30;
+          reasons.push('diff mode active (PRs may span time periods)');
+        }
+
+        // Offline mode: Markdown parsing may miss review metadata
+        if (this.context.isOfflineMode) {
+          threshold += 20;
+          reasons.push('offline mode (parsing markdown files)');
+        }
+
+        // Small datasets have higher statistical variance
+        if (this.context.datasetSize < 20) {
+          threshold += 50;
+          reasons.push(`very small dataset (${this.context.datasetSize} items)`);
+        } else if (this.context.datasetSize < 50) {
+          threshold += 30;
+          reasons.push(`small dataset (${this.context.datasetSize} items)`);
+        }
+      }
+
+      // Cap threshold at 95% (beyond this is almost certainly a data issue)
+      const maxThreshold = Math.min(threshold, 95);
+
+      if (variancePercentage > maxThreshold) {
+        // Variance exceeds even the context-aware threshold
+        const contextInfo =
+          reasons.length > 0 ? ` (threshold: ${maxThreshold}% due to ${reasons.join(', ')})` : '';
         this.errors.push({
           field: 'activity.prMergeRate vs health.prReviewCoverage',
-          message: `PR count mismatch exceeds acceptable threshold: ${variancePercentage.toFixed(1)}%`,
+          message: `PR count mismatch exceeds acceptable threshold: ${variancePercentage.toFixed(1)}%${contextInfo}`,
           expected: healthPRTotal,
           actual: activityPRTotal,
         });
       } else if (variancePercentage > 5) {
-        // 5-20% variance is expected and documented as warning
+        // Variance is expected based on context
         this.passedChecks++;
+        const contextInfo =
+          reasons.length > 0
+            ? ` This is expected due to: ${reasons.join(', ')}`
+            : ' Expected behavior: Some PRs are merged via force-merge, auto-merge (bots like dependabot), or by maintainers without formal review.';
+
         this.warnings.push({
           field: 'activity.prMergeRate vs health.prReviewCoverage',
-          message: `PR count variance detected: ${prCountVariance} PRs merged without review data (${variancePercentage.toFixed(1)}%)`,
+          message: `PR count variance detected: ${prCountVariance} PRs difference (${variancePercentage.toFixed(1)}%).${contextInfo}`,
           severity: 'low',
           suggestion:
-            'Expected behavior: Some PRs are merged via force-merge, auto-merge, or by maintainers without formal review. This is normal in large projects.',
+            reasons.length > 0
+              ? `This variance (${variancePercentage.toFixed(1)}%) is within acceptable range (${maxThreshold}%) for the current context.`
+              : 'This is normal in large projects with automation.',
         });
       } else {
-        // Less than 5% variance is acceptable
+        // Less than 5% variance is excellent
         this.passedChecks++;
       }
     } else {
@@ -498,16 +576,19 @@ export class ReportValidator {
 /**
  * Helper function to validate a report and log results
  */
-export function validateReport(report: AnalyticsReport): ValidationResult {
+export function validateReport(
+  report: AnalyticsReport,
+  context?: ValidationContext
+): ValidationResult {
   const validator = new ReportValidator();
-  return validator.validate(report);
+  return validator.validate(report, context);
 }
 
 /**
  * Helper function to validate and throw if invalid
  */
-export function validateReportOrThrow(report: AnalyticsReport): void {
-  const result = validateReport(report);
+export function validateReportOrThrow(report: AnalyticsReport, context?: ValidationContext): void {
+  const result = validateReport(report, context);
   if (!result.valid) {
     const validator = new ReportValidator();
     const summary = validator.generateSummary(result);

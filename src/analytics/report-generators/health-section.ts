@@ -23,21 +23,21 @@ export class HealthSectionGenerator implements SectionGenerator {
   }
 
   private generatePRSizeAnalysis(report: AnalyticsReport): string {
+    // Skip entire section if no PR size data available
+    if (report.health.averagePrSize.total === 0) {
+      return '';
+    }
+
     let md = `### PR Size Analysis\n\n`;
+    md += `- **Average Changes:** ${report.health.averagePrSize.total} lines per PR\n`;
+    md += `  - **Additions:** +${report.health.averagePrSize.additions} lines\n`;
+    md += `  - **Deletions:** -${report.health.averagePrSize.deletions} lines\n\n`;
 
-    if (report.health.averagePrSize.total > 0) {
-      md += `- **Average Changes:** ${report.health.averagePrSize.total} lines per PR\n`;
-      md += `  - **Additions:** +${report.health.averagePrSize.additions} lines\n`;
-      md += `  - **Deletions:** -${report.health.averagePrSize.deletions} lines\n\n`;
-
-      // Add PR size recommendation
-      if (report.health.averagePrSize.total > 500) {
-        md += `> ⚠️ **Note:** Average PR size is large (>500 lines). Consider breaking down changes into smaller PRs for easier review.\n\n`;
-      } else if (report.health.averagePrSize.total < 100) {
-        md += `> ✅ **Good Practice:** Small PR sizes facilitate faster reviews and reduce merge conflicts.\n\n`;
-      }
-    } else {
-      md += `- **Average PR Size:** No data available (PRs contain no diff metadata)\n\n`;
+    // Add PR size recommendation
+    if (report.health.averagePrSize.total > 500) {
+      md += `> ⚠️ **Consideration:** Average PR size is large (>500 lines). Breaking changes into smaller PRs improves review efficiency.\n\n`;
+    } else if (report.health.averagePrSize.total < 100) {
+      md += `> 🟢 **Healthy Practice:** Small PR sizes (avg <100 lines) enable faster reviews and reduce merge conflicts.\n\n`;
     }
 
     return md;

@@ -25,12 +25,16 @@ export class PredictionsSectionGenerator implements SectionGenerator {
 
     const pred = report.projections.predictions;
 
-    // Only show if predictions have confidence > 'low'
-    const hasHighConfidence =
-      pred.prsToMerge.confidence !== 'low' || pred.openIssuesAtEndOfPeriod.confidence !== 'low';
+    // Only show if predictions have confidence >= 'medium'
+    const hasReliableConfidence =
+      pred.prsToMerge.confidence !== 'low' && pred.openIssuesAtEndOfPeriod.confidence !== 'low';
 
-    if (!hasHighConfidence) {
-      return `⚠️ **Insufficient data for reliable projections.** Historical patterns are limited.\n\n`;
+    if (!hasReliableConfidence) {
+      return `🔴 **Insufficient data for reliable projections.**
+
+Historical patterns are too limited to forecast accurately. Collect more data over time to enable predictive analysis.
+
+`;
     }
 
     let md = `| Metric | Min | Max | Confidence |\n`;
@@ -53,6 +57,14 @@ export class PredictionsSectionGenerator implements SectionGenerator {
     }
 
     md += `\n`;
+
+    // Add confidence disclaimer for medium or low confidence predictions
+    const hasLowConfidence =
+      pred.prsToMerge.confidence === 'low' || pred.openIssuesAtEndOfPeriod.confidence === 'low';
+    if (hasLowConfidence) {
+      md += `> ⚠️ **Note:** Some predictions have low confidence due to limited historical data. Treat as estimates only.\n\n`;
+    }
+
     return md;
   }
 

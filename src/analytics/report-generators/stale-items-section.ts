@@ -35,21 +35,36 @@ export class StaleItemsSectionGenerator implements SectionGenerator {
     }
 
     let md = `### PRs Aging Out (>7 days without merge)\n\n`;
-    md += `| # | Title | Author | Age | Status |\n`;
-    md += `|---|-------|--------|-----|--------|\n`;
+    md += `| # | Title | Author | Created | Waiting | Status |\n`;
+    md += `|---|-------|--------|---------|---------|--------|\n`;
+
+    // Pre-calculate all ages once for performance (moved calculation out of loop)
+    const now = Date.now();
+    let totalAgeInDays = 0;
 
     for (const pr of bottlenecks) {
       const status = this.getStatusLabel(pr.status);
-      const ageBracket =
+      const createdDate = new Date(pr.createdAt);
+      const daysOld = Math.floor((now - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      totalAgeInDays += daysOld;
+
+      const waitingBracket =
         pr.waitingDays > 14 ? '[CRITICAL]' : pr.waitingDays > 7 ? '[WARN]' : '[INFO]';
-      md += `| #${pr.prNumber} | ${pr.title} | @${pr.author} | ${ageBracket} ${pr.waitingDays}d | ${status} |\n`;
+      const ageLabel = daysOld > 0 ? `${daysOld}d ago` : 'Today';
+      md += `| #${pr.prNumber} | ${pr.title} | @${pr.author} | ${ageLabel} | ${waitingBracket} ${pr.waitingDays}d | ${status} |\n`;
     }
 
     md += `\n`;
+    md += `**Legend:** "Created" = Days since PR was created | "Waiting" = Days without merge progress\n\n`;
 
-    md += `**Value at risk:** ${bottlenecks.length} stalled PRs\n`;
+    // Calculate value at risk (work hours based on PR age) - using accumulated days
+    const valueAtRiskHours = totalAgeInDays * 2; // ~2 hours per day PR is stalled
+    const avgAgeDays = bottlenecks.length > 0 ? Math.round(totalAgeInDays / bottlenecks.length) : 0;
+
+    md += `**Value at risk:** ${bottlenecks.length} stalled PRs (~${Math.round(valueAtRiskHours)} hours of work, created avg ${avgAgeDays}d ago)\n\n`;
+    md += `**Business Impact:** Delayed features, frustrated contributors, potential technical debt\n\n`;
     md += `**Actions:**\n`;
-    md += `- Review PR status and unblock bottlenecks\n`;
+    md += `- Review PR status and unblock bottlenecks (priority: PRs >14 days old)\n`;
     md += `- Request author updates if waiting on changes\n`;
     md += `- Auto-merge approved PRs with passing CI\n\n`;
 

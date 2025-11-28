@@ -130,16 +130,16 @@ describe('AnalyticsProcessor', () => {
 
       // Mock all the API calls
       vi.mocked(execGh.execGhJson).mockImplementation(async (command: string) => {
-        if (command.includes('pr list') && command.includes('--state all --limit 500')) {
+        if (command.includes('pr list') && command.includes('--limit 2000')) {
           return mockPRs;
         }
-        if (command.includes('issue list') && command.includes('--state all --limit 500')) {
+        if (command.includes('issue list') && command.includes('--limit 2000')) {
           return mockIssues;
         }
         if (command.includes('api repos') && command.includes('commits')) {
           return mockCommits;
         }
-        if (command.includes('release list') && command.includes('--limit 100')) {
+        if (command.includes('release list') && command.includes('--limit 500')) {
           return mockReleases;
         }
         return [];
@@ -177,12 +177,12 @@ describe('AnalyticsProcessor', () => {
 
       // Verify that execGhJson was called with the correct commands
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('pr list --repo test-owner/test-repo --state all --limit 500'),
+        expect.stringContaining('pr list --repo test-owner/test-repo --state all --limit 2000'),
         expect.any(Object)
       );
 
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('issue list --repo test-owner/test-repo --state all --limit 500'),
+        expect.stringContaining('issue list --repo test-owner/test-repo --state all --limit 2000'),
         expect.any(Object)
       );
 
@@ -192,7 +192,7 @@ describe('AnalyticsProcessor', () => {
       );
 
       expect(execGh.execGhJson).toHaveBeenCalledWith(
-        expect.stringContaining('release list --repo test-owner/test-repo --limit 100'),
+        expect.stringContaining('release list --repo test-owner/test-repo --limit 500'),
         expect.any(Object)
       );
     });

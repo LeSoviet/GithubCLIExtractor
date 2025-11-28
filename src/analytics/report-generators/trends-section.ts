@@ -13,11 +13,15 @@ export class TrendsSectionGenerator implements SectionGenerator {
       return '';
     }
 
-    let md = `## Trends (vs Previous Period)\n\n`;
-    md += `> **Note:** PR Merge Rate compares last 30 days (${report.trends.trends.prMergeRate.current.toFixed(1)}%) vs previous 30 days (${report.trends.trends.prMergeRate.previous.toFixed(1)}%). Overall metrics in Executive Summary reflect the entire analysis period.\n\n`;
+    let md = `---
 
+## Trends (vs Previous Period)
+
+`;
+    md += `### Period-over-Period Comparison\n\n`;
     md += this.generateTrendMetricsTable(report);
     md += this.generateVelocityChart(report);
+    md += `---\n\n`;
     return md;
   }
 
@@ -105,9 +109,17 @@ export class TrendsSectionGenerator implements SectionGenerator {
     const trend = report.trends.velocityTrend;
     const weeks = trend.map((t) => t.week);
     const mergedPRs = trend.map((t) => t.mergedPRs);
-    const maxValue = Math.max(...mergedPRs, 5); // Ensure reasonable scale
+    const maxValue = Math.max(...mergedPRs, 5);
+
+    // Calculate trend insight
+    const firstWeek = mergedPRs[0] || 1;
+    const lastWeek = mergedPRs[mergedPRs.length - 1] || 1;
+    const trendPercentageNum = ((lastWeek - firstWeek) / firstWeek) * 100;
+    const trendDirection = lastWeek > firstWeek ? 'increasing' : 'decreasing';
+    const insight = `Velocity is ${trendDirection}: ${Math.abs(trendPercentageNum).toFixed(0)}% change over 12 weeks (${firstWeek} → ${lastWeek} PRs/week)`;
 
     let md = `### 12-Week Velocity Trend\n\n`;
+    md += `*${insight}*\n\n`;
     md += ChartGenerator.generateVelocityChart(weeks, mergedPRs, maxValue);
     md += `\n`;
 

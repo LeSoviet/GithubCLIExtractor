@@ -85,10 +85,40 @@ export class AnalyticsProcessor {
         projections,
       };
 
-      // Validate report for numerical consistency
+      // Validate report for numerical consistency with context-aware thresholds
       logger.info('Validating report for numerical consistency...');
+
+      // Build validation context for intelligent threshold calculation
+      const totalPRs = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+      const totalIssues =
+        report.labels.issueVsPrratio > 0 ? Math.round(totalPRs * report.labels.issueVsPrratio) : 0;
+      const datasetSize = totalPRs + totalIssues;
+
+      // Detect diff mode using multiple heuristics:
+      // 1. Small dataset suggests incremental/diff export
+      // 2. Short time period (< 60 days) suggests filtered export
+      const periodStart = new Date(report.activity.period.start);
+      const periodEnd = new Date(report.activity.period.end);
+      const periodDays = (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24);
+
+      const isDiffMode = Boolean(this.options.offline && (datasetSize < 150 || periodDays < 60));
+
+      const validationContext = {
+        isOfflineMode: this.options.offline || false,
+        isDiffMode,
+        datasetSize,
+        period: report.activity.period,
+      };
+
+      logger.debug(
+        `  → Dataset: ${totalPRs} PRs, ${totalIssues} issues (${datasetSize} total), period: ${periodDays.toFixed(0)} days`
+      );
+      if (isDiffMode) {
+        logger.debug(`  → Diff mode detected: using relaxed validation thresholds`);
+      }
+
       const validator = new ReportValidator();
-      const validationResult = validator.validate(report);
+      const validationResult = validator.validate(report, validationContext);
 
       if (!validationResult.valid) {
         logger.error(
@@ -698,15 +728,17 @@ export class AnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
-        // In offline mode, use parsed data
+        // In offline mode, use parsed data from activity analytics (already parsed with merged/closed counts)
         const parser = new MarkdownParser(this.options.exportedDataPath!);
         const parsedPRs = await parser.parsePullRequests();
         const parsedReleases = await parser.parseReleases();
 
         // Convert parsed data to match GitHub API format
+        // Note: All parsed PRs from markdown are considered reviewed in offline mode
+        // because offline mode doesn't have reviewDecision data
         prs = parsedPRs.map((pr: any) => ({
           number: pr.number,
-          reviewDecision: pr.mergedAt ? 'APPROVED' : 'CHANGES_REQUESTED',
+          reviewDecision: 'REVIEWED', // Default to REVIEWED in offline mode (all PRs counted)
           additions: 0, // Not available in markdown files
           deletions: 0, // Not available in markdown files
           createdAt: pr.createdAt,

@@ -35,10 +35,7 @@ function AppContent() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<any>(null);
-  const [exportComplete, setExportComplete] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [lastExportPath, setLastExportPath] = useState<string>('');
-  const [lastExportedRepo, setLastExportedRepo] = useState<Repository | null>(null);
 
   const [filters, setFilters] = useState<ExportFilters>({
     dateFilter: { type: 'all' },
@@ -72,27 +69,15 @@ function AppContent() {
 
     window.electronAPI.onExportComplete(() => {
       console.log('[App] Export complete event received');
-      console.log('[App] Current lastExportPath before update:', lastExportPath);
-      console.log('[App] Current filters.outputPath:', filters.outputPath);
       setExporting(false);
       setExportProgress(null);
-      setExportComplete(true);
       setExportError(null);
-      setLastExportPath(filters.outputPath);
-      console.log('[App] Set lastExportPath to:', filters.outputPath);
-      if (selectedRepos.length > 0) {
-        setLastExportedRepo(selectedRepos[selectedRepos.length - 1]);
-        console.log('[App] Set lastExportedRepo to:', selectedRepos[selectedRepos.length - 1]);
-      }
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => setExportComplete(false), 5000);
     });
 
     window.electronAPI.onExportError((error: string) => {
       console.log('[App] Export error event received:', error);
       setExporting(false);
       setExportProgress(null);
-      setExportComplete(false);
       setExportError(error);
       // Auto-hide error message after 8 seconds
       setTimeout(() => setExportError(null), 8000);
@@ -140,12 +125,9 @@ function AppContent() {
       return;
     }
 
-    console.log('[App] handleExport called with filters.outputPath:', filters.outputPath);
+    console.log('[App] handleExport called');
     setExporting(true);
-    setExportComplete(false);
     setExportError(null);
-    setLastExportPath(filters.outputPath);
-    console.log('[App] Set lastExportPath to:', filters.outputPath);
     setExportProgress({
       stage: 'Initializing export...',
       progress: 0,
@@ -169,7 +151,7 @@ function AppContent() {
           currentRepo: repo.fullName,
         });
 
-        console.log('[App] Exporting repo with outputPath:', filters.outputPath);
+        console.log('[App] Exporting repo');
         await window.electronAPI.exportData({
           repository: repo,
           exportTypes: filters.exportTypes,
@@ -186,9 +168,6 @@ function AppContent() {
           outputPath: filters.outputPath,
           generateAnalytics: filters.generateAnalytics,
         });
-
-        // Update last exported repo after each export
-        setLastExportedRepo(repo);
       }
 
       // Final completion
@@ -257,17 +236,6 @@ function AppContent() {
             {exportProgress && (
               <section className="section">
                 <ProgressDisplay progress={exportProgress} />
-              </section>
-            )}
-
-            {exportComplete && (
-              <section className="section success-message">
-                <h3>Export Completed Successfully</h3>
-                <p>
-                  {selectedRepos.length === 1
-                    ? `Repository exported to ${lastExportPath}/${lastExportedRepo?.owner}/${lastExportedRepo?.name}`
-                    : `${selectedRepos.length} repositories exported to ${lastExportPath}`}
-                </p>
               </section>
             )}
 

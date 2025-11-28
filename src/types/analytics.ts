@@ -148,7 +148,8 @@ export interface ReviewVelocityAnalytics extends AnalyticsResult {
     prNumber: number;
     title: string;
     author: string;
-    waitingDays: number;
+    createdAt: string; // ISO timestamp for age calculation
+    waitingDays: number; // Days waiting for merge (from creation date)
     status: 'no_reviewers' | 'changes_requested' | 'approved_pending_merge' | 'unknown';
   }[];
   reviewerLoadDistribution: {

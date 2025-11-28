@@ -154,6 +154,7 @@ export class AdvancedAnalyticsProcessor {
             prNumber: pr.number,
             title: pr.title || `PR #${pr.number}`,
             author: pr.author?.login || 'unknown',
+            createdAt: pr.createdAt, // Store creation date for accurate age calculation
             waitingDays: Math.floor(waitingDays * 10) / 10,
             status,
           };
