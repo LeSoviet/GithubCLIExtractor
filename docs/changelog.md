@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2025-11-29
+
+### Fixed
+
+- **CLI vs GUI Report Inconsistencies**: Comprehensive fixes ensuring consistent, transparent analytics reports
+  - Chart.js ctx variable duplication eliminated - using unique variable names (velocityCtx, burndownCtx, radarCtx)
+  - False 'Partial Data' warnings fixed - commits and branches no longer incorrectly marked as missing
+  - Releases export/count mismatch resolved - 219 exported releases now correctly counted in analytics
+  - GUI diff mode now explicit - users can see full backup exports are performed, not incremental filtering
+  - Data collection transparency improved - collection method clearly shown in reports
+
+### Added
+
+- **Data Collection Summary Section**: New report section showing
+  - Collection Method (Full Repository Backup vs Partial Export)
+  - Analysis Period (start date, end date, duration)
+  - Data Types Analyzed with item counts
+  - Notes about missing data types if applicable
+- **Enhanced Report Metadata**: Comprehensive metadata now includes
+  - Report generation timestamp
+  - Data collection mode
+  - Precise period analyzed (From/To dates)
+  - Analysis duration for each module
+  - Tool version information
+- **GUI Export Mode Indicator**: Export summary now displays
+  - "Export Mode: Full Backup (Complete data export)" 
+  - Making full vs partial exports immediately visible to users
+
+### Changed
+
+- **Data Completeness Validator**: Updated to only mark core data types as missing
+  - PRs, Issues, Releases: marked as missing if count is 0
+  - Commits, Branches: not marked as missing (may be legitimately 0 or exported in other formats)
+  - Prevents false warnings for complete full-backup exports
+- **Report Structure**: Reorganized sections for better clarity
+  - Data Collection Summary now appears before Executive Summary
+  - Enhanced metadata section with comprehensive collection info
+  - Better visual separation of report sections
+
+### Technical
+
+- **Markdown Generator Enhancement**: Added generateDataSummary() method for transparency
+- **Electron GUI**: Updated ExportPanel to display export mode information
+- **Data Validator**: Improved logic to distinguish between "missing" and "not applicable" data types
+- **Stalled PR Ordering**: Verified consistent sorting by waitingDays across CLI and GUI
+
+### Quality Assurance
+
+- Verified CLI and GUI reports generate identical metrics
+- Confirmed no false "Partial Data" warnings for complete exports
+- Validated data consistency: both interfaces show same PR counts, contributors, and metrics
+- Tested full backup workflows: all 5 data types exported and counted correctly
+
 ## [0.9.8] - 2025-11-28
 
 ### Fixed
