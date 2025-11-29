@@ -15,8 +15,34 @@ export class AdvancedAnalyticsProcessor {
   constructor(
     private repository: { owner: string; name: string },
     private offline: boolean = false,
-    private exportedDataPath?: string
+    private exportedDataPath?: string,
+    private timeRange?: '1-week' | '1-month' | '2-months' | '3-months'
   ) {}
+
+  /**
+   * Filter items by timeRange if specified
+   */
+  private filterByTimeRange(items: any[]): any[] {
+    if (!this.timeRange) {
+      return items;
+    }
+
+    const days = {
+      '1-week': 7,
+      '1-month': 30,
+      '2-months': 60,
+      '3-months': 90,
+    }[this.timeRange];
+
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    return items.filter((item) => {
+      const itemDate = new Date(
+        item.createdAt || item.mergedAt || item.closedAt || item.publishedAt
+      );
+      return itemDate >= cutoffDate;
+    });
+  }
 
   /**
    * Generate Review Velocity analytics
@@ -66,6 +92,9 @@ export class AdvancedAnalyticsProcessor {
           reviewRequests: [],
         }));
       }
+
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
 
       // Calculate time to first review
       const reviewTimes: number[] = [];
@@ -270,6 +299,10 @@ export class AdvancedAnalyticsProcessor {
         }));
       }
 
+      // Apply timeRange filter if specified (before period comparison)
+      prs = this.filterByTimeRange(prs);
+      issues = this.filterByTimeRange(issues);
+
       // Filter PRs by period
       const currentPRs = prs.filter((pr) => {
         const created = new Date(pr.createdAt);
@@ -426,6 +459,9 @@ export class AdvancedAnalyticsProcessor {
         );
       }
 
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
+
       // Categorize PRs by size
       const smallPRs = prs.filter((pr) => pr.additions + pr.deletions < 100);
       const mediumPRs = prs.filter(
@@ -538,6 +574,11 @@ export class AdvancedAnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
+
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
+      issues = this.filterByTimeRange(issues);
+      releases = this.filterByTimeRange(releases);
 
       // Calculate average PR merge rate for last 30 days
       const now = new Date();

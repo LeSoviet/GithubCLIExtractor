@@ -1,0 +1,90 @@
+┌  GitHub Extractor CLI
+│
+●  Scanning repositories...
+│
+◆  Found 37 repositories
+│
+◇  What would you like to export?
+│  Full Repository Backup
+│
+◇  Select a repository:
+│  [*] Enter a repository manually
+│
+●  Enter a public repository to document
+│
+◇  Enter repository (owner/repo):
+│  tensorflow/tensorflow
+│
+●  Validating repository...
+│
+◆  Repository found: tensorflow/tensorflow
+│
+●  Selected: tensorflow/tensorflow
+│
+◇  Select output format:
+│  PDF
+│
+◇  Enter output path:
+│  C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI
+│
+◇  Select time range for analytics:
+│  1 Month
+│
+●  Starting full repository backup...
+
+⠋ Exporting Pull Requests...[INFO] Starting export for tensorflow/tensorflow...
+⠋ Exporting Pull Requests...[INFO] Fetched 2000 items
+⠧ Exporting Pull Requests...[OK] Export completed: 2000 exported, 0 failed
+✔ Pull Requests completed
+⠋ Exporting Issues...[INFO] Starting export for tensorflow/tensorflow...
+⠦ Exporting Issues...[INFO] Fetched 2000 items
+⠹ Exporting Issues...[OK] Export completed: 2000 exported, 0 failed
+✔ Issues completed
+⠋ Exporting Commits...[INFO] Starting export for tensorflow/tensorflow...
+⠦ Exporting Commits...[INFO] Fetched 100 items
+⠧ Exporting Commits...[OK] Export completed: 100 exported, 0 failed
+✔ Commits completed
+⠋ Exporting Branches...[INFO] Starting export for tensorflow/tensorflow...
+⠴ Exporting Branches...[INFO] Fetched 1752 items
+⠦ Exporting Branches...[OK] Export completed: 1752 exported, 0 failed
+✔ Branches completed
+⠋ Exporting Releases...[INFO] Starting export for tensorflow/tensorflow...
+⠸ Exporting Releases...[INFO] Fetched 219 items
+⠴ Exporting Releases...[OK] Export completed: 219 exported, 0 failed
+✔ Releases completed
+
+│
+●  Full backup summary:
+  ✔ Pull Requests: 2000 items
+  ✔ Issues: 2000 items
+  ✔ Commits: 100 items
+  ✔ Branches: 1752 items
+  ✔ Releases: 219 items
+│
+◆  Full backup saved to: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI
+[OK] ✅ Complete data detected - generating comprehensive analytics
+[INFO] Generating analytics report for tensorflow/tensorflow...
+[INFO] [OFFLINE] Using offline mode: parsing exported markdown files...
+[WARN] [OFFLINE] Review coverage data not available in markdown files. Coverage reported as 0%.
+[INFO] [PARSED] Loaded 2000 PRs, 2000 issues from markdown files
+[INFO] [MERGED] Found 879 merged PRs
+[INFO] Generating advanced analytics (Review Velocity, Trends, Correlations, Projections)...
+[INFO] Validating report for numerical consistency...
+[INFO] Validating analytics report for numerical consistency...
+[OK] ✅ Report validation passed (32/33 checks)
+[INFO] [PASSED] Report validation passed with 3 warnings
+[INFO] Comparing metrics against industry benchmarks...
+[INFO] Comparing repository metrics to industry benchmarks...
+[INFO] Generating executive narrative and insights...
+[INFO] Generating executive narrative...
+[INFO] Starting PDF generation pipeline: Markdown -> HTML -> PDF
+[INFO] [OK] Markdown report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI\tensorflow-tensorflow-analytics.md    
+[INFO] [OK] HTML report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI\tensorflow-tensorflow-analytics.html
+[INFO] Converting HTML to PDF: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI\tensorflow-tensorflow-analytics.pdf
+[INFO] PDF generated successfully: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI\tensorflow-tensorflow-analytics.pdf
+[INFO] [OK] PDF report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\CLI\tensorflow-tensorflow-analytics.pdf
+[OK] [OK] Analytics report generated in 3.77s
+│
+└  Thanks for using GitHub Extractor CLI!
+
+PS C:\Users\LeSoviet\Documents\GitHub\GithubCLIExtractor>

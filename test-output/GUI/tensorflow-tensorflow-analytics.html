@@ -1,0 +1,913 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tensorflow/tensorflow Analytics Report</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f5f5f5;
+      padding: 40px 20px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 10px;
+      }
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 60px 50px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 30px 20px;
+      }
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.3em;
+      color: #1a1a1a;
+      border-bottom: 3px solid #0066cc;
+      padding-bottom: 0.3em;
+    }
+
+    h2 {
+      font-size: 1.8em;
+      margin: 1em 0 0.5em 0;
+      color: #0066cc;
+      border-left: 4px solid #0066cc;
+      padding-left: 1em;
+    }
+
+    h3 {
+      font-size: 1.1em;
+      margin: 0.6em 0 0.3em 0;
+      color: #333;
+    }
+
+    h4 {
+      font-size: 0.95em;
+      margin: 0.5em 0 0.25em 0;
+      color: #555;
+    }
+
+    p {
+      margin-bottom: 1em;
+      text-align: justify;
+    }
+
+    code {
+      background: #f0f0f0;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      color: #d63384;
+    }
+
+    pre {
+      background: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1em;
+      margin: 1em 0;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      line-height: 1.4;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5em 0;
+      font-size: 0.95em;
+    }
+
+    th {
+      background: #f0f0f0;
+      padding: 0.8em;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #ddd;
+      color: #333;
+    }
+
+    td {
+      padding: 0.8em;
+      border-bottom: 1px solid #ddd;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    ul, ol {
+      margin-left: 2em;
+      margin-bottom: 1em;
+    }
+
+    li {
+      margin-bottom: 0.3em;
+    }
+
+    blockquote {
+      border-left: 4px solid #ddd;
+      padding-left: 1em;
+      margin: 1em 0;
+      color: #666;
+      font-style: italic;
+    }
+
+    strong {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    em {
+      font-style: italic;
+      color: #555;
+    }
+
+    hr {
+      border: none;
+      border-top: 2px solid #eee;
+      margin: 2em 0;
+    }
+
+    /* Alert/highlight boxes */
+    .alert {
+      padding: 1em;
+      margin: 1em 0;
+      border-radius: 4px;
+      border-left: 4px solid;
+    }
+
+    /* Emoji size reduction */
+    em, strong em {
+      font-size: 0.9em;
+      line-height: 1;
+    }
+
+    /* Paragraph spacing in dense sections */
+    h2 + p,
+    h3 + p {
+      margin-top: 0;
+    }
+
+    /* Section control for PDF page breaks */
+    h2 {
+      page-break-inside: avoid;
+      margin-bottom: 0.3em;
+    }
+
+    h2 + * {
+      page-break-before: avoid;
+    }
+
+    .section {
+      page-break-inside: avoid;
+    }
+
+    /* Reduce excessive whitespace */
+    h2 {
+      margin-top: 1.2em;
+    }
+
+    h3 {
+      margin-top: 0.8em;
+      margin-bottom: 0.2em;
+    }
+
+    /* Compact content sections */
+    ul, ol {
+      margin-top: 0.3em;
+      margin-bottom: 0.3em;
+    }
+
+    p {
+      margin-bottom: 0.5em;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 100%;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      h1 {
+        page-break-after: avoid;
+      }
+
+      h2, h3 {
+        page-break-after: avoid;
+      }
+
+      table {
+        page-break-inside: avoid;
+      }
+    }
+
+    /* Page sizing for PDF */
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Analytics Report</h1>
+<h2>tensorflow/tensorflow</h2>
+<p><strong>Generated:</strong> Saturday, November 29, 2025 at 6:44:54 PM</p>
+<hr>
+<h2>Data Collection Summary</h2>
+<p><strong>Collection Method:</strong> Full Repository Backup (Complete)</p>
+<p><strong>Analysis Period:</strong></p>
+<ul>
+<li>Start: Thu, Oct 30, 2025</li>
+<li>End: Sat, Nov 29, 2025</li>
+<li>Duration: 30 days</li>
+</ul>
+<p><strong>Data Types Analyzed:</strong></p>
+<ul>
+<li>Pull Requests: 986 items analyzed</li>
+<li>Issues: ~84 items (estimated from ratio)</li>
+<li>Releases: 0 items</li>
+</ul>
+<h2>Executive Summary</h2>
+<p>This analytics report provides data-driven insights into repository health, team dynamics, and development velocity.</p>
+<h3>Key Metrics Overview</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Current Value</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PR Merge Rate</strong></td>
+<td>45.4% (837/986 in period)</td>
+<td>Needs Improvement</td>
+</tr>
+<tr>
+<td><strong>Review Coverage</strong></td>
+<td>0.0% (0/1845 total)</td>
+<td>Needs Improvement</td>
+</tr>
+<tr>
+<td><strong>Active Contributors</strong></td>
+<td>36</td>
+<td>Healthy</td>
+</tr>
+<tr>
+<td><strong>Bus Factor</strong></td>
+<td>2</td>
+<td>High Risk</td>
+</tr>
+<tr>
+<td><strong>Deployment Frequency</strong></td>
+<td>0 releases</td>
+<td>Low Activity</td>
+</tr>
+</tbody></table>
+<h3>Critical Alerts</h3>
+<p><strong>Critical Risk</strong>: Low bus factor indicates project vulnerability
+<strong>Quality Risk</strong>: More than half of PRs lack code review</p>
+<hr>
+<h2>Activity Analytics</h2>
+<p><strong>Analysis Period:</strong> 10/30/2025 to 11/29/2025</p>
+<h3>Pull Request Metrics</h3>
+<ul>
+<li><strong>Merge Rate:</strong> 45.4%</li>
+<li><strong>Merged PRs:</strong> 837</li>
+<li><strong>Closed (not merged):</strong> 149</li>
+<li><strong>Total PRs:</strong> 986</li>
+</ul>
+<h3>Issue Resolution</h3>
+<ul>
+<li><strong>Average Resolution Time:</strong> 5.1 days (121 hours)</li>
+<li><strong>Median Resolution Time:</strong> 1.5 days (36 hours)</li>
+</ul>
+<h3>Activity Hotspots</h3>
+<p><strong>Most Active Days:</strong></p>
+<p>#1 <strong>2025-11-29:</strong> 36 commits</p>
+<hr>
+<h2>👥 Contributor Analytics</h2>
+<h3>Team Health</h3>
+<ul>
+<li><strong>Bus Factor:</strong> 2 High Risk<ul>
+<li><em>Indicates project risk if key contributors become unavailable</em></li>
+</ul>
+</li>
+<li><strong>Active Contributors:</strong> 36 (last 90 days)</li>
+<li><strong>Contributor Mix:</strong> 30 new, 6 returning</li>
+</ul>
+<h3>Top Contributors</h3>
+<table>
+<thead>
+<tr>
+<th>Contributor</th>
+<th>PRs</th>
+<th>Total Contributions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>app/copybara-service</td>
+<td>1789</td>
+<td>1789</td>
+</tr>
+<tr>
+<td>CodersAcademy006</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ILCSFNO</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Noam173</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td>app/dependabot</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Akarsh-28</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>AshiteshSingh</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>johnnynunez</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>newcomer119</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ajayvnkt</td>
+<td>2</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p><strong>Concentration of Contributions</strong>: The top contributor accounts for 97.0% of all contributions.</p>
+<h2>Label Analytics</h2>
+<h3>Issue/PR Balance</h3>
+<ul>
+<li><strong>Ratio:</strong> 1:0.09 (More PRs than issues)</li>
+</ul>
+<h3>Issue Lifecycle</h3>
+<ul>
+<li><strong>Average Time Open:</strong> 5.1 days</li>
+<li><strong>Median Time Open:</strong> 1.5 days</li>
+</ul>
+<h3>Most Common Labels</h3>
+<ol>
+<li><code>type:bug</code></li>
+<li><code>TF 2.19</code></li>
+<li><code>comp:ops</code></li>
+<li><code>ready to pull</code></li>
+<li><code>TFLiteConverter</code></li>
+</ol>
+<h3>Label Distribution</h3>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Count</th>
+<th>Percentage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>type:bug</td>
+<td>92</td>
+<td>18.5%</td>
+</tr>
+<tr>
+<td>TF 2.19</td>
+<td>50</td>
+<td>10.0%</td>
+</tr>
+<tr>
+<td>comp:ops</td>
+<td>47</td>
+<td>9.4%</td>
+</tr>
+<tr>
+<td>ready to pull</td>
+<td>40</td>
+<td>8.0%</td>
+</tr>
+<tr>
+<td>TFLiteConverter</td>
+<td>39</td>
+<td>7.8%</td>
+</tr>
+<tr>
+<td>stat:awaiting response</td>
+<td>26</td>
+<td>5.2%</td>
+</tr>
+<tr>
+<td>size:XS</td>
+<td>22</td>
+<td>4.4%</td>
+</tr>
+<tr>
+<td>awaiting review</td>
+<td>16</td>
+<td>3.2%</td>
+</tr>
+<tr>
+<td>comp:gpu</td>
+<td>15</td>
+<td>3.0%</td>
+</tr>
+<tr>
+<td>2.17</td>
+<td>15</td>
+<td>3.0%</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Code Health Metrics</h2>
+<h3>Review Process</h3>
+<ul>
+<li><strong>Review Coverage:</strong> 0.0% Needs Improvement</li>
+<li><strong>Reviewed PRs:</strong> 0 / 1845</li>
+</ul>
+<h3>Deployment Activity</h3>
+<ul>
+<li><strong>Total Releases:</strong> 0 Low Activity</li>
+</ul>
+<hr>
+<h2>Trends (vs Previous Period)</h2>
+<h3>Period-over-Period Comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Current</th>
+<th>Previous</th>
+<th>Δ</th>
+<th>Trend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PR Merge Rate</td>
+<td>45.4%</td>
+<td>0.0%</td>
+<td>+45.4%</td>
+<td>Improving Improving</td>
+</tr>
+<tr>
+<td>Active Contributors</td>
+<td>36</td>
+<td>0</td>
+<td>+36</td>
+<td>Improving Improving</td>
+</tr>
+<tr>
+<td>Issue Resolution</td>
+<td>5.1d</td>
+<td>0.0d</td>
+<td>+5.1d</td>
+<td>Declining Declining</td>
+</tr>
+</tbody></table>
+<h3>12-Week Velocity Trend</h3>
+<p><em>Velocity is increasing: 21900.0% change over 12 weeks (1 Stable 220 PRs/week)</em></p>
+<div class="chart-container" style="position: relative; width: 100%; height: 300px; margin: 1.5em 0;">
+  <canvas id="velocityChart"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+  new Chart(velocityCtx, {
+    type: 'line',
+    data: {
+      labels: ["W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12"],
+      datasets: [{
+        label: 'Merged PRs per Week',
+        data: [0,0,0,0,0,0,0,24,226,184,183,220],
+        borderColor: '#0066cc',
+        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: '#0066cc',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { usePointStyle: true }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 226,
+          title: { display: true, text: 'Merged PRs' }
+        }
+      }
+    }
+  });
+</script>
+
+<hr>
+<h2>🔮 Projections (Next 30 Days)</h2>
+<p>Based on current velocity and historical patterns:</p>
+<p> <strong>Insufficient data for reliable projections.</strong></p>
+<p>Historical patterns are too limited to forecast accurately. Collect more data over time to enable predictive analysis.</p>
+<h2>Industry Benchmark Comparison</h2>
+<p>Compared against 50 similar-sized open source projects:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Your Repo</th>
+<th>Median</th>
+<th>Percentile</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PR Merge Rate</td>
+<td>45.4%</td>
+<td>45.0%</td>
+<td>⚪ 60th</td>
+<td>Average (median)</td>
+</tr>
+<tr>
+<td>Time to First Review</td>
+<td>N/A</td>
+<td>12.0h</td>
+<td>95th</td>
+<td>Excellent (top 10%)</td>
+</tr>
+<tr>
+<td>Review Coverage</td>
+<td>0.0%</td>
+<td>72.0%</td>
+<td>5th</td>
+<td>Poor (bottom 25%)</td>
+</tr>
+<tr>
+<td>Bus Factor</td>
+<td>2</td>
+<td>3</td>
+<td>35th</td>
+<td>Below average</td>
+</tr>
+<tr>
+<td>Issue Resolution</td>
+<td>5.1d</td>
+<td>14.0d</td>
+<td>80th</td>
+<td>Good (top 25%)</td>
+</tr>
+<tr>
+<td>Deployment Frequency</td>
+<td>0.0/mo</td>
+<td>2.0/mo</td>
+<td>5th</td>
+<td>Poor (bottom 25%)</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Score: 50/100</strong></p>
+<h3>Your Position in the Industry</h3>
+<div class="chart-container" style="position: relative; width: 100%; height: 350px; margin: 1.5em 0;">
+  <canvas id="radarChart"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const radarCtx = document.getElementById('radarChart').getContext('2d');
+  new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+      labels: ["Merge Rate","Review Speed","Coverage","Bus Factor","Deployment"],
+      datasets: [{
+        label: 'Your Repository',
+        data: [60,95,5,35,5],
+        borderColor: '#0066cc',
+        backgroundColor: 'rgba(0, 102, 204, 0.2)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: '#0066cc',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { usePointStyle: true }
+        }
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 20
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<h3>Analysis</h3>
+<p><strong>Strengths (Above 75th percentile):</strong></p>
+<ul>
+<li>Issue Resolution Time (Days): 5.1d (🟡 good, 80th percentile)</li>
+</ul>
+<p><strong>Weaknesses (Below 50th percentile):</strong></p>
+<ul>
+<li>Review Coverage: 0.0% (🔴 poor, 5th percentile)</li>
+<li>Bus Factor: 2 (🟠 below_average, 35th percentile)</li>
+<li>Deployment Frequency: 0.0/month (🔴 poor, 5th percentile)</li>
+</ul>
+<p><strong>Recommendations (Priority Order):</strong></p>
+<ol>
+<li>Increase review coverage by 85% to reach 75th percentile (85%)</li>
+<li>CRITICAL: Bus factor is 2 (risky). Aim for at least 3-5 core contributors</li>
+<li>app/copybara-service contributes 97% of work</li>
+<li>Increase deployment frequency to at least 2.0/month</li>
+<li>Consider automated releases for merged PRs or weekly release cadence</li>
+</ol>
+<h2>📖 Executive Narrative</h2>
+<h3>The Story This Data Tells</h3>
+<h3>Executive Summary: tensorflow</h3>
+<p><strong>tensorflow demonstrates healthy development practices</strong> with 0% review coverage and 45% PR merge rate.</p>
+<h2>Key Observations</h2>
+<ul>
+<li>📈 <strong>Velocity improving</strong>: 2 out of 4 key metrics show positive trends</li>
+<li>🔴 <strong>2 metrics below industry standards</strong> (require immediate attention)</li>
+<li>⚠️  <strong>Single contributor dominance</strong>: app/copybara-service accounts for 97% of contributions</li>
+</ul>
+<h3>Root Cause Analysis</h3>
+<p><strong>Low deployment frequency despite active development</strong></p>
+<p><em>Hypothesis:</em> Manual release process or CI/CD pipeline may be bottleneck preventing frequent deployments</p>
+<p><strong>Supporting Evidence:</strong></p>
+<ul>
+<li>0 releases in analysis period</li>
+<li>837 PRs merged but not released</li>
+<li>Potential 837 PRs per release</li>
+</ul>
+<h3>Recommended Actions (Priority Order)</h3>
+<h4>🥇 Critical</h4>
+<p><strong>Audit and resolve 10 stalled PRs</strong></p>
+<ul>
+<li><strong>Rationale:</strong> PRs waiting &gt;3 days represent blocked work and frustrated contributors. Quick wins available by clearing backlog.</li>
+<li><strong>Expected Impact:</strong> Improve merge rate by ~1%</li>
+<li><strong>Timeframe:</strong> This week</li>
+</ul>
+<h4>🥉 Enhance</h4>
+<p><strong>Increase deployment cadence</strong></p>
+<ul>
+<li><strong>Rationale:</strong> Current: 0.0/month, Industry median: 2.0/month</li>
+<li><strong>Expected Impact:</strong> Faster feedback loops, improved velocity</li>
+<li><strong>Timeframe:</strong> 1-2 months</li>
+</ul>
+<h3>Projected Outcome</h3>
+<h2>Projected Outcome</h2>
+<p><strong>If no action is taken:</strong></p>
+<ul>
+<li>Contributor frustration will increase, potentially leading to abandonment</li>
+</ul>
+<p><strong>If priority actions are taken:</strong></p>
+<ul>
+<li>Improve merge rate by ~1%</li>
+<li>Faster feedback loops, improved velocity</li>
+</ul>
+<h3>Risk Assessment</h3>
+<p><strong>Risk Level: 🟠 High</strong></p>
+<ul>
+<li>🟠 <strong>High dependency risk</strong>: Bus factor is only 2</li>
+</ul>
+<h2>Items Requiring Attention</h2>
+<h3>PRs Aging Out (&gt;7 days without merge)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Title</th>
+<th>Author</th>
+<th>Created</th>
+<th>Waiting</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>#103319</td>
+<td>[PoC] Test trilom/file-changes-action CVE-2025-30066 via malicious filename</td>
+<td>@QxCV2</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103320</td>
+<td>[xla:pjrt] Remove PjRtFuture type alias</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103321</td>
+<td>Remove all usages of arguments_are_tupled since the default is false and it is</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103322</td>
+<td>Map CudaGraph Node in traceviewer could show per-node framework namescope by rewrite their annotation to the value during its corresponing creation.</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103323</td>
+<td>Use ABSL_LOG instead of LOG to avoid name collisions with other projects.</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103324</td>
+<td>Fix: near-singular matrix check for GPU</td>
+<td>@Navya1707</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103325</td>
+<td>[ReplicaGroupV3][Validation] Add validation for <code>Mesh</code> and <code>AxisRef</code> constructors.</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.9d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103326</td>
+<td>[xla:ffi] Add iterator to traverse Dictionary</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.8d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103327</td>
+<td>Automated Code Change</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.8d</td>
+<td>No reviewers</td>
+</tr>
+<tr>
+<td>#103328</td>
+<td>Unify topology in PjRtTopologyDescription</td>
+<td>@app/copybara-service</td>
+<td>29d ago</td>
+<td>[CRITICAL] 29.7d</td>
+<td>No reviewers</td>
+</tr>
+</tbody></table>
+<p><strong>Legend:</strong> &quot;Created&quot; = Days since PR was created | &quot;Waiting&quot; = Days without merge progress</p>
+<p><strong>Value at risk:</strong> 10 stalled PRs (~580 hours of work, created avg 29d ago)</p>
+<p><strong>Business Impact:</strong> Delayed features, frustrated contributors, potential technical debt</p>
+<p><strong>Actions:</strong></p>
+<ul>
+<li>Review PR status and unblock bottlenecks (priority: PRs &gt;14 days old)</li>
+<li>Request author updates if waiting on changes</li>
+<li>Auto-merge approved PRs with passing CI</li>
+</ul>
+<hr>
+<h2>Insights &amp; Recommendations</h2>
+<h3>1. <strong>Moderate PR Merge Rate (45.4%)</strong></h3>
+<ul>
+<li>Note: Some high-quality projects maintain merge rates in 25-40% range by design</li>
+<li>If above benchmark: maintain current standards</li>
+<li>If trending down: investigate recent process changes</li>
+<li>Consider benchmark data: industry median is 45.0%</li>
+</ul>
+<h3>2. <strong>Review Coverage Needs Improvement (0.0%)</strong></h3>
+<ul>
+<li><strong>Action</strong>: 1845 PRs were merged without review</li>
+<li><strong>Next Steps</strong>:<ul>
+<li>Enable &quot;Require approvals&quot; in branch protection</li>
+<li>Set up CODEOWNERS file for automatic review assignment</li>
+<li>Schedule code review training session</li>
+</ul>
+</li>
+</ul>
+<h3>3. <strong>Critical: Low Bus Factor (2)</strong></h3>
+<ul>
+<li><strong>Risk</strong>: app/copybara-service accounts for 97.0% of contributions</li>
+<li><strong>Immediate Actions</strong>:<ul>
+<li>Document critical systems and processes</li>
+<li>Implement pair programming sessions</li>
+<li>Create onboarding documentation for new contributors</li>
+<li>Schedule knowledge transfer sessions</li>
+</ul>
+</li>
+</ul>
+<h3>4. <strong>High Contribution Concentration (97.0%)</strong></h3>
+<ul>
+<li>Top contributor dominates contributions</li>
+<li>Risk of knowledge silos</li>
+<li>Encourage broader participation</li>
+</ul>
+<h3>5. <strong>Fast Issue Resolution (5.1 days avg)</strong></h3>
+<ul>
+<li>Excellent responsiveness</li>
+<li>Maintain current triage process</li>
+</ul>
+<hr>
+<h2>Report Metadata</h2>
+<p><strong>Report Generated:</strong> 11/29/2025, 6:44:54 PM</p>
+<p><strong>Data Collection Mode:</strong> Full Repository Backup (Complete)</p>
+<p><strong>Period Analyzed:</strong></p>
+<ul>
+<li>From: October 30, 2025</li>
+<li>To: November 29, 2025</li>
+</ul>
+<p><strong>Analysis Duration:</strong></p>
+<ul>
+<li>Activity: 1.73s</li>
+<li>Contributors: 1.07s</li>
+<li>Labels: 1.60s</li>
+<li>Health: 1.15s</li>
+</ul>
+<p><strong>Generated by:</strong> <a href="https://github.com/LeSoviet/GithubCLIExtractor">GitHub Extractor CLI (ghextractor)</a>
+<strong>Version:</strong> n/a</p>
+
+  </div>
+</body>
+</html>
+    

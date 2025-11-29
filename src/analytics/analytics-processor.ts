@@ -62,7 +62,8 @@ export class AnalyticsProcessor {
       const advancedProcessor = new AdvancedAnalyticsProcessor(
         this.options.repository,
         this.options.offline || false,
-        this.options.exportedDataPath
+        this.options.exportedDataPath,
+        this.options.timeRange
       );
 
       const [reviewVelocity, trends, correlations, projections] = await Promise.all([
@@ -175,11 +176,61 @@ export class AnalyticsProcessor {
    * Generate activity analytics
    */
   /**
+   * Get the date range based on timeRange option
+   */
+  private getTimeRangeDates(): { start: Date; end: Date } {
+    const now = new Date();
+    const end = now;
+    let start: Date;
+
+    if (!this.options.timeRange) {
+      // Default: last 30 days
+      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else {
+      const days = {
+        '1-week': 7,
+        '1-month': 30,
+        '2-months': 60,
+        '3-months': 90,
+      }[this.options.timeRange];
+
+      start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    }
+
+    return { start, end };
+  }
+
+  /**
+   * Filter items by timeRange if specified
+   */
+  private filterByTimeRange(items: any[]): any[] {
+    if (!this.options.timeRange) {
+      return items; // No filtering if timeRange not specified
+    }
+
+    const { start } = this.getTimeRangeDates();
+
+    return items.filter((item) => {
+      const itemDate = new Date(item.createdAt || item.mergedAt || item.closedAt);
+      return itemDate >= start;
+    });
+  }
+
+  /**
    * Calculate the analysis period from actual data dates
    * @param items - Array of items with createdAt dates
    * @returns Object with start and end ISO date strings
    */
   private calculateAnalysisPeriod(items: any[]): { start: string; end: string } {
+    // If timeRange is specified, use it to define the period
+    if (this.options.timeRange) {
+      const { start, end } = this.getTimeRangeDates();
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      };
+    }
+
     if (items.length === 0) {
       // Fallback to last 30 days if no data
       return {
@@ -289,6 +340,10 @@ export class AnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       }
+
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
+      issues = this.filterByTimeRange(issues);
 
       // Calculate analysis period from actual data
       const allItems = [...prs, ...issues];
@@ -487,6 +542,9 @@ export class AnalyticsProcessor {
         }));
       }
 
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
+
       // Count PRs per contributor
       prs.forEach((pr) => {
         try {
@@ -628,6 +686,10 @@ export class AnalyticsProcessor {
           author: { login: pr.author },
         }));
       }
+
+      // Apply timeRange filter if specified
+      issues = this.filterByTimeRange(issues);
+      prs = this.filterByTimeRange(prs);
 
       // Calculate issue/PR ratio
       result.issueVsPrratio = prs.length > 0 ? issues.length / prs.length : 0;
@@ -776,6 +838,9 @@ export class AnalyticsProcessor {
         const parsedPRs = await parser.parsePullRequests();
         const parsedReleases = await parser.parseReleases();
 
+        // Log releases found in offline mode for debugging
+        logger.debug(`[OFFLINE] Releases found: ${parsedReleases.length}`);
+
         // Convert parsed data to match GitHub API format
         // Note: Offline mode doesn't have reviewDecision data from markdown files
         // We leave reviewDecision undefined to indicate data is not available
@@ -796,6 +861,13 @@ export class AnalyticsProcessor {
           publishedAt: release.publishedAt,
         }));
       }
+
+      // Apply timeRange filter if specified
+      prs = this.filterByTimeRange(prs);
+      releases = this.filterByTimeRange(releases);
+
+      // Log releases after filtering for debugging
+      logger.debug(`[HEALTH] Releases after timeRange filter: ${releases.length}`);
 
       // Calculate PR review coverage
       if (prs.length > 0) {

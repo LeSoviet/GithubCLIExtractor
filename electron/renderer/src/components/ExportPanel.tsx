@@ -124,6 +124,9 @@ function ExportPanel({
             <strong>Output:</strong> {filters.outputPath}
           </li>
           <li>
+            <strong>Export Mode:</strong> Full Backup (Complete data export)
+          </li>
+          <li>
             <strong>Analytics:</strong> {filters.generateAnalytics ? 'Yes' : 'No'}
           </li>
         </ul>

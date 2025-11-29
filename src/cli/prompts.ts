@@ -285,3 +285,23 @@ export async function promptEnableDiffMode(): Promise<boolean> {
 
   return enableDiff;
 }
+
+export async function selectTimeRange(): Promise<'1-week' | '1-month' | '2-months' | '3-months'> {
+  const timeRange = await clack.select({
+    message: 'Select time range for analytics:',
+    options: [
+      { value: '1-week', label: '1 Week', hint: 'Last 7 days' },
+      { value: '1-month', label: '1 Month', hint: 'Last 30 days' },
+      { value: '2-months', label: '2 Months', hint: 'Last 60 days' },
+      { value: '3-months', label: '3 Months', hint: 'Last 90 days' },
+    ],
+    initialValue: '1-month',
+  });
+
+  if (clack.isCancel(timeRange)) {
+    clack.cancel('Operation cancelled');
+    process.exit(0);
+  }
+
+  return timeRange as '1-week' | '1-month' | '2-months' | '3-months';
+}

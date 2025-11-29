@@ -305,17 +305,18 @@ ipcMain.handle('export-data', async (_event, options) => {
         repository,
         outputPath: finalOutputPath,
         format,
+        // IMPORTANT: Explicitly disable diff mode for GUI exports
+        // GUI provides a full export with optional date range filtering for analytics
+        // Diff mode is NOT used in GUI - it's only for CLI incremental exports
+        diffMode: {
+          enabled: false,
+          forceFullExport: true,
+        },
       };
 
-      // Add date filter if provided
-      if (dateFilter) {
-        const diffModeOptions = {
-          enabled: true,
-          since: dateFilter.from,
-          until: dateFilter.to,
-        };
-        exporterOptions.diffMode = diffModeOptions;
-      }
+      // NOTE: dateFilter is for analytics time range, NOT for diff mode
+      // Diff mode is for incremental exports (only new/updated items)
+      // We want full exports for accurate analytics
 
       // Add user filter if provided
       if (userFilter) {
@@ -343,6 +344,7 @@ ipcMain.handle('export-data', async (_event, options) => {
           repository,
           offline: true,
           exportedDataPath: repoOutputPath,
+          timeRange: dateFilter?.type || '1-month', // Use selected time range for filtering
         };
         const processor = new AnalyticsProcessor(analyticsOptions);
         await processor.generateReport();

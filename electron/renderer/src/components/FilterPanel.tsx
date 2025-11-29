@@ -3,7 +3,7 @@ import { subDays, format } from 'date-fns';
 interface FilterPanelProps {
   filters: {
     dateFilter: {
-      type: 'last-week' | 'last-month' | 'custom' | 'all';
+      type: '1-week' | '1-month' | '2-months' | '3-months';
       from?: string;
       to?: string;
     };
@@ -21,30 +21,27 @@ function FilterPanel({ filters, contributors, onFiltersChange }: FilterPanelProp
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  const updateDateFilter = (key: string, value: any) => {
-    onFiltersChange({
-      ...filters,
-      dateFilter: { ...filters.dateFilter, [key]: value },
-    });
-  };
-
-  const handleDateRangeChange = (type: 'last-week' | 'last-month' | 'custom' | 'all') => {
+  const handleDateRangeChange = (type: '1-week' | '1-month' | '2-months' | '3-months') => {
     const today = new Date();
     let from = '';
     let to = format(today, 'yyyy-MM-dd');
 
-    if (type === 'last-week') {
+    if (type === '1-week') {
       from = format(subDays(today, 7), 'yyyy-MM-dd');
-    } else if (type === 'last-month') {
+    } else if (type === '1-month') {
       from = format(subDays(today, 30), 'yyyy-MM-dd');
+    } else if (type === '2-months') {
+      from = format(subDays(today, 60), 'yyyy-MM-dd');
+    } else if (type === '3-months') {
+      from = format(subDays(today, 90), 'yyyy-MM-dd');
     }
 
     onFiltersChange({
       ...filters,
       dateFilter: {
         type,
-        from: type !== 'all' ? from : undefined,
-        to: type !== 'all' ? to : undefined,
+        from,
+        to,
       },
     });
   };
@@ -79,54 +76,34 @@ function FilterPanel({ filters, contributors, onFiltersChange }: FilterPanelProp
         <label className="filter-label">📅 Date Range:</label>
         <div className="date-range-buttons">
           <button
-            className={`btn-filter ${filters.dateFilter.type === 'all' ? 'active' : ''}`}
-            onClick={() => handleDateRangeChange('all')}
+            className={`btn-filter ${filters.dateFilter.type === '1-week' ? 'active' : ''}`}
+            onClick={() => handleDateRangeChange('1-week')}
           >
-            All Time
+            1 Week
           </button>
           <button
-            className={`btn-filter ${filters.dateFilter.type === 'last-week' ? 'active' : ''}`}
-            onClick={() => handleDateRangeChange('last-week')}
+            className={`btn-filter ${filters.dateFilter.type === '1-month' ? 'active' : ''}`}
+            onClick={() => handleDateRangeChange('1-month')}
           >
-            Last Week
+            1 Month
           </button>
           <button
-            className={`btn-filter ${filters.dateFilter.type === 'last-month' ? 'active' : ''}`}
-            onClick={() => handleDateRangeChange('last-month')}
+            className={`btn-filter ${filters.dateFilter.type === '2-months' ? 'active' : ''}`}
+            onClick={() => handleDateRangeChange('2-months')}
           >
-            Last Month
+            2 Months
           </button>
           <button
-            className={`btn-filter ${filters.dateFilter.type === 'custom' ? 'active' : ''}`}
-            onClick={() => handleDateRangeChange('custom')}
+            className={`btn-filter ${filters.dateFilter.type === '3-months' ? 'active' : ''}`}
+            onClick={() => handleDateRangeChange('3-months')}
           >
-            Custom Range
+            3 Months
           </button>
         </div>
 
-        {filters.dateFilter.type === 'custom' && (
-          <div className="custom-date-range">
-            <input
-              type="date"
-              value={filters.dateFilter.from || ''}
-              onChange={(e) => updateDateFilter('from', e.target.value)}
-              placeholder="From"
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={filters.dateFilter.to || ''}
-              onChange={(e) => updateDateFilter('to', e.target.value)}
-              placeholder="To"
-            />
-          </div>
-        )}
-
-        {filters.dateFilter.type !== 'all' && (
-          <div className="date-preview">
-            Selected: {filters.dateFilter.from} → {filters.dateFilter.to}
-          </div>
-        )}
+        <div className="date-preview">
+          Selected: {filters.dateFilter.from} → {filters.dateFilter.to}
+        </div>
       </div>
 
       <div className="filter-group">

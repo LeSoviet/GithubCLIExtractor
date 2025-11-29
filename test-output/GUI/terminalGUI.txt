@@ -1,0 +1,63 @@
+PS C:\Users\LeSoviet\Documents\GitHub\GithubCLIExtractor> npm run dev
+
+> ghextractor@0.9.8 dev  
+> node bin/ghextractor.js
+
+
+🚀 GitHub Extractor
+
+Choose your interface:
+  1) CLI - Command Line Interface (recommended for automation)
+  2) GUI - Graphical User Interface (with filters & preview)
+  q) Quit
+
+Your choice (1/2/q): 2
+
+> ghextractor@0.9.8 preview:gui
+> npx electron ./out/main/index.js
+
+
+[Main] App is ready, creating window...
+[Main] Creating browser window...
+[Main] Loading HTML from: C:\Users\LeSoviet\Documents\GitHub\GithubCLIExtractor\out\renderer\index.html
+[Main] HTML loaded successfully
+[Main] Fetching repositories...
+[Main] Auth status: { isAuthenticated: true, username: undefined }
+[Main] Successfully fetched 37 repositories
+[INFO] Starting export for tensorflow/tensorflow...
+[INFO] Fetched 2000 items
+[OK] Export completed: 2000 exported, 0 failed
+[INFO] Starting export for tensorflow/tensorflow...
+[INFO] Fetched 100 items
+[OK] Export completed: 100 exported, 0 failed
+[INFO] Starting export for tensorflow/tensorflow...
+[INFO] Fetched 2000 items
+[OK] Export completed: 2000 exported, 0 failed
+[INFO] Starting export for tensorflow/tensorflow...
+[INFO] Fetched 219 items
+[OK] Export completed: 219 exported, 0 failed
+[INFO] Starting export for tensorflow/tensorflow...
+[INFO] Fetched 1752 items
+[OK] Export completed: 1752 exported, 0 failed
+[INFO] Generating analytics report for tensorflow/tensorflow...
+[INFO] [OFFLINE] Using offline mode: parsing exported markdown files...
+[WARN] [OFFLINE] Review coverage data not available in markdown files. Coverage reported as 0%.
+[INFO] [PARSED] Loaded 2000 PRs, 2000 issues from markdown files
+[INFO] [MERGED] Found 879 merged PRs
+[INFO] Generating advanced analytics (Review Velocity, Trends, Correlations, Projections)...
+[INFO] Validating report for numerical consistency...
+[INFO] Validating analytics report for numerical consistency...
+[OK] Γ£à Report validation passed (32/33 checks)
+[INFO] [PASSED] Report validation passed with 3 warnings
+[INFO] Comparing metrics against industry benchmarks...
+[INFO] Comparing repository metrics to industry benchmarks...
+[INFO] Generating executive narrative and insights...
+[INFO] Generating executive narrative...
+[INFO] Starting PDF generation pipeline: Markdown -> HTML -> PDF
+[INFO] [OK] Markdown report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\GUI\tensorflow\tensorflow\tensorflow-tensorflow-analytics.md
+[INFO] [OK] HTML report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\GUI\tensorflow\tensorflow\tensorflow-tensorflow-analytics.html
+[INFO] Converting HTML to PDF: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\GUI\tensorflow\tensorflow\tensorflow-tensorflow-analytics.pdf
+[INFO] PDF generated successfully: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\GUI\tensorflow\tensorflow\tensorflow-tensorflow-analytics.pdf
+[INFO] [OK] PDF report generated: C:\Users\LeSoviet\Desktop\GHEXTRACTOR_TEST\GUI\tensorflow\tensorflow\tensorflow-tensorflow-analytics.pdf
+[OK] [OK] Analytics report generated in 5.81s
+[INFO] Analytics report generated successfully

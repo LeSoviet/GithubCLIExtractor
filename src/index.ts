@@ -15,6 +15,7 @@ import {
   selectBatchExportTypes,
   promptBatchParallelism,
   promptEnableDiffMode,
+  selectTimeRange,
 } from './cli/prompts.js';
 import { createProgressTracker, ProgressTracker } from './cli/progress.js';
 import { checkGhInstalled, getAuthStatus } from './core/github-auth.js';
@@ -404,6 +405,12 @@ async function main() {
       ? defaultPath
       : await selectOutputPath(defaultPath);
 
+    // Select time range for analytics (only for full-backup or when not in test mode)
+    const timeRange =
+      process.env.GHX_TEST_MODE || exportType !== 'full-backup'
+        ? '1-month'
+        : await selectTimeRange();
+
     // Exit if dry-run
     if (args.dryRun) {
       console.log('\n✔ Dry-run completed successfully');
@@ -411,6 +418,7 @@ async function main() {
       console.log(`  Export type: ${exportType}`);
       console.log(`  Format: ${exportFormat}`);
       console.log(`  Output: ${outputPath}`);
+      console.log(`  Time range: ${timeRange}`);
       if (args.diff) {
         console.log(`  Diff mode: enabled`);
       }
@@ -447,7 +455,7 @@ async function main() {
     };
 
     // Execute export
-    await executeExport(exportOptions, args.diff);
+    await executeExport(exportOptions, args.diff, timeRange);
 
     showOutro('Thanks for using GitHub Extractor CLI!');
     await cleanup();
@@ -468,7 +476,8 @@ async function main() {
  */
 async function executeExport(
   options: ExportOptions,
-  diffModeEnabled: boolean = false
+  diffModeEnabled: boolean = false,
+  timeRange: '1-week' | '1-month' | '2-months' | '3-months' = '1-month'
 ): Promise<void> {
   const progress = createProgressTracker();
 
@@ -504,6 +513,7 @@ async function executeExport(
             exportedDataPath: exportPath,
             allowPartialAnalytics: !completeness.isComplete,
             missingDataTypes: completeness.missingTypes,
+            timeRange,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
@@ -553,6 +563,7 @@ async function executeExport(
             exportedDataPath: exportPath,
             allowPartialAnalytics: !completeness.isComplete,
             missingDataTypes: completeness.missingTypes,
+            timeRange,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);

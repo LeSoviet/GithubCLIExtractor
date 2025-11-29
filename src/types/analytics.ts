@@ -27,6 +27,9 @@ export interface AnalyticsOptions {
 
   /** List of missing data types (for partial analytics disclaimer) */
   missingDataTypes?: string[];
+
+  /** Time range for analytics (filters data by date) */
+  timeRange?: '1-week' | '1-month' | '2-months' | '3-months';
 }
 
 /**

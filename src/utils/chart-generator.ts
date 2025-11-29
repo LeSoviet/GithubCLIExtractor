@@ -16,8 +16,8 @@ export class ChartGenerator {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('velocityChart').getContext('2d');
-  new Chart(ctx, {
+  const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+  new Chart(velocityCtx, {
     type: 'line',
     data: {
       labels: ["${labels}"],
@@ -75,8 +75,8 @@ export class ChartGenerator {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('burndownChart').getContext('2d');
-  new Chart(ctx, {
+  const burndownCtx = document.getElementById('burndownChart').getContext('2d');
+  new Chart(burndownCtx, {
     type: 'line',
     data: {
       labels: ["${weekLabels}"],
@@ -137,8 +137,8 @@ export class ChartGenerator {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('radarChart').getContext('2d');
-  new Chart(ctx, {
+  const radarCtx = document.getElementById('radarChart').getContext('2d');
+  new Chart(radarCtx, {
     type: 'radar',
     data: {
       labels: [${categoryLabels}],
