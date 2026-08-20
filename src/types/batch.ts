@@ -27,6 +27,15 @@ export interface BatchConfig {
 
   /** Verbose output */
   verbose?: boolean;
+
+  /** Loaded user configuration (rateLimit, exportLimits, etc.) */
+  config?: import('./config.js').ConfigFile;
+
+  /** Export time window (caps how far back items are fetched) */
+  timeRange?: import('../exporters/base-exporter.js').TimeRange;
+
+  /** Optional filter by a single user */
+  userFilter?: string;
 }
 
 /**

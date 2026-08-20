@@ -1,5 +1,5 @@
 import { BaseExporter } from './base-exporter.js';
-import { execGhJson } from '../utils/exec-gh.js';
+import { paginateApi } from '../utils/paginate-api.js';
 import { sanitizeUnicode } from '../utils/sanitize.js';
 import { convertCommit } from '../utils/converters.js';
 import { logger } from '../utils/logger.js';
@@ -18,30 +18,26 @@ export class CommitExporter extends BaseExporter<Commit> {
       // Log diff mode info if enabled
       this.logDiffModeInfo();
 
-      // Build API URL with optional since parameter for diff mode
-      let apiUrl = `api repos/${repoId}/commits?per_page=100`;
+      // Build API URL with optional since parameter for diff mode / time range
+      // We page manually (not --paginate) to avoid 60s timeouts and stdout
+      // overflows on large repos. Each page is a small, fast request.
+      const queryParts: string[] = [];
 
       // Add author filter if specified
       if (this.isUserFilterEnabled()) {
-        apiUrl += `&author=${encodeURIComponent(this.getUserFilter()!)}`;
+        queryParts.push(`author=${encodeURIComponent(this.getUserFilter()!)}`);
       }
 
-      if (this.isDiffMode()) {
-        const since = this.getDiffModeSince();
-        if (since) {
-          // GitHub API accepts ISO 8601 format for since parameter
-          apiUrl += `&since=${encodeURIComponent(since)}`;
-        }
+      // Apply time range cutoff if set (caps how far back we fetch)
+      const since = this.getTimeRangeSince() || this.getDiffModeSince();
+      if (since) {
+        queryParts.push(`since=${encodeURIComponent(since)}`);
       }
 
-      // Fetch commits - using reasonable per_page size
-      // GitHub CLI handles pagination automatically, ensuring complete data export
-      // For large repos this may take longer but guarantees all data is captured
-      const commits = await execGhJson<GitHubCommit[]>(apiUrl, {
-        timeout: 60000,
-        useRateLimit: false,
-        useRetry: false,
-      });
+      const commits = await paginateApi<GitHubCommit>(
+        `repos/${repoId}/commits`,
+        queryParts.join('&')
+      );
 
       // Convert to our format
       const convertedCommits = commits.map((commit) => convertCommit(commit));

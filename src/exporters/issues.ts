@@ -19,7 +19,7 @@ export class IssueExporter extends BaseExporter<Issue> {
       this.logDiffModeInfo();
 
       // Fetch issues using dynamically configured limit for complete data export
-      const issueLimit = getExportLimit('issues');
+      const issueLimit = getExportLimit('issues', this.config);
       const issues = await execGhJson<any[]>(
         `issue list --repo ${repoId} --state all --limit ${issueLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url`,
         { timeout: 60000, useRateLimit: false, useRetry: false }

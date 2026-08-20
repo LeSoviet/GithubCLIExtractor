@@ -88,6 +88,9 @@ export interface ExportOptions {
   repository: Repository;
   type: ExportType;
   diffMode?: import('./state.js').DiffModeOptions;
+  config?: import('./config.js').ConfigFile;
+  timeRange?: import('../exporters/base-exporter.js').TimeRange;
+  userFilter?: string;
 }
 
 export interface RateLimitInfo {

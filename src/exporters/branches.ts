@@ -34,16 +34,14 @@ export class BranchExporter extends BaseExporter<Branch> {
       // Convert branches
       let convertedBranches = branches.map((branch) => convertBranch(branch));
 
-      // Filter by last commit date if diff mode is enabled
-      if (this.isDiffMode()) {
-        const since = this.getDiffModeSince();
-        if (since) {
-          const sinceDate = new Date(since);
-          convertedBranches = convertedBranches.filter((branch) => {
-            const lastCommitDate = new Date(branch.lastCommit.date);
-            return lastCommitDate > sinceDate;
-          });
-        }
+      // Filter by last commit date if diff mode or time range is set
+      const since = this.getDiffModeSince() || this.getTimeRangeSince();
+      if (since) {
+        const sinceDate = new Date(since);
+        convertedBranches = convertedBranches.filter((branch) => {
+          const lastCommitDate = new Date(branch.lastCommit.date);
+          return lastCommitDate > sinceDate;
+        });
       }
 
       return convertedBranches;
