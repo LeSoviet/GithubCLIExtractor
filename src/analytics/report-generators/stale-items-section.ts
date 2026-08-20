@@ -57,11 +57,11 @@ export class StaleItemsSectionGenerator implements SectionGenerator {
     md += `\n`;
     md += `**Legend:** "Created" = Days since PR was created | "Waiting" = Days without merge progress\n\n`;
 
-    // Calculate value at risk (work hours based on PR age) - using accumulated days
-    const valueAtRiskHours = totalAgeInDays * 2; // ~2 hours per day PR is stalled
+    // Calculate value at risk (accumulated waiting days across stalled PRs)
+    const totalWaitingDays = bottlenecks.reduce((sum, b) => sum + b.waitingDays, 0);
     const avgAgeDays = bottlenecks.length > 0 ? Math.round(totalAgeInDays / bottlenecks.length) : 0;
 
-    md += `**Value at risk:** ${bottlenecks.length} stalled PRs (~${Math.round(valueAtRiskHours)} hours of work, created avg ${avgAgeDays}d ago)\n\n`;
+    md += `**Value at risk:** ${bottlenecks.length} stalled PRs (~${Math.round(totalWaitingDays)} days of accumulated waiting, created avg ${avgAgeDays}d ago)\n\n`;
     md += `**Business Impact:** Delayed features, frustrated contributors, potential technical debt\n\n`;
     md += `**Actions:**\n`;
     md += `- Review PR status and unblock bottlenecks (priority: PRs >14 days old)\n`;

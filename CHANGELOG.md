@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-08-20
+
+### Removed
+
+- **Synthetic Benchmark Comparison**: Removed the analytics "Industry Benchmark
+  Comparison" section, which claimed to compare against "50 similar-sized open
+  source projects" but actually scored metrics against hardcoded data. Reports
+  now only show real repository metrics.
+- Deleted `benchmarking.ts` and `benchmarks-section.ts` (dead code, 0% coverage).
+
+### Added
+
+- **User Filter**: New "Filter by user" prompt in the CLI and GUI that caps an
+  export (and its analytics report) to a single contributor. Reports indicate
+  when they are filtered by a user.
+- **"All Time" Time Range**: Added an "All time" option (default) alongside
+  1-week/1-month/2-months/3-months in both CLI and GUI.
+- **Commit Activity Chart**: New chart showing commits over time in analytics.
+- **Review Velocity Section**: Shows time to first review/approval and reviewer
+  load distribution (omitted when there is no review data).
+- **Configurable Export Limits & Rate Limiting**: `rateLimit`, `concurrency` and
+  per-type `exportLimits` can be set in config or via environment overrides
+  (`GHEXTRACTOR_RATE_LIMIT`, `GHEXTRACTOR_CONCURRENCY`).
+- **Robust Pagination**: Added `paginateApi` for manual REST paging, avoiding
+  60s timeouts and stdout overflows on large repositories.
+
+### Changed
+
+- **Analytics Report Integrity**: PR metrics now report open/total consistently
+  (no more 117 vs 125 mismatches); contribution concentration uses real totals;
+  "Contribution Mix" no longer labels a truncated top-10 sum as "100%".
+- **Trends**: "All time" periods are derived from the actual data range instead
+  of the last 30 days; empty previous periods are flagged as insufficient data
+  instead of implying infinite improvement; velocity % change is honest when the
+  baseline is 0.
+- **Narrative**: No longer calls a repo "healthy" with 0% review coverage; the
+  stalled-PR impact is described honestly instead of "~0%".
+- **Rendering**: Activity hotspots render as a proper numbered list; releases
+  show N/A when not exported; duplicate "Stable Stable" text removed.
+
+### Fixed
+
+- **Out-of-window commit dates**: Commit activity chart now respects the selected
+  time range in offline mode.
+- **Commit/Branch parsing**: Offline parser reads the `Date` and `Protection`
+  fields correctly, so commits/branches are no longer reported as missing.
+- **Value at risk**: Reports accumulated waiting days instead of invented hours.
+- **Package version**: Analytics metadata now resolves the correct version in
+  both ESM and CJS builds.
+- **Build**: Removed `import.meta` usage that broke the CJS build.
+
 ## [0.9.9] - 2025-11-29
 
 ### Fixed

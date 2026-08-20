@@ -6,7 +6,7 @@ import type { ConfigFile, CLIConfig } from '../types/config.js';
 import { logger } from './logger.js';
 import { getCurrentVersion } from './version-checker.js';
 
-const CONFIG_FILENAMES = ['.ghextractorrc.json', 'ghextractor.config.json'];
+const CONFIG_FILENAMES = ['.ghextractorrc', '.ghextractorrc.json', 'ghextractor.config.json'];
 const GLOBAL_CONFIG_PATH = join(homedir(), '.ghextractor', 'config.json');
 
 /**
@@ -56,6 +56,7 @@ export class ConfigManager {
       } catch {
         // ignore
       }
+      this.applyEnvironmentOverrides();
       logger.debug('Using default configuration');
       return this.config;
     }
@@ -76,12 +77,29 @@ export class ConfigManager {
         // ignore
       }
 
+      this.applyEnvironmentOverrides();
+
       logger.info(`Loaded configuration from: ${configPath}`);
       return this.config;
     } catch (error) {
       logger.warn(`Failed to load config from ${configPath}: ${error}`);
       this.config = this.getDefaultConfig();
       return this.config;
+    }
+  }
+
+  /**
+   * Apply environment variable overrides to the loaded configuration.
+   * Environment variables take precedence over configuration file values.
+   */
+  private applyEnvironmentOverrides(): void {
+    if (process.env.GHEXTRACTOR_RATE_LIMIT) {
+      const n = Number(process.env.GHEXTRACTOR_RATE_LIMIT);
+      if (!Number.isNaN(n) && n > 0) this.config!.rateLimit = n;
+    }
+    if (process.env.GHEXTRACTOR_CONCURRENCY) {
+      const n = Number(process.env.GHEXTRACTOR_CONCURRENCY);
+      if (!Number.isNaN(n) && n > 0) this.config!.concurrency = n;
     }
   }
 
@@ -99,6 +117,9 @@ export class ConfigManager {
       parallelExports: 3,
       cacheEnabled: true,
       cacheTTL: 24,
+      rateLimit: 1000,
+      concurrency: 5,
+      exportLimits: {},
     };
   }
 

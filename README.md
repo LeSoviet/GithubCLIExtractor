@@ -105,8 +105,9 @@ npm install
 # Development scripts
 npm run dev          # Run CLI in development mode
 npm run dev:gui      # Run GUI in development mode (with hot-reload)
-npm run build        # Build CLI for production
-npm run build:gui    # Build GUI for production
+npm run build        # Build both CLI and GUI for production
+npm run build:cli    # Build CLI only (for faster development)
+npm run build:gui    # Build GUI only (for faster development)
 npm run test         # Run tests
 npm run test:coverage # Run tests with coverage
 ```

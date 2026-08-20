@@ -6,12 +6,16 @@ import { writeMarkdown, writeJson } from '../utils/output.js';
 import { join } from 'path';
 import type { DiffModeOptions } from '../types/state.js';
 
+export type TimeRange = '1-week' | '1-month' | '2-months' | '3-months' | 'all';
+
 export interface ExporterOptions {
   repository: Repository;
   outputPath: string;
   format: ExportFormat;
   diffMode?: DiffModeOptions;
   userFilter?: string; // Filter by specific user
+  config?: import('../types/config.js').ConfigFile; // Loaded user configuration
+  timeRange?: TimeRange; // Optional export window (filters items by date)
 }
 
 /**
@@ -23,6 +27,8 @@ export abstract class BaseExporter<T> {
   protected format: ExportFormat;
   protected diffMode?: DiffModeOptions;
   protected userFilter?: string;
+  protected config?: import('../types/config.js').ConfigFile;
+  protected timeRange?: TimeRange;
   protected startTime: number = 0;
   protected apiCalls: number = 0;
   protected cacheHits: number = 0;
@@ -33,6 +39,25 @@ export abstract class BaseExporter<T> {
     this.format = options.format;
     this.diffMode = options.diffMode;
     this.userFilter = options.userFilter;
+    this.config = options.config;
+    this.timeRange = options.timeRange;
+  }
+
+  /**
+   * Get the `since` cutoff date based on the configured time range.
+   * If a time range is set, computes the cutoff; otherwise returns undefined
+   * (meaning no date filter / full history).
+   */
+  protected getTimeRangeSince(): string | undefined {
+    if (!this.timeRange) return undefined;
+    if (this.timeRange === 'all') return undefined;
+    const days = {
+      '1-week': 7,
+      '1-month': 30,
+      '2-months': 60,
+      '3-months': 90,
+    }[this.timeRange];
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   }
 
   /**
@@ -220,20 +245,18 @@ export abstract class BaseExporter<T> {
       }
     }
 
-    // Apply diff mode filter
-    if (this.isDiffMode()) {
-      const since = this.getDiffModeSince();
-      if (since) {
-        const sinceDate = new Date(since);
-        filtered = filtered.filter((item) => {
-          const itemDate = item[dateField];
-          return itemDate && new Date(String(itemDate)) > sinceDate;
-        });
-        if (shouldLog) {
-          this.logFilteringAction(
-            `diff mode: ${filtered.length} items updated since ${sinceDate.toLocaleString()}`
-          );
-        }
+    // Apply date cutoff: diff-mode since takes precedence over timeRange
+    const since = this.getDiffModeSince() || this.getTimeRangeSince();
+    if (since) {
+      const sinceDate = new Date(since);
+      filtered = filtered.filter((item) => {
+        const itemDate = item[dateField];
+        return itemDate && new Date(String(itemDate)) > sinceDate;
+      });
+      if (shouldLog) {
+        this.logFilteringAction(
+          `date range: ${filtered.length} items since ${sinceDate.toLocaleString()}`
+        );
       }
     }
 

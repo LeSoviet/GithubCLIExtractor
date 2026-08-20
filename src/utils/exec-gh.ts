@@ -40,7 +40,7 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
 
       const { stdout, stderr } = await execAsync(fullCommand, {
         timeout,
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
+        maxBuffer: 100 * 1024 * 1024, // 100MB buffer for large outputs (e.g. 10k+ PRs/issues)
         killSignal: 'SIGTERM', // Ensure process can be killed
       });
 

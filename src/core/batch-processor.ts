@@ -242,6 +242,9 @@ export class BatchProcessor {
       outputPath: finalOutputPath,
       format: this.config.format,
       diffMode: diffModeOptions,
+      config: this.config.config,
+      timeRange: this.config.timeRange,
+      userFilter: this.config.userFilter,
     };
 
     // Create appropriate exporter

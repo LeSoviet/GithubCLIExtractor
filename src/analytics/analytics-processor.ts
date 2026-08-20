@@ -15,7 +15,6 @@ import { MarkdownParser } from './markdown-parser.js';
 import { MarkdownReportGenerator } from './report-generators/index.js';
 import { AdvancedAnalyticsProcessor } from './advanced-analytics.js';
 import { ReportValidator } from './report-validator.js';
-import { BenchmarkingEngine } from './benchmarking.js';
 import { NarrativeGenerator } from './narrative-generator.js';
 import { HtmlReportGenerator } from '../utils/html-report-generator.js';
 import { PuppeteerPdfConverter } from '../utils/puppeteer-pdf-converter.js';
@@ -86,6 +85,7 @@ export class AnalyticsProcessor {
         projections,
         isPartialData: this.options.allowPartialAnalytics,
         missingDataTypes: this.options.missingDataTypes,
+        userFilter: this.options.userFilter,
       };
 
       // Validate report for numerical consistency with context-aware thresholds
@@ -147,16 +147,10 @@ export class AnalyticsProcessor {
         logger.success('[PASSED] Report validation passed all checks');
       }
 
-      // Generate benchmark comparison
-      logger.info('Comparing metrics against industry benchmarks...');
-      const benchmarkEngine = new BenchmarkingEngine();
-      const benchmark = await benchmarkEngine.compareToBenchmarks(report);
-      report.benchmark = benchmark;
-
       // Generate executive narrative
       logger.info('Generating executive narrative and insights...');
       const narrativeGenerator = new NarrativeGenerator();
-      const narrative = await narrativeGenerator.generate(report, benchmark);
+      const narrative = await narrativeGenerator.generate(report);
       report.narrative = narrative;
 
       // Export report in specified formats
@@ -183,9 +177,9 @@ export class AnalyticsProcessor {
     const end = now;
     let start: Date;
 
-    if (!this.options.timeRange) {
-      // Default: last 30 days
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    if (!this.options.timeRange || this.options.timeRange === 'all') {
+      // No date filter: use a wide window (last 5 years) so analytics cover all data
+      start = new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000);
     } else {
       const days = {
         '1-week': 7,
@@ -280,6 +274,8 @@ export class AnalyticsProcessor {
       prMergeRate: {
         merged: 0,
         closed: 0,
+        open: 0,
+        total: 0,
         mergeRate: 0,
       },
       issueResolutionTime: {
@@ -352,9 +348,12 @@ export class AnalyticsProcessor {
       // Calculate PR merge rate
       const mergedPRs = prs.filter((pr) => pr.mergedAt);
       const closedPRs = prs.filter((pr) => pr.state === 'closed' && !pr.mergedAt);
+      const openPRs = prs.filter((pr) => pr.state === 'open');
       result.prMergeRate = {
         merged: mergedPRs.length,
         closed: closedPRs.length,
+        open: openPRs.length,
+        total: prs.length,
         mergeRate: prs.length > 0 ? (mergedPRs.length / prs.length) * 100 : 0,
       };
 
@@ -393,24 +392,28 @@ export class AnalyticsProcessor {
           { timeout: 60000, useRateLimit: false, useRetry: false }
         );
       } else {
-        // In offline mode, we can't get commit data from markdown files
-        // So we'll use a simple heuristic based on PR authors
-        const prAuthors = new Set<string>();
-        prs.forEach((pr) => {
-          if (pr.author?.login) {
-            prAuthors.add(pr.author.login);
-          }
-        });
-        // Create mock commit data for each PR author
-        commits = Array.from(prAuthors).map((author) => ({
+        // In offline mode, parse commits from exported markdown files
+        const parser = new MarkdownParser(this.options.exportedDataPath!);
+        const parsedCommits = await parser.parseCommits();
+        commits = parsedCommits.map((commit: any) => ({
           commit: {
             author: {
-              name: author,
-              date: new Date().toISOString(),
+              name: commit.author,
+              date: commit.createdAt,
             },
           },
         }));
       }
+
+      // Apply timeRange filter to commits so the activity chart only shows
+      // activity inside the selected window (fixes out-of-window dates).
+      commits = commits.filter((commit) => {
+        const date = new Date(commit.commit.author.date);
+        if (isNaN(date.getTime())) return false;
+        if (!this.options.timeRange || this.options.timeRange === 'all') return true;
+        const { start } = this.getTimeRangeDates();
+        return date >= start;
+      });
 
       // Group commits by day for activity patterns
       const commitsByDay = new Map<string, number>();
@@ -439,17 +442,17 @@ export class AnalyticsProcessor {
         count,
       }));
 
-      // Calculate active contributors
+      // Calculate active contributors from PR authors (consistent with trends)
       const contributors = new Set<string>();
-      commits.forEach((commit) => {
-        if (commit.commit.author.name) {
-          contributors.add(commit.commit.author.name);
+      prs.forEach((pr) => {
+        if (pr.author?.login) {
+          contributors.add(pr.author.login);
         }
       });
 
       result.activeContributors = [
         {
-          period: 'last_30_days',
+          period: 'all',
           contributors: contributors.size,
         },
       ];
@@ -482,6 +485,7 @@ export class AnalyticsProcessor {
         returning: 0,
       },
       contributionDistribution: [],
+      totalContributors: 0,
       busFactor: 0,
     };
 
@@ -573,6 +577,7 @@ export class AnalyticsProcessor {
         .sort((a, b) => b.totalContributions - a.totalContributions);
 
       result.topContributors = contributorsArray.slice(0, 10);
+      result.totalContributors = contributorsArray.length;
 
       // Calculate contribution distribution
       const totalContributions = contributorsArray.reduce(
@@ -946,64 +951,62 @@ export class AnalyticsProcessor {
    * Get package version from package.json
    */
   private async getPackageVersion(): Promise<string> {
-    try {
-      // Try to read package.json from the project root
-      const packagePath = join(__dirname, '../../package.json');
-      const packageJson = JSON.parse(await readFile(packagePath, 'utf-8'));
-      return packageJson.version || 'unknown';
-    } catch {
-      return 'unknown';
+    // The CLI runs from the project directory, so package.json is at cwd.
+    // This avoids import.meta/__dirname differences between ESM and CJS builds.
+    const candidates = [
+      join(process.cwd(), 'package.json'),
+      join(process.cwd(), '..', 'package.json'),
+    ];
+
+    for (const packagePath of candidates) {
+      try {
+        const packageJson = JSON.parse(await readFile(packagePath, 'utf-8'));
+        if (packageJson.version) {
+          return packageJson.version;
+        }
+      } catch {
+        // Try next candidate
+      }
     }
+    return 'unknown';
   }
 
   /**
    * Export the analytics report in the specified formats
    */
   private async exportReport(report: AnalyticsReport): Promise<void> {
-    const { format, outputPath } = this.options;
+    const { outputPath } = this.options;
     const repoIdentifier = `${this.options.repository.owner}-${this.options.repository.name}`;
 
     try {
-      // Export as JSON (without markdown report)
-      if (format === 'json') {
+      // Always generate the Markdown report (base for HTML and PDF)
+      const markdownContent = await this.generateMarkdownReport(report);
+      const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
+      await writeFile(markdownPath, markdownContent, 'utf8');
+      logger.info(`Analytics report saved as Markdown: ${markdownPath}`);
+
+      // Always generate the styled HTML report
+      const htmlGenerator = new HtmlReportGenerator();
+      const htmlContent = await htmlGenerator.generateHtml(
+        markdownContent,
+        `${this.options.repository.owner}/${this.options.repository.name} Analytics Report`
+      );
+      const htmlPath = join(outputPath, `${repoIdentifier}-analytics.html`);
+      await writeFile(htmlPath, htmlContent, 'utf8');
+      logger.info(`Analytics report saved as HTML: ${htmlPath}`);
+
+      // Always generate the PDF report (Markdown → HTML → PDF pipeline)
+      logger.info('Starting PDF generation pipeline: Markdown -> HTML -> PDF');
+      const pdfConverter = new PuppeteerPdfConverter();
+      const pdfPath = join(outputPath, `${repoIdentifier}-analytics.pdf`);
+      await pdfConverter.convertHtmlToPdf(htmlContent, pdfPath);
+      logger.info(`Analytics report saved as PDF: ${pdfPath}`);
+
+      // Additionally export as JSON if requested
+      if (this.options.format === 'json') {
         const jsonPath = join(outputPath, `${repoIdentifier}-analytics.json`);
         await writeFile(jsonPath, JSON.stringify(report, null, 2));
         logger.info(`Analytics report saved as JSON: ${jsonPath}`);
-      }
-
-      // Export as Markdown (direct output)
-      if (format === 'markdown') {
-        const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
-        const markdownContent = await this.generateMarkdownReport(report);
-        await writeFile(markdownPath, markdownContent, 'utf8');
-        logger.info(`Analytics report saved as Markdown: ${markdownPath}`);
-      }
-
-      // Export as PDF (Markdown → HTML → PDF pipeline)
-      if (format === 'pdf') {
-        logger.info('Starting PDF generation pipeline: Markdown -> HTML -> PDF');
-
-        // Step 1: Generate markdown
-        const markdownContent = await this.generateMarkdownReport(report);
-        const markdownPath = join(outputPath, `${repoIdentifier}-analytics.md`);
-        await writeFile(markdownPath, markdownContent, 'utf8');
-        logger.info(`[OK] Markdown report generated: ${markdownPath}`);
-
-        // Step 2: Convert markdown to styled HTML
-        const htmlGenerator = new HtmlReportGenerator();
-        const htmlContent = await htmlGenerator.generateHtml(
-          markdownContent,
-          `${this.options.repository.owner}/${this.options.repository.name} Analytics Report`
-        );
-        const htmlPath = join(outputPath, `${repoIdentifier}-analytics.html`);
-        await writeFile(htmlPath, htmlContent, 'utf8');
-        logger.info(`[OK] HTML report generated: ${htmlPath}`);
-
-        // Step 3: Convert HTML to PDF using Puppeteer
-        const pdfConverter = new PuppeteerPdfConverter();
-        const pdfPath = join(outputPath, `${repoIdentifier}-analytics.pdf`);
-        await pdfConverter.convertHtmlToPdf(htmlContent, pdfPath);
-        logger.info(`[OK] PDF report generated: ${pdfPath}`);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -1017,8 +1020,7 @@ export class AnalyticsProcessor {
    */
   private async generateMarkdownReport(report: AnalyticsReport): Promise<string> {
     const version = await this.getPackageVersion();
-    const benchmark = report.benchmark as any;
     const narrative = report.narrative as any;
-    return await this.markdownGenerator.generate(report, version, benchmark, narrative);
+    return await this.markdownGenerator.generate(report, version, narrative);
   }
 }

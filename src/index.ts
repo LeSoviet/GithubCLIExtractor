@@ -16,6 +16,7 @@ import {
   promptBatchParallelism,
   promptEnableDiffMode,
   selectTimeRange,
+  selectUserFilter,
 } from './cli/prompts.js';
 import { createProgressTracker, ProgressTracker } from './cli/progress.js';
 import { checkGhInstalled, getAuthStatus } from './core/github-auth.js';
@@ -25,6 +26,7 @@ import { HelpCommand, VersionCommand, CheckCommand } from './cli/commands/index.
 import { getStateManager } from './core/state-manager.js';
 import { BatchProcessor } from './core/batch-processor.js';
 import { listUserRepositories, getRepositoryFromString } from './scanner/repo-scanner.js';
+import { listContributors } from './scanner/contributors.js';
 import { PullRequestExporter } from './exporters/prs.js';
 import { IssueExporter } from './exporters/issues.js';
 import { CommitExporter } from './exporters/commits.js';
@@ -37,6 +39,7 @@ import {
   displayDataCompletenessStatus,
 } from './analytics/data-completeness-validator.js';
 import { checkForUpdates } from './utils/version-checker.js';
+import { loadConfig } from './utils/config.js';
 import type {
   ExportOptions,
   ExportType,
@@ -271,8 +274,16 @@ async function main() {
       await showWelcome(authStatus.username);
     }
 
+    // Load user configuration (from file and/or env vars) and apply it
+    const userConfig = await loadConfig();
+
     // Check and display rate limit
     const rateLimiter = getRateLimiter();
+    // Honor user rateLimit (delay in ms between requests) and concurrency.
+    rateLimiter.configure({
+      minTime: userConfig.rateLimit ?? 1000,
+      maxConcurrent: userConfig.concurrency ?? 5,
+    });
     const rateLimit = await rateLimiter.fetchRateLimitStatus();
 
     if (args.verbose) {
@@ -328,6 +339,9 @@ async function main() {
       // Prompt for diff mode
       const enableDiff = await promptEnableDiffMode();
 
+      // Select time range (caps how far back items are exported)
+      const batchTimeRange = await selectTimeRange();
+
       // Build batch config
       const batchConfig: BatchConfig = {
         repositories: batchRepositories,
@@ -337,6 +351,8 @@ async function main() {
         parallelism,
         diffMode: enableDiff,
         verbose: args.verbose || false,
+        config: userConfig,
+        timeRange: batchTimeRange as import('./exporters/base-exporter.js').TimeRange,
       };
 
       // Execute batch export
@@ -405,11 +421,15 @@ async function main() {
       ? defaultPath
       : await selectOutputPath(defaultPath);
 
-    // Select time range for analytics (only for full-backup or when not in test mode)
-    const timeRange =
-      process.env.GHX_TEST_MODE || exportType !== 'full-backup'
-        ? '1-month'
-        : await selectTimeRange();
+    // Select time range (always asked, caps how far back items are exported)
+    const timeRange = process.env.GHX_TEST_MODE ? '1-month' : await selectTimeRange();
+
+    // Select user filter (optional, caps export to a single contributor)
+    let userFilter: string | undefined;
+    if (!process.env.GHX_TEST_MODE) {
+      const contributors = await listContributors(selectedRepo.owner, selectedRepo.name);
+      userFilter = await selectUserFilter(contributors);
+    }
 
     // Exit if dry-run
     if (args.dryRun) {
@@ -419,6 +439,9 @@ async function main() {
       console.log(`  Format: ${exportFormat}`);
       console.log(`  Output: ${outputPath}`);
       console.log(`  Time range: ${timeRange}`);
+      if (userFilter) {
+        console.log(`  User filter: ${userFilter}`);
+      }
       if (args.diff) {
         console.log(`  Diff mode: enabled`);
       }
@@ -452,6 +475,9 @@ async function main() {
       repository: selectedRepo,
       type: exportType,
       diffMode: diffModeOptions,
+      config: userConfig,
+      timeRange: timeRange as import('./exporters/base-exporter.js').TimeRange,
+      userFilter,
     };
 
     // Execute export
@@ -477,7 +503,7 @@ async function main() {
 async function executeExport(
   options: ExportOptions,
   diffModeEnabled: boolean = false,
-  timeRange: '1-week' | '1-month' | '2-months' | '3-months' = '1-month'
+  timeRange: '1-week' | '1-month' | '2-months' | '3-months' | 'all' = '1-month'
 ): Promise<void> {
   const progress = createProgressTracker();
 
@@ -514,6 +540,7 @@ async function executeExport(
             allowPartialAnalytics: !completeness.isComplete,
             missingDataTypes: completeness.missingTypes,
             timeRange,
+            userFilter: options.userFilter,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
@@ -564,6 +591,7 @@ async function executeExport(
             allowPartialAnalytics: !completeness.isComplete,
             missingDataTypes: completeness.missingTypes,
             timeRange,
+            userFilter: options.userFilter,
           };
 
           const analyticsProcessor = new AnalyticsProcessor(analyticsOptions);
@@ -700,6 +728,9 @@ function createExporter(
     repository: options.repository,
     outputPath: finalOutputPath,
     format: options.format,
+    config: options.config,
+    timeRange: options.timeRange,
+    userFilter: options.userFilter,
   };
 
   switch (options.type) {
@@ -783,6 +814,10 @@ async function handleBatchExport(args: ReturnType<typeof parseArgs>): Promise<vo
     }
 
     // Create and run batch processor
+    const userConfig = await loadConfig();
+    if (batchConfig && typeof batchConfig === 'object') {
+      batchConfig.config = userConfig;
+    }
     const processor = new BatchProcessor(batchConfig);
     const result = await processor.process();
 

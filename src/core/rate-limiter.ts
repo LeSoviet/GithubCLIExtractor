@@ -8,16 +8,23 @@ import type { GitHubRateLimit } from '../types/github.js';
  * Rate limiter for GitHub API requests
  * Uses bottleneck to ensure we don't exceed GitHub's rate limits
  */
+export interface RateLimiterOptions {
+  /** Minimum time in ms between requests (rate limit delay). */
+  minTime?: number;
+  /** Maximum number of concurrent requests. */
+  maxConcurrent?: number;
+}
+
 export class RateLimiter {
   private limiter: Bottleneck;
   private currentLimit: RateLimitInfo | null = null;
 
-  constructor() {
-    // GitHub REST API: 5000 requests/hour = ~83/minute = ~1.4/second
-    // We'll be conservative: max 1 request per second, with 5 concurrent
+  constructor(options: RateLimiterOptions = {}) {
+    const { minTime = 1000, maxConcurrent = 5 } = options;
+
     this.limiter = new Bottleneck({
-      maxConcurrent: 5, // Max concurrent requests
-      minTime: 1000, // Minimum time between requests (1 second)
+      maxConcurrent,
+      minTime,
       reservoir: 5000, // Initial capacity (GitHub's hourly limit)
       reservoirRefreshAmount: 5000, // Refresh to full capacity
       reservoirRefreshInterval: 60 * 60 * 1000, // Every hour
@@ -43,6 +50,21 @@ export class RateLimiter {
       logger.error(`Request ${id} failed after 3 retries`);
       return undefined; // Stop retrying
     });
+  }
+
+  /**
+   * Reconfigure the limiter with user-provided settings.
+   * Only settings that are provided get applied.
+   */
+  configure(options: RateLimiterOptions = {}): void {
+    const update: Bottleneck.ConstructorOptions = {
+      ...(options.minTime !== undefined ? { minTime: options.minTime } : {}),
+      ...(options.maxConcurrent !== undefined ? { maxConcurrent: options.maxConcurrent } : {}),
+    };
+    this.limiter.updateSettings(update);
+    logger.debug(
+      `Configured rate limiter: minTime=${options.minTime ?? 'unchanged'}, maxConcurrent=${options.maxConcurrent ?? 'unchanged'}`
+    );
   }
 
   /**

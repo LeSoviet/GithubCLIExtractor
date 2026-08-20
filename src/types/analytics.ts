@@ -28,8 +28,11 @@ export interface AnalyticsOptions {
   /** List of missing data types (for partial analytics disclaimer) */
   missingDataTypes?: string[];
 
-  /** Time range for analytics (filters data by date) */
-  timeRange?: '1-week' | '1-month' | '2-months' | '3-months';
+  /** Time range for analytics (filters data by date); 'all' means no date filter */
+  timeRange?: '1-week' | '1-month' | '2-months' | '3-months' | 'all';
+
+  /** Optional user filter applied to the export (single contributor) */
+  userFilter?: string;
 }
 
 /**
@@ -57,6 +60,8 @@ export interface ActivityAnalytics extends AnalyticsResult {
   prMergeRate: {
     merged: number;
     closed: number;
+    open: number;
+    total: number;
     mergeRate: number; // percentage
   };
   issueResolutionTime: {
@@ -93,6 +98,7 @@ export interface ContributorAnalytics extends AnalyticsResult {
     contributor: string;
     percentage: number;
   }[];
+  totalContributors: number; // Total unique contributors in the analysis period
   busFactor: number; // Number of contributors whose departure would critically impact the project
 }
 
@@ -177,6 +183,7 @@ export interface TemporalTrends extends AnalyticsResult {
     current: { start: string; end: string };
     previous: { start: string; end: string };
   };
+  hasPreviousData: boolean; // Whether the previous period had any items to compare against
   trends: {
     prMergeRate: {
       current: number;
@@ -259,8 +266,8 @@ export interface AnalyticsReport {
   trends?: TemporalTrends;
   correlations?: MetricCorrelations;
   projections?: Projections;
-  benchmark?: any; // BenchmarkComparison type from benchmarking.ts
   narrative?: any; // ExecutiveNarrative type from narrative-generator.ts
   isPartialData?: boolean; // Indicates if analytics was generated from incomplete data
   missingDataTypes?: string[]; // List of missing data types
+  userFilter?: string; // Optional single-contributor filter applied to the export
 }

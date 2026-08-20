@@ -19,7 +19,7 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
       this.logDiffModeInfo();
 
       // Fetch PRs using dynamically configured limit for complete data export
-      const prLimit = getExportLimit('prs');
+      const prLimit = getExportLimit('prs', this.config);
       const prs = await execGhJson<any[]>(
         `pr list --repo ${repoId} --state all --limit ${prLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url`,
         { timeout: 60000, useRateLimit: false, useRetry: false }

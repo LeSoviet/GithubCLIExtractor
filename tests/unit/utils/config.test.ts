@@ -158,7 +158,7 @@ describe('ConfigManager', () => {
       await configManager.save({ outputPath: './saved-output' });
 
       // Verify file was saved
-      const configPath = join(testDir, '.ghextractorrc.json');
+      const configPath = join(testDir, '.ghextractorrc');
       expect(existsSync(configPath)).toBe(true);
     });
 

@@ -1,6 +1,7 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { formatPercentage, formatCount } from '../../utils/format-helpers.js';
+import { ChartGenerator } from '../../utils/chart-generator.js';
 
 /**
  * Generates the Activity Analytics section of the markdown report
@@ -12,6 +13,7 @@ export class ActivitySectionGenerator implements SectionGenerator {
 
     md += this.generatePRMetrics(report);
     md += this.generateIssueResolution(report);
+    md += this.generateCommitActivity(report);
     md += this.generateActivityHotspots(report);
 
     md += `---\n\n`;
@@ -19,11 +21,15 @@ export class ActivitySectionGenerator implements SectionGenerator {
   }
 
   private generatePRMetrics(report: AnalyticsReport): string {
+    const { merged, closed, open, total, mergeRate } = report.activity.prMergeRate;
     let md = `### Pull Request Metrics\n\n`;
-    md += `- **Merge Rate:** ${formatPercentage(report.activity.prMergeRate.mergeRate)}\n`;
-    md += `- **Merged PRs:** ${report.activity.prMergeRate.merged}\n`;
-    md += `- **Closed (not merged):** ${report.activity.prMergeRate.closed}\n`;
-    md += `- **Total PRs:** ${report.activity.prMergeRate.merged + report.activity.prMergeRate.closed}\n\n`;
+    md += `- **Merge Rate:** ${formatPercentage(mergeRate)}\n`;
+    md += `- **Merged PRs:** ${merged}\n`;
+    md += `- **Closed (not merged):** ${closed}\n`;
+    if (open > 0) {
+      md += `- **Open PRs:** ${open}\n`;
+    }
+    md += `- **Total PRs:** ${total}\n\n`;
     return md;
   }
 
@@ -51,9 +57,28 @@ export class ActivitySectionGenerator implements SectionGenerator {
     md += `**Most Active Days:**\n\n`;
 
     report.activity.busiestDays.slice(0, 5).forEach((day, index) => {
-      const indicator = index === 0 ? '#1' : index === 1 ? '#2' : index === 2 ? '#3' : '·';
-      md += `${indicator} **${day.day}:** ${day.count} commits\n`;
+      md += `${index + 1}. **${day.day}:** ${day.count} commits\n`;
     });
+
+    return md;
+  }
+
+  private generateCommitActivity(report: AnalyticsReport): string {
+    const { dates, counts } = report.activity.commitsOverTime;
+    if (dates.length === 0) {
+      return '';
+    }
+
+    const totalCommits = counts.reduce((sum, c) => sum + c, 0);
+    const maxValue = Math.max(...counts, 1);
+
+    let md = `\n### Commit Activity\n\n`;
+    md += `- **Total Commits:** ${formatCount(totalCommits)}\n`;
+    md += `- **Active Days:** ${dates.length}\n`;
+    md += `- **Avg Commits/Day:** ${(totalCommits / dates.length).toFixed(1)}\n\n`;
+
+    md += ChartGenerator.generateCommitsChart(dates, counts, maxValue);
+    md += `\n`;
 
     return md;
   }

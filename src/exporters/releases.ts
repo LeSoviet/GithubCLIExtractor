@@ -3,6 +3,7 @@ import { execGhJson } from '../utils/exec-gh.js';
 import { decodeUnicode, sanitizeUnicode } from '../utils/sanitize.js';
 import { convertRelease } from '../utils/converters.js';
 import { logger } from '../utils/logger.js';
+import { getExportLimit } from '../config/export-limits.js';
 import type { Release } from '../types/index.js';
 
 /**
@@ -18,8 +19,9 @@ export class ReleaseExporter extends BaseExporter<Release> {
       this.logDiffModeInfo();
 
       // Fetch releases with ONLY available fields - use configured limit
+      const releaseLimit = getExportLimit('releases', this.config);
       const releases = await execGhJson<any[]>(
-        `release list --repo ${repoId} --limit 500 --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
+        `release list --repo ${repoId} --limit ${releaseLimit} --json tagName,name,createdAt,publishedAt,isDraft,isPrerelease`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
@@ -51,18 +53,11 @@ export class ReleaseExporter extends BaseExporter<Release> {
         })
       );
 
-      // Filter by date if diff mode is enabled
-      let filteredReleases = releasesWithDetails;
-      if (this.isDiffMode()) {
-        const since = this.getDiffModeSince();
-        if (since) {
-          const sinceDate = new Date(since);
-          filteredReleases = releasesWithDetails.filter((release) => {
-            const publishedAt = new Date(release.publishedAt);
-            return publishedAt > sinceDate;
-          });
-        }
-      }
+      // Apply user filter + date cutoff (time range / diff mode)
+      const filteredReleases = await this.applyFilters(releasesWithDetails, {
+        authorField: 'author',
+        dateField: 'publishedAt',
+      });
 
       return filteredReleases;
     } catch (error: any) {

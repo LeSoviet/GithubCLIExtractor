@@ -125,33 +125,32 @@ export class ChartGenerator {
   }
 
   /**
-   * Generate a radar chart for benchmark comparison
+   * Generate a line chart for commits over time
    */
-  static generateRadarChart(categories: string[], values: number[]): string {
-    const categoryLabels = categories.map((c) => `"${c}"`).join(',');
-    const dataValues = values.join(',');
+  static generateCommitsChart(dates: string[], counts: number[], maxValue: number): string {
+    const dateLabels = dates.map((d) => `"${d}"`).join(',');
+    const data = counts.join(',');
 
     return `
-<div class="chart-container" style="position: relative; width: 100%; height: 350px; margin: 1.5em 0;">
-  <canvas id="radarChart"></canvas>
+<div class="chart-container" style="position: relative; width: 100%; height: 300px; margin: 1.5em 0;">
+  <canvas id="commitsChart"></canvas>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const radarCtx = document.getElementById('radarChart').getContext('2d');
-  new Chart(radarCtx, {
-    type: 'radar',
+  const commitsCtx = document.getElementById('commitsChart').getContext('2d');
+  new Chart(commitsCtx, {
+    type: 'line',
     data: {
-      labels: [${categoryLabels}],
+      labels: [${dateLabels}],
       datasets: [{
-        label: 'Your Repository',
-        data: [${dataValues}],
+        label: 'Commits per Day',
+        data: [${data}],
         borderColor: '#0066cc',
-        backgroundColor: 'rgba(0, 102, 204, 0.2)',
+        backgroundColor: 'rgba(0, 102, 204, 0.1)',
         borderWidth: 2,
-        pointRadius: 4,
-        pointBackgroundColor: '#0066cc',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2
+        pointRadius: 2,
+        tension: 0.3,
+        fill: true
       }]
     },
     options: {
@@ -163,13 +162,10 @@ export class ChartGenerator {
         }
       },
       scales: {
-        r: {
-          min: 0,
-          max: 100,
+        y: {
           beginAtZero: true,
-          ticks: {
-            stepSize: 20
-          }
+          max: ${maxValue},
+          title: { display: true, text: 'Commits' }
         }
       }
     }

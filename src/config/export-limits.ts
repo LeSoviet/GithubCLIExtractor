@@ -13,68 +13,57 @@
  * it might be capped and incomplete.
  */
 
-export const EXPORT_LIMITS = {
-  /**
-   * Pull Requests
-   * Default: 2000 (comprehensive coverage for most repos)
-   * Increased from 1000 in v0.9.5 for better analytics
-   */
-  prs: 2000,
+import type { ConfigFile, ExportLimitType } from '../types/config.js';
 
-  /**
-   * Issues
-   * Default: 2000 (comprehensive coverage)
-   * Increased from 1000 in v0.9.5 for better analytics
-   */
-  issues: 2000,
-
-  /**
-   * Commits
-   * Uses --paginate for unlimited retrieval with date filters
-   * Will fetch ALL commits since specified date via GitHub API
-   */
-  commits: 0, // 0 means unlimited (uses --paginate)
-
-  /**
-   * Branches
-   * Default: 500 (most repos have < 500 branches)
-   * Increased from 100 in v0.9.5
-   */
+/**
+ * Default export limits used when no configuration override is provided.
+ */
+const DEFAULT_EXPORT_LIMITS: Record<ExportLimitType, number> = {
+  prs: 10000,
+  issues: 10000,
   branches: 500,
-
-  /**
-   * Releases
-   * Default: 500 (comprehensive coverage for most projects)
-   * Increased from 100 in v0.9.5
-   */
-  releases: 500,
-} as const;
+  releases: 1000,
+};
 
 /**
- * Export limit descriptions for user feedback
+ * Resolve the effective export limits, applying user configuration overrides
+ * on top of the defaults.
  */
-export const LIMIT_DESCRIPTIONS = {
-  prs: `Pull Requests limit: ${EXPORT_LIMITS.prs} items (comprehensive coverage)`,
-  issues: `Issues limit: ${EXPORT_LIMITS.issues} items (comprehensive coverage)`,
-  commits: `Commits: unlimited with date filters (uses GitHub API pagination)`,
-  branches: `Branches limit: ${EXPORT_LIMITS.branches} items (most repos have fewer)`,
-  releases: `Releases limit: ${EXPORT_LIMITS.releases} items (comprehensive coverage)`,
-} as const;
+export function resolveExportLimits(config?: Partial<ConfigFile>): Record<ExportLimitType, number> {
+  const overrides = config?.exportLimits ?? {};
+  return {
+    prs: overrides.prs ?? DEFAULT_EXPORT_LIMITS.prs,
+    issues: overrides.issues ?? DEFAULT_EXPORT_LIMITS.issues,
+    branches: overrides.branches ?? DEFAULT_EXPORT_LIMITS.branches,
+    releases: overrides.releases ?? DEFAULT_EXPORT_LIMITS.releases,
+  };
+}
 
 /**
- * Get limit for a specific export type
+ * Get the effective limit for a specific export type.
+ * When a config is provided, user overrides are honored; otherwise the default
+ * (matching previous behavior) is returned.
  */
-export function getExportLimit(
-  type: 'prs' | 'issues' | 'commits' | 'branches' | 'releases'
-): number {
-  return EXPORT_LIMITS[type];
+export function getExportLimit(type: ExportLimitType, config?: Partial<ConfigFile>): number {
+  return resolveExportLimits(config)[type];
+}
+
+/**
+ * Get the default export limit for a specific export type.
+ */
+export function getDefaultExportLimit(type: ExportLimitType): number {
+  return DEFAULT_EXPORT_LIMITS[type];
 }
 
 /**
  * Get description for a specific export type
  */
-export function getLimitDescription(
-  type: 'prs' | 'issues' | 'commits' | 'branches' | 'releases'
-): string {
-  return LIMIT_DESCRIPTIONS[type];
+export function getLimitDescription(type: ExportLimitType): string {
+  const descriptions: Record<ExportLimitType, string> = {
+    prs: `Pull Requests limit: configurable (default ${DEFAULT_EXPORT_LIMITS.prs} items)`,
+    issues: `Issues limit: configurable (default ${DEFAULT_EXPORT_LIMITS.issues} items)`,
+    branches: `Branches limit: configurable (default ${DEFAULT_EXPORT_LIMITS.branches} items)`,
+    releases: `Releases limit: configurable (default ${DEFAULT_EXPORT_LIMITS.releases} items)`,
+  };
+  return descriptions[type];
 }

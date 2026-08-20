@@ -1,7 +1,7 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
 import type { SectionGenerator } from './types.js';
 import { statusHelpers } from './status-helpers.js';
-import { formatPercentage } from '../../utils/format-helpers.js';
+import { formatPercentage, formatHours } from '../../utils/format-helpers.js';
 
 /**
  * Generates the Code Health Metrics section of the markdown report
@@ -11,6 +11,7 @@ export class HealthSectionGenerator implements SectionGenerator {
     let md = `---\n\n`;
     md += `## Code Health Metrics\n\n`;
     md += this.generateReviewProcess(report);
+    md += this.generateReviewTiming(report);
     md += this.generatePRSizeAnalysis(report);
     md += this.generateDeploymentActivity(report);
     return md;
@@ -20,6 +21,24 @@ export class HealthSectionGenerator implements SectionGenerator {
     let md = `### Review Process\n\n`;
     md += `- **Review Coverage:** ${formatPercentage(report.health.prReviewCoverage.coveragePercentage)} ${statusHelpers.getHealthStatus(report.health.prReviewCoverage.coveragePercentage, 50, 70)}\n`;
     md += `- **Reviewed PRs:** ${report.health.prReviewCoverage.reviewed} / ${report.health.prReviewCoverage.total}\n\n`;
+    return md;
+  }
+
+  private generateReviewTiming(report: AnalyticsReport): string {
+    const avg = report.health.timeToFirstReview.averageHours;
+    const median = report.health.timeToFirstReview.medianHours;
+    if (avg <= 0 && median <= 0) {
+      return '';
+    }
+
+    let md = `### Time to First Review\n\n`;
+    if (avg > 0) {
+      md += `- **Average:** ${formatHours(avg)}\n`;
+    }
+    if (median > 0) {
+      md += `- **Median:** ${formatHours(median)}\n`;
+    }
+    md += `\n`;
     return md;
   }
 
@@ -45,8 +64,15 @@ export class HealthSectionGenerator implements SectionGenerator {
   }
 
   private generateDeploymentActivity(report: AnalyticsReport): string {
+    const releasesMissing = report.missingDataTypes?.includes('Releases') ?? false;
+    const releasesDisplay = releasesMissing
+      ? 'N/A (not exported)'
+      : `${report.health.deploymentFrequency.releases}`;
+    const releasesStatus = releasesMissing
+      ? 'No data'
+      : statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases);
     let md = `### Deployment Activity\n\n`;
-    md += `- **Total Releases:** ${report.health.deploymentFrequency.releases} ${statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases)}\n`;
+    md += `- **Total Releases:** ${releasesDisplay} ${releasesStatus}\n`;
     return md;
   }
 }

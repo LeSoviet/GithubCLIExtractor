@@ -18,7 +18,7 @@ export class ContributorSectionGenerator implements SectionGenerator {
     let md = `### Team Health\n\n`;
     md += `- **Bus Factor:** ${report.contributors.busFactor} ${statusHelpers.getBusFactorStatus(report.contributors.busFactor)}\n`;
     md += `  - *Indicates project risk if key contributors become unavailable*\n`;
-    md += `- **Active Contributors:** ${report.activity.activeContributors[0]?.contributors || 0} (last 90 days)\n`;
+    md += `- **Active Contributors:** ${report.activity.activeContributors[0]?.contributors || 0} (in analysis period)\n`;
     md += `- **Contributor Mix:** ${report.contributors.newVsReturning.new} new, ${report.contributors.newVsReturning.returning} returning\n\n`;
     return md;
   }
@@ -78,6 +78,34 @@ export class ContributorSectionGenerator implements SectionGenerator {
       const topContributorPercentage =
         report.contributors.contributionDistribution[0]?.percentage || 0;
       md += `**Concentration of Contributions**: The top contributor accounts for ${formatPercentage(topContributorPercentage)} of all contributions.\n\n`;
+    }
+
+    // Add contribution mix breakdown
+    const totalCommits = report.contributors.topContributors.reduce((sum, c) => sum + c.commits, 0);
+    const totalPRs = report.contributors.topContributors.reduce((sum, c) => sum + c.prs, 0);
+    const totalReviews = report.contributors.topContributors.reduce((sum, c) => sum + c.reviews, 0);
+    const totalAll = totalCommits + totalPRs + totalReviews;
+
+    if (totalAll > 0) {
+      // Use the real total PR count from the activity section as the denominator,
+      // not the sum of the (truncated) top-10 list, so the share is not misleading.
+      const totalPRsInRepo = report.activity.prMergeRate.total;
+      const prShare = totalPRsInRepo > 0 ? (totalPRs / totalPRsInRepo) * 100 : 0;
+
+      md += `### Contribution Mix\n\n`;
+      md += `*Breakdown of the top ${report.contributors.topContributors.length} contributors (of ${report.contributors.totalContributors} total in the analysis period). Shares are relative to the full PR count (${totalPRsInRepo}).*\n\n`;
+      md += `| Type | Count | Share of Total |\n`;
+      md += `|------|-------|----------------|\n`;
+      if (totalCommits > 0) {
+        md += `| Commits | ${totalCommits} | ${((totalCommits / totalAll) * 100).toFixed(1)}% of top-10 mix |\n`;
+      }
+      if (totalPRs > 0) {
+        md += `| Pull Requests | ${totalPRs} | ${prShare.toFixed(1)}% of all PRs |\n`;
+      }
+      if (totalReviews > 0) {
+        md += `| Reviews | ${totalReviews} | ${((totalReviews / totalAll) * 100).toFixed(1)}% of top-10 mix |\n`;
+      }
+      md += `\n`;
     }
 
     return md;
