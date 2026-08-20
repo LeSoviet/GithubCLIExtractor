@@ -1,5 +1,4 @@
 import type { AnalyticsReport } from '../../types/analytics.js';
-import type { BenchmarkComparison } from '../benchmarking.js';
 import type { ExecutiveNarrative } from '../narrative-generator.js';
 import { ActivitySectionGenerator } from './activity-section.js';
 import { ContributorSectionGenerator } from './contributor-section.js';
@@ -9,7 +8,7 @@ import { RecommendationsGenerator } from './recommendations.js';
 import { TrendsSectionGenerator } from './trends-section.js';
 import { CorrelationsSectionGenerator } from './correlations-section.js';
 import { PredictionsSectionGenerator } from './predictions-section.js';
-import { BenchmarksSectionGenerator } from './benchmarks-section.js';
+import { ReviewVelocitySectionGenerator } from './review-velocity-section.js';
 import { NarrativeSectionGenerator } from './narrative-section.js';
 import { StaleItemsSectionGenerator } from './stale-items-section.js';
 import { statusHelpers } from './status-helpers.js';
@@ -28,7 +27,7 @@ export class MarkdownReportGenerator {
   private trendsGenerator: TrendsSectionGenerator;
   private correlationsGenerator: CorrelationsSectionGenerator;
   private predictionsGenerator: PredictionsSectionGenerator;
-  private benchmarksGenerator: BenchmarksSectionGenerator;
+  private reviewVelocityGenerator: ReviewVelocitySectionGenerator;
   private narrativeGenerator: NarrativeSectionGenerator;
   private staleItemsGenerator: StaleItemsSectionGenerator;
 
@@ -41,7 +40,7 @@ export class MarkdownReportGenerator {
     this.trendsGenerator = new TrendsSectionGenerator();
     this.correlationsGenerator = new CorrelationsSectionGenerator();
     this.predictionsGenerator = new PredictionsSectionGenerator();
-    this.benchmarksGenerator = new BenchmarksSectionGenerator();
+    this.reviewVelocityGenerator = new ReviewVelocitySectionGenerator();
     this.narrativeGenerator = new NarrativeSectionGenerator();
     this.staleItemsGenerator = new StaleItemsSectionGenerator();
   }
@@ -52,7 +51,6 @@ export class MarkdownReportGenerator {
   async generate(
     report: AnalyticsReport,
     packageVersion: string = 'unknown',
-    benchmark?: BenchmarkComparison,
     narrative?: ExecutiveNarrative
   ): Promise<string> {
     let md = '';
@@ -69,7 +67,7 @@ export class MarkdownReportGenerator {
     md += this.trendsGenerator.generate(report);
     md += this.correlationsGenerator.generate(report);
     md += this.predictionsGenerator.generate(report);
-    md += this.benchmarksGenerator.generate(report, benchmark);
+    md += this.reviewVelocityGenerator.generate(report);
     md += this.narrativeGenerator.generate(report, narrative);
     md += this.staleItemsGenerator.generate(report);
 
@@ -102,6 +100,12 @@ export class MarkdownReportGenerator {
       md += `>\n> For comprehensive analytics, export all data types using "Full Repository Backup".\n\n`;
     }
 
+    // Add user filter disclaimer if a single contributor was selected
+    if (report.userFilter) {
+      md += `> **NOTE: Filtered by user**\n>\n`;
+      md += `> This report only includes activity from **@${report.userFilter}**. Metrics reflect that single contributor, not the whole repository.\n\n`;
+    }
+
     md += `---\n\n`;
     return md;
   }
@@ -127,7 +131,7 @@ export class MarkdownReportGenerator {
 `;
 
     const mergeRate = report.activity.prMergeRate.mergeRate;
-    const prsInPeriod = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+    const prsInPeriod = report.activity.prMergeRate.total;
     md += `| **PR Merge Rate** | ${formatPercentage(mergeRate)} (${report.activity.prMergeRate.merged}/${prsInPeriod} in period) | ${statusHelpers.getHealthStatus(mergeRate, 50, 80)} |
 `;
 
@@ -137,7 +141,14 @@ export class MarkdownReportGenerator {
 `;
     md += `| **Bus Factor** | ${report.contributors.busFactor} | ${statusHelpers.getBusFactorStatus(report.contributors.busFactor)} |
 `;
-    md += `| **Deployment Frequency** | ${report.health.deploymentFrequency.releases} releases | ${statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases)} |
+    const releasesMissing = report.missingDataTypes?.includes('Releases') ?? false;
+    const releasesDisplay = releasesMissing
+      ? 'N/A (not exported)'
+      : `${report.health.deploymentFrequency.releases} releases`;
+    const releasesStatus = releasesMissing
+      ? 'No data'
+      : statusHelpers.getDeploymentStatus(report.health.deploymentFrequency.releases);
+    md += `| **Deployment Frequency** | ${releasesDisplay} | ${releasesStatus} |
 
 `;
 
@@ -157,7 +168,7 @@ export class MarkdownReportGenerator {
       md += `### Critical Alerts
 
 `;
-      alerts.forEach((alert) => (md += `${alert}\n`));
+      alerts.forEach((alert) => (md += `- ${alert}\n`));
       md += `\n`;
     }
 
@@ -195,7 +206,7 @@ export class MarkdownReportGenerator {
     // Data types analyzed
     md += `**Data Types Analyzed:**
 `;
-    const totalPRs = report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+    const totalPRs = report.activity.prMergeRate.total;
     md += `- Pull Requests: ${totalPRs} items analyzed
 `;
 

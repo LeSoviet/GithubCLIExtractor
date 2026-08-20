@@ -1,5 +1,4 @@
 import type { AnalyticsReport } from '../types/analytics.js';
-import type { BenchmarkComparison } from './benchmarking.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -44,15 +43,14 @@ export class NarrativeGenerator {
    * Generate executive narrative from analytics report
    */
   async generate(
-    report: AnalyticsReport,
-    benchmark?: BenchmarkComparison
+    report: AnalyticsReport
   ): Promise<ExecutiveNarrative> {
     logger.info('Generating executive narrative...');
 
     const paradoxes = this.detectParadoxes(report);
     const rootCauses = this.analyzeRootCauses(report, paradoxes);
-    const actionPlan = this.prioritizeActions(report, rootCauses, benchmark);
-    const keyFindings = this.extractKeyFindings(report, benchmark);
+    const actionPlan = this.prioritizeActions(report, rootCauses);
+    const keyFindings = this.extractKeyFindings(report);
     const summary = this.generateSummary(report, keyFindings, paradoxes);
     const riskAssessment = this.assessRisk(report);
     const projectedOutcome = this.projectOutcome(report, actionPlan);
@@ -129,10 +127,9 @@ export class NarrativeGenerator {
     }
 
     // Paradox 4: Growing backlog - creation velocity >> merge velocity
-    if (report.trends) {
+    if (report.trends && report.trends.hasPreviousData !== false) {
       const prMergeTrend = report.trends.trends.prMergeRate;
-      const prCreationTrend =
-        report.activity.prMergeRate.merged + report.activity.prMergeRate.closed;
+      const prCreationTrend = report.activity.prMergeRate.total;
 
       // Check if merge rate is declining significantly AND we have stalled PRs
       if (
@@ -254,7 +251,11 @@ export class NarrativeGenerator {
     }
 
     // Root cause 4: Contributor retention issues
-    if (report.trends && report.trends.trends.activeContributors.trend === 'declining') {
+    if (
+      report.trends &&
+      report.trends.hasPreviousData !== false &&
+      report.trends.trends.activeContributors.trend === 'declining'
+    ) {
       rootCauses.push({
         issue: 'Declining contributor base',
         hypothesis:
@@ -275,8 +276,7 @@ export class NarrativeGenerator {
    */
   private prioritizeActions(
     report: AnalyticsReport,
-    rootCauses: RootCause[],
-    benchmark?: BenchmarkComparison
+    rootCauses: RootCause[]
   ): ActionItem[] {
     const actions: ActionItem[] = [];
 
@@ -297,7 +297,10 @@ export class NarrativeGenerator {
         priority: 1,
         action: `Audit and resolve ${report.reviewVelocity.reviewBottlenecks.length} stalled PRs`,
         rationale: `PRs waiting >3 days represent blocked work and frustrated contributors. Quick wins available by clearing backlog.`,
-        expectedImpact: `Improve merge rate by ~${Math.round((report.reviewVelocity.reviewBottlenecks.length / report.health.prReviewCoverage.total) * 100)}%`,
+        expectedImpact: this.formatMergeImpact(
+          report.reviewVelocity.reviewBottlenecks.length,
+          report.health.prReviewCoverage.total
+        ),
         timeframe: 'This week',
       });
     }
@@ -326,16 +329,6 @@ export class NarrativeGenerator {
     }
 
     // Priority 3 (Nice-to-have/Long-term)
-    if (benchmark && benchmark.metrics.deploymentFrequency.percentile < 50) {
-      actions.push({
-        priority: 3,
-        action: 'Increase deployment cadence',
-        rationale: `Current: ${benchmark.metrics.deploymentFrequency.value.toFixed(1)}/month, Industry median: ${benchmark.metrics.deploymentFrequency.median.toFixed(1)}/month`,
-        expectedImpact: 'Faster feedback loops, improved velocity',
-        timeframe: '1-2 months',
-      });
-    }
-
     if (report.activity.issueResolutionTime.averageHours / 24 > 14) {
       actions.push({
         priority: 3,
@@ -352,11 +345,11 @@ export class NarrativeGenerator {
   /**
    * Extract key findings
    */
-  private extractKeyFindings(report: AnalyticsReport, benchmark?: BenchmarkComparison): string[] {
+  private extractKeyFindings(report: AnalyticsReport): string[] {
     const findings: string[] = [];
 
-    // Trend findings
-    if (report.trends) {
+    // Trend findings (only when there is previous-period data to compare)
+    if (report.trends && report.trends.hasPreviousData !== false) {
       const improving = Object.entries(report.trends.trends).filter(
         ([_, t]) => t.trend === 'improving'
       );
@@ -364,13 +357,23 @@ export class NarrativeGenerator {
         ([_, t]) => t.trend === 'declining'
       );
 
+      // Count only the metrics that are actually shown in the trends table.
+      // Time to Review is omitted from the table when there is no data, so
+      // exclude it from the denominator to avoid "1 out of 4" when only 3 rows render.
+      const shownMetrics = Object.entries(report.trends.trends).filter(([key, t]) => {
+        if (key === 'timeToReview') {
+          return t.current > 0 && isFinite(t.current);
+        }
+        return true;
+      }).length;
+
       if (declining.length > improving.length) {
         findings.push(
-          `📉 **Velocity declining**: ${declining.length} out of 4 key metrics show negative trends`
+          `📉 **Velocity declining**: ${declining.length} out of ${shownMetrics} key metrics show negative trends`
         );
       } else if (improving.length > declining.length) {
         findings.push(
-          `📈 **Velocity improving**: ${improving.length} out of 4 key metrics show positive trends`
+          `📈 **Velocity improving**: ${improving.length} out of ${shownMetrics} key metrics show positive trends`
         );
       }
     }
@@ -389,25 +392,6 @@ export class NarrativeGenerator {
         } else {
           findings.push(`Average review speed: 90% of PRs reviewed within ${p90Hours.toFixed(1)}h`);
         }
-      }
-    }
-
-    // Benchmark findings
-    if (benchmark) {
-      const excellentMetrics = Object.entries(benchmark.metrics).filter(
-        ([_, m]) => m.rating === 'excellent'
-      ).length;
-      const poorMetrics = Object.entries(benchmark.metrics).filter(
-        ([_, m]) => m.rating === 'poor'
-      ).length;
-
-      if (excellentMetrics >= 3) {
-        findings.push(`🌟 **${excellentMetrics} metrics at excellent level** (90th+ percentile)`);
-      }
-      if (poorMetrics >= 2) {
-        findings.push(
-          `🔴 **${poorMetrics} metrics below industry standards** (require immediate attention)`
-        );
       }
     }
 
@@ -439,7 +423,15 @@ export class NarrativeGenerator {
       summary += `**${repoName} is experiencing ${mainParadox.title.toLowerCase()}.**\n\n`;
       summary += `${mainParadox.description}\n\n`;
     } else {
-      summary += `**${repoName} demonstrates healthy development practices** with ${report.health.prReviewCoverage.coveragePercentage.toFixed(0)}% review coverage and ${report.activity.prMergeRate.mergeRate.toFixed(0)}% PR merge rate.\n\n`;
+      const coverage = report.health.prReviewCoverage.coveragePercentage;
+      const mergeRate = report.activity.prMergeRate.mergeRate;
+      const busFactor = report.contributors.busFactor;
+
+      if (coverage < 50 || mergeRate < 40 || busFactor < 3) {
+        summary += `**${repoName} shows mixed health signals.** Review coverage is ${coverage.toFixed(0)}%, PR merge rate is ${mergeRate.toFixed(0)}%, and bus factor is ${busFactor}. These areas need attention to reduce project risk.\n\n`;
+      } else {
+        summary += `**${repoName} demonstrates healthy development practices** with ${coverage.toFixed(0)}% review coverage and ${mergeRate.toFixed(0)}% PR merge rate.\n\n`;
+      }
     }
 
     summary += `## Key Observations\n\n`;
@@ -448,6 +440,19 @@ export class NarrativeGenerator {
     });
 
     return summary;
+  }
+
+  /**
+   * Format the expected merge-rate impact of clearing stalled PRs.
+   * When the impact rounds to ~0%, describe it honestly instead of
+   * presenting a "Critical" action with a null effect.
+   */
+  private formatMergeImpact(stalledCount: number, totalPRs: number): string {
+    const pct = totalPRs > 0 ? (stalledCount / totalPRs) * 100 : 0;
+    if (pct < 1) {
+      return `Unblocks ${stalledCount} stalled PRs (${pct.toFixed(1)}% of all PRs) — small direct impact on merge rate, but reduces contributor frustration`;
+    }
+    return `Improve merge rate by ~${Math.round(pct)}%`;
   }
 
   /**
@@ -468,12 +473,16 @@ export class NarrativeGenerator {
       if (riskLevel === 'low') riskLevel = 'high';
     }
 
-    // Velocity risk
-    if (report.trends && report.trends.trends.prMergeRate.trend === 'declining') {
+    // Velocity risk (only meaningful when there is previous-period data)
+    if (
+      report.trends &&
+      report.trends.hasPreviousData !== false &&
+      report.trends.trends.prMergeRate.trend === 'declining'
+    ) {
       const velocityDrop = Math.abs(report.trends.trends.prMergeRate.delta);
       if (velocityDrop > 20) {
         risks.push(
-          `🟠 **Velocity collapse risk**: Merge rate dropped ${velocityDrop.toFixed(0)}% in 30 days`
+          `🟠 **Velocity collapse risk**: Merge rate dropped ${velocityDrop.toFixed(0)}%`
         );
         if (riskLevel !== 'critical') riskLevel = 'high';
       }
@@ -609,9 +618,8 @@ export class NarrativeGenerator {
  * Helper function to generate narrative
  */
 export async function generateNarrative(
-  report: AnalyticsReport,
-  benchmark?: BenchmarkComparison
+  report: AnalyticsReport
 ): Promise<ExecutiveNarrative> {
   const generator = new NarrativeGenerator();
-  return await generator.generate(report, benchmark);
+  return await generator.generate(report);
 }

@@ -161,14 +161,19 @@ interface Exporter {
 ```
 analytics-processor.ts    (Main processor)
 advanced-analytics.ts     (Complex metrics)
-benchmarking.ts          (Industry comparison)
-narrative-generator.ts   (Insight generation)
+narrative-generator.ts    (Insight generation)
 report-generators/       (Section generators)
 ├── activity-section.ts
 ├── contributor-section.ts
-├── performance-section.ts
+├── health-section.ts
+├── label-section.ts
+├── review-velocity-section.ts
 ├── trends-section.ts
-├── benchmarks-section.ts
+├── correlations-section.ts
+├── predictions-section.ts
+├── narrative-section.ts
+├── stale-items-section.ts
+├── recommendations.ts
 ├── export-orchestrator.ts
 └── markdown-generator.ts
 ```
