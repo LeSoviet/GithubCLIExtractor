@@ -3,7 +3,7 @@ import { subDays, format } from 'date-fns';
 interface FilterPanelProps {
   filters: {
     dateFilter: {
-      type: '1-week' | '1-month' | '2-months' | '3-months';
+      type: 'all' | '1-week' | '1-month' | '2-months' | '3-months';
       from?: string;
       to?: string;
     };
@@ -21,12 +21,15 @@ function FilterPanel({ filters, contributors, onFiltersChange }: FilterPanelProp
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  const handleDateRangeChange = (type: '1-week' | '1-month' | '2-months' | '3-months') => {
+  const handleDateRangeChange = (type: 'all' | '1-week' | '1-month' | '2-months' | '3-months') => {
     const today = new Date();
     let from = '';
     let to = format(today, 'yyyy-MM-dd');
 
-    if (type === '1-week') {
+    if (type === 'all') {
+      // No date cap: keep from empty to signal "all time"
+      from = '';
+    } else if (type === '1-week') {
       from = format(subDays(today, 7), 'yyyy-MM-dd');
     } else if (type === '1-month') {
       from = format(subDays(today, 30), 'yyyy-MM-dd');
@@ -75,6 +78,12 @@ function FilterPanel({ filters, contributors, onFiltersChange }: FilterPanelProp
       <div className="filter-group">
         <label className="filter-label">📅 Date Range:</label>
         <div className="date-range-buttons">
+          <button
+            className={`btn-filter ${filters.dateFilter.type === 'all' ? 'active' : ''}`}
+            onClick={() => handleDateRangeChange('all')}
+          >
+            All Time
+          </button>
           <button
             className={`btn-filter ${filters.dateFilter.type === '1-week' ? 'active' : ''}`}
             onClick={() => handleDateRangeChange('1-week')}

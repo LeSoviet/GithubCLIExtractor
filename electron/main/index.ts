@@ -277,6 +277,15 @@ ipcMain.handle('export-data', async (_event, options) => {
       generateAnalytics,
     } = options;
 
+    // Load user config (exportLimits, rateLimit) and apply it
+    const { loadConfig } = await import('../../src/utils/config.js');
+    const userConfig = await loadConfig();
+    const { getRateLimiter } = await import('../../src/core/rate-limiter.js');
+    getRateLimiter().configure({
+      minTime: userConfig.rateLimit ?? 1000,
+      maxConcurrent: userConfig.concurrency ?? 5,
+    });
+
     if (!mainWindow) {
       throw new Error('Main window not available');
     }
@@ -305,8 +314,10 @@ ipcMain.handle('export-data', async (_event, options) => {
         repository,
         outputPath: finalOutputPath,
         format,
+        config: userConfig,
+        timeRange: dateFilter?.type || '1-month',
         // IMPORTANT: Explicitly disable diff mode for GUI exports
-        // GUI provides a full export with optional date range filtering for analytics
+        // GUI provides a full export with optional date range filtering
         // Diff mode is NOT used in GUI - it's only for CLI incremental exports
         diffMode: {
           enabled: false,
@@ -345,6 +356,7 @@ ipcMain.handle('export-data', async (_event, options) => {
           offline: true,
           exportedDataPath: repoOutputPath,
           timeRange: dateFilter?.type || '1-month', // Use selected time range for filtering
+          userFilter,
         };
         const processor = new AnalyticsProcessor(analyticsOptions);
         await processor.generateReport();

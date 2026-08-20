@@ -8,7 +8,7 @@ declare global {
         exportTypes: string[];
         format: string;
         dateFilter?: {
-          type: '1-week' | '1-month' | '2-months' | '3-months';
+          type: 'all' | '1-week' | '1-month' | '2-months' | '3-months';
           from?: string;
           to?: string;
         };

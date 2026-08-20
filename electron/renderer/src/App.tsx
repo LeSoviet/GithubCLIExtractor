@@ -16,7 +16,7 @@ interface Repository {
 
 interface ExportFilters {
   dateFilter: {
-    type: '1-week' | '1-month' | '2-months' | '3-months';
+    type: 'all' | '1-week' | '1-month' | '2-months' | '3-months';
     from?: string;
     to?: string;
   };
@@ -38,7 +38,7 @@ function AppContent() {
   const [exportError, setExportError] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<ExportFilters>({
-    dateFilter: { type: '1-month' },
+    dateFilter: { type: 'all' },
     userFilter: '',
     exportTypes: ['prs', 'commits', 'issues'],
     format: 'markdown',
