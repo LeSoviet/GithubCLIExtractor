@@ -62,10 +62,7 @@ export class ReviewVelocitySectionGenerator implements SectionGenerator {
       return '';
     }
 
-    const totalReviews = rv.reviewerLoadDistribution.reduce(
-      (sum, r) => sum + r.reviewCount,
-      0
-    );
+    const totalReviews = rv.reviewerLoadDistribution.reduce((sum, r) => sum + r.reviewCount, 0);
 
     let md = `### Reviewer Load Distribution\n\n`;
     md += `| Reviewer | Reviews | Share | Avg Response |\n`;
@@ -74,9 +71,7 @@ export class ReviewVelocitySectionGenerator implements SectionGenerator {
     for (const reviewer of rv.reviewerLoadDistribution.slice(0, 10)) {
       const share = totalReviews > 0 ? (reviewer.reviewCount / totalReviews) * 100 : 0;
       const response =
-        reviewer.averageResponseHours > 0
-          ? formatHours(reviewer.averageResponseHours)
-          : 'N/A';
+        reviewer.averageResponseHours > 0 ? formatHours(reviewer.averageResponseHours) : 'N/A';
       md += `| @${reviewer.reviewer} | ${reviewer.reviewCount} | ${share.toFixed(1)}% | ${response} |\n`;
     }
 

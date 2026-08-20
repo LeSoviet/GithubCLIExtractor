@@ -309,9 +309,7 @@ export class AdvancedAnalyticsProcessor {
       // data range (split into two halves) instead of the last 30 days, which
       // would otherwise report all-zero trends for repos with older activity.
       if (!this.timeRange || this.timeRange === 'all') {
-        const allDates = prs
-          .map((pr) => new Date(pr.createdAt).getTime())
-          .filter((t) => !isNaN(t));
+        const allDates = prs.map((pr) => new Date(pr.createdAt).getTime()).filter((t) => !isNaN(t));
         if (allDates.length > 0) {
           const minTime = Math.min(...allDates);
           const maxTime = Math.max(...allDates);

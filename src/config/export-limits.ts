@@ -29,9 +29,7 @@ const DEFAULT_EXPORT_LIMITS: Record<ExportLimitType, number> = {
  * Resolve the effective export limits, applying user configuration overrides
  * on top of the defaults.
  */
-export function resolveExportLimits(
-  config?: Partial<ConfigFile>
-): Record<ExportLimitType, number> {
+export function resolveExportLimits(config?: Partial<ConfigFile>): Record<ExportLimitType, number> {
   const overrides = config?.exportLimits ?? {};
   return {
     prs: overrides.prs ?? DEFAULT_EXPORT_LIMITS.prs,
@@ -46,10 +44,7 @@ export function resolveExportLimits(
  * When a config is provided, user overrides are honored; otherwise the default
  * (matching previous behavior) is returned.
  */
-export function getExportLimit(
-  type: ExportLimitType,
-  config?: Partial<ConfigFile>
-): number {
+export function getExportLimit(type: ExportLimitType, config?: Partial<ConfigFile>): number {
   return resolveExportLimits(config)[type];
 }
 

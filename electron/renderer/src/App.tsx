@@ -247,7 +247,7 @@ function AppContent() {
       </main>
 
       <footer className="app-footer">
-        <p>GitHub Extractor v0.9.2 - Professional Data Extraction Tool for Developers & PMs</p>
+        <p>GitHub Extractor - Professional Data Extraction Tool for Developers &amp; PMs</p>
       </footer>
     </div>
   );

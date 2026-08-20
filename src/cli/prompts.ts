@@ -286,7 +286,9 @@ export async function promptEnableDiffMode(): Promise<boolean> {
   return enableDiff;
 }
 
-export async function selectTimeRange(): Promise<'1-week' | '1-month' | '2-months' | '3-months' | 'all'> {
+export async function selectTimeRange(): Promise<
+  '1-week' | '1-month' | '2-months' | '3-months' | 'all'
+> {
   const timeRange = await clack.select({
     message: 'Select time range:',
     options: [

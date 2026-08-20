@@ -422,8 +422,7 @@ async function main() {
       : await selectOutputPath(defaultPath);
 
     // Select time range (always asked, caps how far back items are exported)
-    const timeRange =
-      process.env.GHX_TEST_MODE ? '1-month' : await selectTimeRange();
+    const timeRange = process.env.GHX_TEST_MODE ? '1-month' : await selectTimeRange();
 
     // Select user filter (optional, caps export to a single contributor)
     let userFilter: string | undefined;

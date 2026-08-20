@@ -296,7 +296,8 @@ export class MarkdownParser {
 
       // Extract fields
       const author = this.extractField(metadata, 'Author');
-      const createdAt = this.extractField(metadata, 'Date') || this.extractField(metadata, 'Created');
+      const createdAt =
+        this.extractField(metadata, 'Date') || this.extractField(metadata, 'Created');
 
       if (!author || !createdAt) {
         return null;

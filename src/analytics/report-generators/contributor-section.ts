@@ -81,15 +81,9 @@ export class ContributorSectionGenerator implements SectionGenerator {
     }
 
     // Add contribution mix breakdown
-    const totalCommits = report.contributors.topContributors.reduce(
-      (sum, c) => sum + c.commits,
-      0
-    );
+    const totalCommits = report.contributors.topContributors.reduce((sum, c) => sum + c.commits, 0);
     const totalPRs = report.contributors.topContributors.reduce((sum, c) => sum + c.prs, 0);
-    const totalReviews = report.contributors.topContributors.reduce(
-      (sum, c) => sum + c.reviews,
-      0
-    );
+    const totalReviews = report.contributors.topContributors.reduce((sum, c) => sum + c.reviews, 0);
     const totalAll = totalCommits + totalPRs + totalReviews;
 
     if (totalAll > 0) {

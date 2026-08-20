@@ -42,9 +42,7 @@ export class NarrativeGenerator {
   /**
    * Generate executive narrative from analytics report
    */
-  async generate(
-    report: AnalyticsReport
-  ): Promise<ExecutiveNarrative> {
+  async generate(report: AnalyticsReport): Promise<ExecutiveNarrative> {
     logger.info('Generating executive narrative...');
 
     const paradoxes = this.detectParadoxes(report);
@@ -274,10 +272,7 @@ export class NarrativeGenerator {
   /**
    * Prioritize actions based on impact and urgency
    */
-  private prioritizeActions(
-    report: AnalyticsReport,
-    rootCauses: RootCause[]
-  ): ActionItem[] {
+  private prioritizeActions(report: AnalyticsReport, rootCauses: RootCause[]): ActionItem[] {
     const actions: ActionItem[] = [];
 
     // Priority 1 (Critical/Urgent)
@@ -481,9 +476,7 @@ export class NarrativeGenerator {
     ) {
       const velocityDrop = Math.abs(report.trends.trends.prMergeRate.delta);
       if (velocityDrop > 20) {
-        risks.push(
-          `🟠 **Velocity collapse risk**: Merge rate dropped ${velocityDrop.toFixed(0)}%`
-        );
+        risks.push(`🟠 **Velocity collapse risk**: Merge rate dropped ${velocityDrop.toFixed(0)}%`);
         if (riskLevel !== 'critical') riskLevel = 'high';
       }
     }
@@ -617,9 +610,7 @@ export class NarrativeGenerator {
 /**
  * Helper function to generate narrative
  */
-export async function generateNarrative(
-  report: AnalyticsReport
-): Promise<ExecutiveNarrative> {
+export async function generateNarrative(report: AnalyticsReport): Promise<ExecutiveNarrative> {
   const generator = new NarrativeGenerator();
   return await generator.generate(report);
 }
