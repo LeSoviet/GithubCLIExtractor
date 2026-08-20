@@ -286,16 +286,17 @@ export async function promptEnableDiffMode(): Promise<boolean> {
   return enableDiff;
 }
 
-export async function selectTimeRange(): Promise<'1-week' | '1-month' | '2-months' | '3-months'> {
+export async function selectTimeRange(): Promise<'1-week' | '1-month' | '2-months' | '3-months' | 'all'> {
   const timeRange = await clack.select({
-    message: 'Select time range for analytics:',
+    message: 'Select time range:',
     options: [
+      { value: 'all', label: 'All time', hint: 'Export complete history (no date cap)' },
       { value: '1-week', label: '1 Week', hint: 'Last 7 days' },
       { value: '1-month', label: '1 Month', hint: 'Last 30 days' },
       { value: '2-months', label: '2 Months', hint: 'Last 60 days' },
       { value: '3-months', label: '3 Months', hint: 'Last 90 days' },
     ],
-    initialValue: '1-month',
+    initialValue: 'all',
   });
 
   if (clack.isCancel(timeRange)) {
@@ -303,5 +304,29 @@ export async function selectTimeRange(): Promise<'1-week' | '1-month' | '2-month
     process.exit(0);
   }
 
-  return timeRange as '1-week' | '1-month' | '2-months' | '3-months';
+  return timeRange as '1-week' | '1-month' | '2-months' | '3-months' | 'all';
+}
+
+/**
+ * Prompt the user to filter the export by a specific contributor.
+ * Returns the selected username, or undefined for "all users".
+ */
+export async function selectUserFilter(contributors: string[]): Promise<string | undefined> {
+  const options = [
+    { value: '', label: 'All users', hint: 'No user filter' },
+    ...contributors.map((user) => ({ value: user, label: user })),
+  ];
+
+  const selected = await clack.select({
+    message: 'Filter by user:',
+    options,
+    initialValue: '',
+  });
+
+  if (clack.isCancel(selected)) {
+    clack.cancel('Operation cancelled');
+    process.exit(0);
+  }
+
+  return selected ? (selected as string) : undefined;
 }
