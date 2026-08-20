@@ -50,6 +50,8 @@ describe('ExportOrchestrator', () => {
         prMergeRate: {
           merged: 5,
           closed: 2,
+          open: 0,
+          total: 7,
           mergeRate: 71.4,
         },
         issueResolutionTime: {
@@ -78,6 +80,7 @@ describe('ExportOrchestrator', () => {
           returning: 8,
         },
         contributionDistribution: [{ contributor: 'user1', percentage: 50 }],
+        totalContributors: 3,
         busFactor: 3,
       },
       labels: {

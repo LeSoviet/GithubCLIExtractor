@@ -20,10 +20,22 @@ export class TrendsSectionGenerator implements SectionGenerator {
 
 `;
     md += `### Period-over-Period Comparison\n\n`;
+    md += this.generatePeriodContext(report);
+    if (report.trends.hasPreviousData === false) {
+      md += `> **Insufficient data for the previous period** — there was no activity in the prior window to compare against, so deltas are not meaningful.\n\n`;
+      return md;
+    }
     md += this.generateTrendMetricsTable(report);
     md += this.generateVelocityChart(report);
     md += `---\n\n`;
     return md;
+  }
+
+  private generatePeriodContext(report: AnalyticsReport): string {
+    if (!report.trends) return '';
+    const { current, previous } = report.trends.comparisonPeriod;
+    const fmt = (iso: string) => new Date(iso).toLocaleDateString();
+    return `*Comparing the current period (${fmt(current.start)} → ${fmt(current.end)}) against the previous period (${fmt(previous.start)} → ${fmt(previous.end)}). These are different windows than the overall analysis period, so values may differ from the global metrics above.*\n\n`;
   }
 
   private generateTrendMetricsTable(report: AnalyticsReport): string {
@@ -37,7 +49,7 @@ export class TrendsSectionGenerator implements SectionGenerator {
     // PR Merge Rate
     const mergeRate = trends.prMergeRate;
     const mergeIcon = this.getTrendIcon(mergeRate.trend);
-    md += `| PR Merge Rate | ${formatPercentage(mergeRate.current)} | ${formatPercentage(mergeRate.previous)} | ${this.formatDelta(mergeRate.delta)} | ${mergeIcon} ${mergeRate.trend === 'improving' ? 'Improving' : mergeRate.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
+    md += `| PR Merge Rate | ${formatPercentage(mergeRate.current)} | ${formatPercentage(mergeRate.previous)} | ${this.formatDelta(mergeRate.delta)} | ${mergeIcon} |\n`;
 
     // Time to Review
     const timeToReview = trends.timeToReview;
@@ -47,20 +59,20 @@ export class TrendsSectionGenerator implements SectionGenerator {
 
     // Only show if we have valid data
     if (currentReviewHours > 0 && isFinite(currentReviewHours)) {
-      md += `| Time to Review | ${formatHours(currentReviewHours)} | ${formatHours(previousReviewHours)} | ${this.formatTimeDelta(timeToReview.delta)} | ${reviewIcon} ${timeToReview.trend === 'improving' ? 'Improving' : timeToReview.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
+      md += `| Time to Review | ${formatHours(currentReviewHours)} | ${formatHours(previousReviewHours)} | ${this.formatTimeDelta(timeToReview.delta)} | ${reviewIcon} |\n`;
     }
 
     // Active Contributors
     const contributors = trends.activeContributors;
     const contribIcon = this.getTrendIcon(contributors.trend);
-    md += `| Active Contributors | ${contributors.current} | ${contributors.previous} | ${this.formatDeltaInt(contributors.delta)} | ${contribIcon} ${contributors.trend === 'improving' ? 'Improving' : contributors.trend === 'declining' ? 'Declining' : 'Stable'} |\n`;
+    md += `| Active Contributors | ${contributors.current} | ${contributors.previous} | ${this.formatDeltaInt(contributors.delta)} | ${contribIcon} |\n`;
 
     // Issue Resolution
     const resolution = trends.issueResolution;
     const resIcon = this.getTrendIcon(resolution.trend);
     const currentDays = resolution.current / 24;
     const previousDays = resolution.previous / 24;
-    md += `| Issue Resolution | ${formatDays(currentDays)} | ${formatDays(previousDays)} | ${this.formatDaysDelta(resolution.delta / 24)} | ${resIcon} ${resolution.trend === 'improving' ? 'Improving' : resolution.trend === 'declining' ? 'Declining' : 'Stable'} |\n\n`;
+    md += `| Issue Resolution | ${formatDays(currentDays)} | ${formatDays(previousDays)} | ${this.formatDaysDelta(resolution.delta / 24)} | ${resIcon} |\n\n`;
 
     return md;
   }
@@ -112,14 +124,32 @@ export class TrendsSectionGenerator implements SectionGenerator {
     const mergedPRs = trend.map((t) => t.mergedPRs);
     const maxValue = Math.max(...mergedPRs, 5);
 
-    // Calculate trend insight
-    const firstWeek = mergedPRs[0] || 1;
-    const lastWeek = mergedPRs[mergedPRs.length - 1] || 1;
-    const trendPercentageNum = ((lastWeek - firstWeek) / firstWeek) * 100;
-    const trendDirection = lastWeek > firstWeek ? 'increasing' : 'decreasing';
-    const insight = `Velocity is ${trendDirection}: ${formatPercentage(Math.abs(trendPercentageNum))} change over 12 weeks (${firstWeek} Stable ${lastWeek} PRs/week)`;
+    const totalMerged = mergedPRs.reduce((sum, n) => sum + n, 0);
 
     let md = `### 12-Week Velocity Trend\n\n`;
+
+    // If there is no activity in the 12-week window, say so explicitly instead
+    // of implying the project is dead with a "stable 0 → 0" message.
+    if (totalMerged === 0) {
+      md += `*No merged PRs in the last 12 weeks. The most recent activity falls outside this window — this is not a sign of inactivity, just that the 12-week window has no data.*\n\n`;
+      return md;
+    }
+
+    // Calculate trend insight
+    const firstWeek = mergedPRs[0] || 0;
+    const lastWeek = mergedPRs[mergedPRs.length - 1] || 0;
+
+    let insight: string;
+    if (firstWeek === 0 && lastWeek > 0) {
+      // Cannot compute a % change from a zero baseline; describe it honestly.
+      insight = `Velocity went from 0 to ${lastWeek} PRs/week over the 12-week window (no baseline to compute a % change)`;
+    } else {
+      const trendPercentageNum = firstWeek > 0 ? ((lastWeek - firstWeek) / firstWeek) * 100 : 0;
+      const trendDirection =
+        lastWeek > firstWeek ? 'increasing' : lastWeek < firstWeek ? 'decreasing' : 'stable';
+      insight = `Velocity is ${trendDirection}: ${formatPercentage(Math.abs(trendPercentageNum))} change over 12 weeks (${firstWeek} → ${lastWeek} PRs/week)`;
+    }
+
     md += `*${insight}*\n\n`;
     md += ChartGenerator.generateVelocityChart(weeks, mergedPRs, maxValue);
     md += `\n`;

@@ -281,12 +281,12 @@ export class MarkdownParser {
    */
   private parseCommit(content: string): ParsedCommit | null {
     try {
-      // Extract hash from title (e.g., "# Commit abc123: Title")
-      const titleMatch = content.match(/^# Commit\s+([a-f0-9]+):\s*(.+?)\s*$/m);
+      // Extract hash from title (e.g., "# Commit abc123: Title" or "# Commit abc123")
+      const titleMatch = content.match(/^# Commit\s+([a-f0-9]+)(?::\s*(.+?))?\s*$/m);
       if (!titleMatch) return null;
 
       const hash = titleMatch[1];
-      const title = titleMatch[2].trim();
+      const title = (titleMatch[2] || '').trim();
 
       // FIX: Improved Regex for the Metadata section.
       const metadataMatch = content.match(/## Metadata\s*([\s\S]*?)\s*(?:##|$)/);
@@ -296,7 +296,7 @@ export class MarkdownParser {
 
       // Extract fields
       const author = this.extractField(metadata, 'Author');
-      const createdAt = this.extractField(metadata, 'Created');
+      const createdAt = this.extractField(metadata, 'Date') || this.extractField(metadata, 'Created');
 
       if (!author || !createdAt) {
         return null;
@@ -361,9 +361,11 @@ export class MarkdownParser {
       const metadata = metadataMatch[1];
 
       // Extract protected status
-      const protected_str = this.extractField(metadata, 'Protected');
+      const protected_str =
+        this.extractField(metadata, 'Protection') || this.extractField(metadata, 'Protected');
       const isProtected =
-        protected_str.toLowerCase() === 'true' || protected_str.toLowerCase() === 'yes';
+        protected_str.toLowerCase().includes('protected') &&
+        !protected_str.toLowerCase().includes('not protected');
 
       return {
         name,

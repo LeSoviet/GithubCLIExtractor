@@ -49,8 +49,7 @@ export class RecommendationsGenerator implements SectionGenerator {
         `**Moderate PR Merge Rate (${formatPercentage(mergeRate)})**
    - Note: Some high-quality projects maintain merge rates in 25-40% range by design
    - If above benchmark: maintain current standards
-   - If trending down: investigate recent process changes
-   - Consider benchmark data: industry median is ${report.benchmark?.metrics.prMergeRate.median.toFixed(1) || '45'}%`
+   - If trending down: investigate recent process changes`
       );
     } else if (mergeRate >= 75) {
       insights.push(

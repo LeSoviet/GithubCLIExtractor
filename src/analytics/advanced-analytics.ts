@@ -16,14 +16,14 @@ export class AdvancedAnalyticsProcessor {
     private repository: { owner: string; name: string },
     private offline: boolean = false,
     private exportedDataPath?: string,
-    private timeRange?: '1-week' | '1-month' | '2-months' | '3-months'
+    private timeRange?: '1-week' | '1-month' | '2-months' | '3-months' | 'all'
   ) {}
 
   /**
-   * Filter items by timeRange if specified
+   * Filter items by timeRange if specified. 'all' (or unset) means no filtering.
    */
   private filterByTimeRange(items: any[]): any[] {
-    if (!this.timeRange) {
+    if (!this.timeRange || this.timeRange === 'all') {
       return items;
     }
 
@@ -84,6 +84,7 @@ export class AdvancedAnalyticsProcessor {
           number: pr.number,
           title: pr.title,
           author: { login: pr.author },
+          state: pr.state,
           createdAt: pr.createdAt,
           updatedAt: pr.closedAt || pr.createdAt,
           closedAt: pr.closedAt,
@@ -221,11 +222,11 @@ export class AdvancedAnalyticsProcessor {
   async generateTemporalTrends(): Promise<TemporalTrends> {
     const startTime = Date.now();
 
-    // Define periods (last 30 days vs previous 30 days)
+    // Define periods (last 30 days vs previous 30 days by default)
     const now = new Date();
-    const currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const previousStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-    const previousEnd = currentStart;
+    let currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    let previousStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    let previousEnd = currentStart;
 
     const result: TemporalTrends = {
       success: false,
@@ -236,6 +237,7 @@ export class AdvancedAnalyticsProcessor {
         current: { start: currentStart.toISOString(), end: now.toISOString() },
         previous: { start: previousStart.toISOString(), end: previousEnd.toISOString() },
       },
+      hasPreviousData: true,
       trends: {
         prMergeRate: {
           current: 0,
@@ -303,6 +305,27 @@ export class AdvancedAnalyticsProcessor {
       prs = this.filterByTimeRange(prs);
       issues = this.filterByTimeRange(issues);
 
+      // When analyzing "all time", derive the comparison periods from the actual
+      // data range (split into two halves) instead of the last 30 days, which
+      // would otherwise report all-zero trends for repos with older activity.
+      if (!this.timeRange || this.timeRange === 'all') {
+        const allDates = prs
+          .map((pr) => new Date(pr.createdAt).getTime())
+          .filter((t) => !isNaN(t));
+        if (allDates.length > 0) {
+          const minTime = Math.min(...allDates);
+          const maxTime = Math.max(...allDates);
+          const midpoint = minTime + (maxTime - minTime) / 2;
+          currentStart = new Date(midpoint);
+          previousStart = new Date(minTime);
+          previousEnd = new Date(midpoint);
+          result.comparisonPeriod = {
+            current: { start: currentStart.toISOString(), end: new Date(maxTime).toISOString() },
+            previous: { start: previousStart.toISOString(), end: previousEnd.toISOString() },
+          };
+        }
+      }
+
       // Filter PRs by period
       const currentPRs = prs.filter((pr) => {
         const created = new Date(pr.createdAt);
@@ -313,6 +336,11 @@ export class AdvancedAnalyticsProcessor {
         const created = new Date(pr.createdAt);
         return created >= previousStart && created < previousEnd;
       });
+
+      // Determine if there was any data in the previous period. If not, we
+      // cannot compute a meaningful comparison and should not imply an infinite
+      // improvement from 0.
+      result.hasPreviousData = previousPRs.length > 0;
 
       // Calculate PR merge rate for both periods
       const currentMerged = currentPRs.filter((pr) => pr.mergedAt).length;
@@ -339,13 +367,15 @@ export class AdvancedAnalyticsProcessor {
       );
 
       const contributorDelta = currentContributors.size - previousContributors.size;
+      const contributorBase = Math.max(previousContributors.size, 1);
+      const contributorPctChange = (contributorDelta / contributorBase) * 100;
 
       result.trends.activeContributors = {
         current: currentContributors.size,
         previous: previousContributors.size,
         delta: contributorDelta,
         trend:
-          Math.abs(contributorDelta) < 2
+          Math.abs(contributorPctChange) < 20
             ? 'stable'
             : contributorDelta > 0
               ? 'improving'

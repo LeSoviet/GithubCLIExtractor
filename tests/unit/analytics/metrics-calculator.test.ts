@@ -22,6 +22,8 @@ describe('MetricsCalculator', () => {
       prMergeRate: {
         merged: 18,
         closed: 2,
+        open: 0,
+        total: 20,
         mergeRate: 90,
       },
       issueResolutionTime: {
@@ -68,6 +70,7 @@ describe('MetricsCalculator', () => {
         { contributor: 'user2', percentage: 30 },
         { contributor: 'user3', percentage: 20 },
       ],
+      totalContributors: 3,
       busFactor: 3,
     },
     labels: {
