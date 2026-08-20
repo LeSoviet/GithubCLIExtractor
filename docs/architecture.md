@@ -298,8 +298,7 @@ Data Validation
   ↓
 Metrics Calculation
 ├─ Basic: counts, averages, totals
-├─ Advanced: trends, correlations
-└─ Benchmarks: comparisons
+└─ Advanced: trends, correlations
   ↓
 Insight Generation
 ├─ Narrative analysis
@@ -309,10 +308,9 @@ Insight Generation
 Report Orchestration
 ├─ Activity section
 ├─ Contributors section
-├─ Performance metrics
+├─ Health metrics
 ├─ Trends & predictions
-├─ Benchmarks
-└─ Health assessment
+└─ Review velocity
   ↓
 Format Generation
 ├─ Markdown (for documentation)
