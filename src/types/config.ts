@@ -1,3 +1,5 @@
+export type ExportLimitType = 'prs' | 'issues' | 'branches' | 'releases';
+
 export interface ConfigFile {
   defaultFormat?: 'markdown' | 'json';
   outputPath?: string;
@@ -7,6 +9,9 @@ export interface ConfigFile {
   parallelExports?: number;
   cacheEnabled?: boolean;
   cacheTTL?: number; // in hours
+  rateLimit?: number; // delay in ms between API requests
+  concurrency?: number; // max concurrent API requests
+  exportLimits?: Partial<Record<ExportLimitType, number>>;
   templates?: {
     pr?: string;
     commit?: string;
