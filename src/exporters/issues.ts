@@ -20,8 +20,11 @@ export class IssueExporter extends BaseExporter<Issue> {
 
       // Fetch issues using dynamically configured limit for complete data export
       const issueLimit = getExportLimit('issues', this.config);
+      const jsonFields = this.includeComments
+        ? 'number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url,comments'
+        : 'number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url';
       const issues = await execGhJson<any[]>(
-        `issue list --repo ${repoId} --state all --limit ${issueLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,labels,url`,
+        `issue list --repo ${repoId} --state all --limit ${issueLimit} --json ${jsonFields}`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
@@ -78,6 +81,17 @@ export class IssueExporter extends BaseExporter<Issue> {
 
     markdown += `## Description\n\n`;
     markdown += `${body}\n\n`;
+
+    if (this.includeComments && issue.comments && issue.comments.length > 0) {
+      markdown += `## Comments (${issue.comments.length})\n\n`;
+      for (const comment of issue.comments) {
+        markdown += `### ${sanitizeUnicode(comment.author)} - ${this.formatDate(comment.createdAt)}\n\n`;
+        markdown += `${decodeUnicode(comment.body)}\n\n`;
+        if (comment.url) {
+          markdown += `*URL: ${comment.url}*\n\n`;
+        }
+      }
+    }
 
     markdown += `---\n\n`;
     markdown += `*Exported with [GitHub Extractor CLI](https://github.com/LeSoviet/ghextractor)*\n`;

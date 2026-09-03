@@ -16,6 +16,7 @@ export interface ExporterOptions {
   userFilter?: string; // Filter by specific user
   config?: import('../types/config.js').ConfigFile; // Loaded user configuration
   timeRange?: TimeRange; // Optional export window (filters items by date)
+  includeComments?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export abstract class BaseExporter<T> {
   protected userFilter?: string;
   protected config?: import('../types/config.js').ConfigFile;
   protected timeRange?: TimeRange;
+  protected includeComments: boolean;
   protected startTime: number = 0;
   protected apiCalls: number = 0;
   protected cacheHits: number = 0;
@@ -41,6 +43,7 @@ export abstract class BaseExporter<T> {
     this.userFilter = options.userFilter;
     this.config = options.config;
     this.timeRange = options.timeRange;
+    this.includeComments = options.includeComments ?? options.config?.includeComments ?? false;
   }
 
   /**

@@ -92,6 +92,7 @@ function parseArgs(): {
   batchRepos?: string;
   batchTypes?: string;
   batchParallel?: number;
+  includeComments: boolean;
 } {
   const args = process.argv.slice(2);
 
@@ -122,6 +123,7 @@ function parseArgs(): {
     batchParallel: args.includes('--batch-parallel')
       ? parseInt(args[args.indexOf('--batch-parallel') + 1])
       : undefined,
+    includeComments: args.includes('--include-comments'),
   };
 }
 
@@ -445,6 +447,9 @@ async function main() {
       if (args.diff) {
         console.log(`  Diff mode: enabled`);
       }
+      if (args.includeComments) {
+        console.log(`  Include comments: enabled`);
+      }
       process.exit(0);
     }
 
@@ -478,6 +483,7 @@ async function main() {
       config: userConfig,
       timeRange: timeRange as import('./exporters/base-exporter.js').TimeRange,
       userFilter,
+      includeComments: args.includeComments || userConfig.includeComments || false,
     };
 
     // Execute export
@@ -731,6 +737,7 @@ function createExporter(
     config: options.config,
     timeRange: options.timeRange,
     userFilter: options.userFilter,
+    includeComments: options.includeComments,
   };
 
   switch (options.type) {
@@ -815,6 +822,9 @@ async function handleBatchExport(args: ReturnType<typeof parseArgs>): Promise<vo
 
     // Create and run batch processor
     const userConfig = await loadConfig();
+    if (args.includeComments) {
+      userConfig.includeComments = true;
+    }
     if (batchConfig && typeof batchConfig === 'object') {
       batchConfig.config = userConfig;
     }

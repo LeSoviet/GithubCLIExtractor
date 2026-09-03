@@ -20,8 +20,11 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
 
       // Fetch PRs using dynamically configured limit for complete data export
       const prLimit = getExportLimit('prs', this.config);
+      const jsonFields = this.includeComments
+        ? 'number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url,comments,reviews'
+        : 'number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url';
       const prs = await execGhJson<any[]>(
-        `pr list --repo ${repoId} --state all --limit ${prLimit} --json number,title,body,author,state,createdAt,updatedAt,closedAt,mergedAt,labels,url`,
+        `pr list --repo ${repoId} --state all --limit ${prLimit} --json ${jsonFields}`,
         { timeout: 60000, useRateLimit: false, useRetry: false }
       );
 
@@ -78,6 +81,30 @@ export class PullRequestExporter extends BaseExporter<PullRequest> {
 
     markdown += `## Description\n\n`;
     markdown += `${body}\n\n`;
+
+    if (this.includeComments && pr.comments && pr.comments.length > 0) {
+      markdown += `## Comments (${pr.comments.length})\n\n`;
+      for (const comment of pr.comments) {
+        markdown += `### ${sanitizeUnicode(comment.author)} - ${this.formatDate(comment.createdAt)}\n\n`;
+        markdown += `${decodeUnicode(comment.body)}\n\n`;
+        if (comment.url) {
+          markdown += `*URL: ${comment.url}*\n\n`;
+        }
+      }
+    }
+
+    if (this.includeComments && pr.reviews && pr.reviews.length > 0) {
+      markdown += `## Reviews (${pr.reviews.length})\n\n`;
+      for (const review of pr.reviews) {
+        markdown += `### ${sanitizeUnicode(review.author)} - ${review.state} - ${this.formatDate(review.submittedAt)}\n\n`;
+        if (review.body) {
+          markdown += `${decodeUnicode(review.body)}\n\n`;
+        }
+        if (review.url) {
+          markdown += `*URL: ${review.url}*\n\n`;
+        }
+      }
+    }
 
     markdown += `---\n\n`;
     markdown += `*Exported with [GitHub Extractor CLI](https://github.com/LeSoviet/ghextractor)*\n`;

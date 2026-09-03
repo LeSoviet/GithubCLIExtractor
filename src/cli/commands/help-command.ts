@@ -22,6 +22,7 @@ Options:
   --dry-run               Simulate export without creating files
   --diff, --incremental   Incremental export (only new/updated items since last run)
   --force-full            Force full export even if previous state exists
+  --include-comments      Include issue and PR comment threads
   --since <date>          Filter by date range (start)
   --until <date>          Filter by date range (end)
   --labels <labels>       Filter by labels (comma-separated)

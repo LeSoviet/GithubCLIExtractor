@@ -12,6 +12,7 @@ export interface ConfigFile {
   rateLimit?: number; // delay in ms between API requests
   concurrency?: number; // max concurrent API requests
   exportLimits?: Partial<Record<ExportLimitType, number>>;
+  includeComments?: boolean;
   templates?: {
     pr?: string;
     commit?: string;

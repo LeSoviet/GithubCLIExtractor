@@ -6,6 +6,21 @@ export interface Repository {
   isPrivate: boolean;
 }
 
+export interface Comment {
+  author: string;
+  body: string;
+  createdAt: string;
+  url?: string;
+}
+
+export interface Review {
+  author: string;
+  body?: string;
+  state: string;
+  submittedAt: string;
+  url?: string;
+}
+
 export interface PullRequest {
   number: number;
   title: string;
@@ -18,6 +33,8 @@ export interface PullRequest {
   mergedAt?: string;
   labels: string[];
   url: string;
+  comments?: Comment[];
+  reviews?: Review[];
 }
 
 export interface Commit {
@@ -53,6 +70,7 @@ export interface Issue {
   closedAt?: string;
   labels: string[];
   url: string;
+  comments?: Comment[];
 }
 
 export interface Release {
@@ -91,6 +109,7 @@ export interface ExportOptions {
   config?: import('./config.js').ConfigFile;
   timeRange?: import('../exporters/base-exporter.js').TimeRange;
   userFilter?: string;
+  includeComments?: boolean;
 }
 
 export interface RateLimitInfo {
