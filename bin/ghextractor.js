@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import readline from 'readline';
+import fs from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -58,6 +59,14 @@ function showMenu() {
 }
 
 function launchCLI() {
+  const distJs = join(__dirname, '..', 'dist', 'index.js');
+  const distCjs = join(__dirname, '..', 'dist', 'index.cjs');
+
+  if (!fs.existsSync(distJs) && !fs.existsSync(distCjs)) {
+    console.error('\n❌ Build artifacts not found. Please run `npm run build:cli` to compile `dist/`, or use `npm run dev:cli` for live TypeScript execution.\n');
+    process.exit(1);
+  }
+
   import('../dist/index.js')
     .catch(() => import('../dist/index.cjs'))
     .catch((err) => {
