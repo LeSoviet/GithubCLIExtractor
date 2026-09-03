@@ -138,6 +138,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm install
@@ -145,10 +146,10 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # Publish via OpenID Connect (Trusted Publisher). No NODE_AUTH_TOKEN needed;
-      # npm v11+ authenticates using the OIDC token minted from the id-token permission.
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Post-release notifications
   notify:
