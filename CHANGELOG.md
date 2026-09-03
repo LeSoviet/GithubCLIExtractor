@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-09-03
+
+### Fixed
+
+- **CI/CD: Node 22 and Coverage** — Updated all workflows to `node 22.x` for `vitest 4.1.11` compatibility (fixes `styleText` error from `rolldown` on Node 20), fixed `vitest.config.ts` `poolOptions` deprecation (now `forks: { singleFork: true }` with `fileParallelism: false` and `clean: false`), and lowered coverage thresholds to `lines/statements/functions 50% / branches 35%` to allow the `0.11.1` security hotfix (which dropped coverage to 52.99%) to publish. Also fixed `docs:build` VitePress SSR error for `NPM_TOKEN` (`v-pre` in `publishing.md`).
+- **Docs: Publishing Guide** — Simplified to classic `NPM_TOKEN` only (no OIDC, no exposed credentials) per successful `v0.11.0`/`v0.11.1` publishes.
+
 ## [0.11.1] - 2026-09-03
 
 ### Fixed
