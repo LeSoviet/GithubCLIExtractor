@@ -25,7 +25,8 @@ export default defineConfig({
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Export Formats', link: '/guide/export-formats' },
             { text: 'Diff Mode (Incremental Exports)', link: '/guide/diff-mode' },
-            { text: 'Batch Processing', link: '/guide/batch-processing' }
+            { text: 'Batch Processing', link: '/guide/batch-processing' },
+            { text: 'Publishing a New Version', link: '/guide/publishing' }
           ]
         }
       ],
