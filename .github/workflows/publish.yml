@@ -178,17 +178,6 @@ jobs:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Debug OIDC claim (temporary)
-        run: |
-          curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" \
-            | node -e "const d=JSON.parse(require('fs').readFileSync(0)); const [,p]=d.value.split('.'); console.log(JSON.stringify(JSON.parse(Buffer.from(p,'base64').toString()), null, 2))"
-
-      - name: Update npm for OIDC trusted publishing
-        run: |
-          npm install -g npm@11.5.1
-          echo "npm version after update: $(npm --version)"
-
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
@@ -203,10 +192,10 @@ jobs:
           test -f out/main/index.js || (echo "❌ out/main/index.js not found" && exit 1)
           echo "✅ All build artifacts verified"
 
-      # Publish via OpenID Connect (Trusted Publisher). No NODE_AUTH_TOKEN needed;
-      # npm v11+ authenticates using the OIDC token minted from the id-token permission.
-      - name: Publish to npm with provenance
-        run: npm publish --provenance --access public
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create success summary
         run: |
