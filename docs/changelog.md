@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-09-03
+
+### Added
+
+- **Include Comments Support**: New `--include-comments` flag and `includeComments` config option to export complete discussion threads
+  - Issues: requests `comments` via `gh issue list --json ...,comments` and renders `## Comments (N)` section with author, date and body
+  - Pull Requests: requests `comments,reviews` via `gh pr list --json ...,comments,reviews` and renders `## Comments` and `## Reviews` sections
+  - Configurable via CLI flag, `.ghextractorrc` (`"includeComments": true`), or environment variable `GHEXTRACTOR_INCLUDE_COMMENTS=true`
+  - Default remains `false` to keep fast metadata-only exports for large repositories
+  - Batch export propagates the flag via `userConfig`
+
+### Fixed
+
+- **CLI Launcher Guard**: `bin/ghextractor.js` now checks for `dist/index.js` / `dist/index.cjs` before dynamic import and shows helpful guidance (`npm run build:cli` or `npm run dev:cli`) instead of unhandled `Cannot find module` on fresh clones
+- **Rate Limiter Contract**: Removed `command.includes('api')` guard in `src/utils/exec-gh.ts` that bypassed Bottleneck queue for non-API commands; `useRateLimit` now correctly throttles any `gh` subcommand (e.g. `release view` parallel fetches)
+
 ## [0.10.0] - 2026-08-20
 
 ### Removed
