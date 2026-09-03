@@ -179,7 +179,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Update npm for OIDC trusted publishing
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@11.5.1
+          echo "npm version after update: $(npm --version)"
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
