@@ -179,10 +179,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Update npm for OIDC trusted publishing
-        run: |
-          npm install -g npm@latest
-          echo "npm version after update: $(npm --version)"
-          node -e "const v=require('child_process').execSync('npm --version').toString().trim(); const [maj,minor]=v.split('.').map(Number); if(maj<11 || (maj===11 && minor<5)){console.error('npm version '+v+' < 11.5.1, OIDC will fail'); process.exit(1)} else console.log('npm OIDC ready: '+v)"
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
