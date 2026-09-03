@@ -36,7 +36,7 @@ This project uses the **classic NPM_TOKEN** flow (proven reliable in `v0.11.0`).
   - Name: `NPM_TOKEN`
   - Value: paste the granular token (never commit it, never log it — the workflow references it only via `secrets.NPM_TOKEN`)
 
-The workflow never prints the token; it is injected as `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` at publish time.
+The workflow never prints the token; it is injected as <code v-pre>NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}</code> at publish time.
 
 ### 2. npm Package 2FA Policy
 
@@ -84,7 +84,7 @@ git push origin main
 
 `publish.yml:publish-npm` (and `release.yml:publish-npm` for tag pushes) as used for the successful `v0.11.0` publish:
 
-```yaml
+```yaml v-pre
 - uses: actions/setup-node@v4
   with:
     node-version: '20.x'

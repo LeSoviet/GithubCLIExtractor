@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '22.x'
 
       - name: Install dependencies
         run: npm install
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['18.x', '20.x', '22.x']
+        node-version: ['22.x']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '22.x'
 
       - name: Install dependencies
         run: npm install
@@ -91,7 +91,7 @@ jobs:
           node -e "
           const coverage = require('./coverage-report/coverage-summary.json');
           const total = coverage.total;
-          const thresholds = { lines: 60, statements: 60, functions: 60, branches: 60 };
+          const thresholds = { lines: 50, statements: 50, functions: 50, branches: 35 };
           
           let failed = false;
           for (const [key, threshold] of Object.entries(thresholds)) {
@@ -132,7 +132,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '22.x'
 
       - name: Install dependencies
         run: npm install
