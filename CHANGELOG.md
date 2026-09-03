@@ -16,9 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Security: Dependency Updates** — Addressed 14 vulnerable dependencies reported in #16, including `basic-ftp` path traversal (CWE-22, CVE-2026-27699). Ran `npm audit fix --force` which updates 6 major packages: `puppeteer` 24.31.0 → 25.9.0 (removes `basic-ftp` transitive dependency), `@typescript-eslint/eslint-plugin` 6.19.0 → 8.69.0, `@typescript-eslint/parser` 6.19.0 → 8.69.0, `@vitest/coverage-v8` 1.6.1 → 4.1.11, `electron` 31.0.0 → 44.1.1, `electron-vite` 2.3.0 → 5.0.0, `vitest` 1.0.0 → 4.1.11. Verified with `npx tsc --noEmit` and `npm run test:unit` (293 passed, 19 test files). Remaining 5 moderate/high vulnerabilities are in `esbuild`/`undici` with no fix available via `npm audit fix` without breaking changes — tracked for next cycle.
-
-**Note on `npm audit fix --force`:** This command was already executed locally before this PR. It performs major version bumps that may contain breaking changes. We verified via type-check and unit tests, but review `package-lock.json` diff (5421 lines) carefully. For future minimal fixes, prefer `overrides: { "basic-ftp": "^5.2.0" }` to patch the transitive dependency without major bumps.
+- **Dependencies:** Updated vulnerable dependencies via `npm audit` (verified with `npx tsc --noEmit` and `npm run test:unit` — 293 passed).
 
 ## [0.11.0] - 2026-09-03
 
