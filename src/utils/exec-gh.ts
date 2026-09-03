@@ -81,7 +81,7 @@ export async function execGh(command: string, options: ExecGhOptions = {}): Prom
   }
 
   // Apply rate limiting second (outer wrapper)
-  if (useRateLimit && command.includes('api')) {
+  if (useRateLimit) {
     const originalPromise = resultPromise;
     resultPromise = () => withRateLimit(originalPromise);
   }
