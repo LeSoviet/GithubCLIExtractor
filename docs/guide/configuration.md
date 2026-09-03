@@ -31,6 +31,7 @@ Example configuration file:
 | `cache` | `boolean` | Enable caching | `true` |
 | `diffMode` | `boolean` | Enable incremental export mode | `false` |
 | `forceFullExport` | `boolean` | Force full export even with diff mode | `false` |
+| `includeComments` | `boolean` | Include issue and PR comment threads | `false` |
 
 ## Environment Variables
 
@@ -43,6 +44,7 @@ You can also configure the CLI using environment variables:
 - `GHEXTRACTOR_CACHE` - Enable caching (true/false)
 - `GHEXTRACTOR_DIFF_MODE` - Enable diff mode (true/false)
 - `GHEXTRACTOR_FORCE_FULL_EXPORT` - Force full export (true/false)
+- `GHEXTRACTOR_INCLUDE_COMMENTS` - Include comments (true/false)
 
 ## Command Line Options
 

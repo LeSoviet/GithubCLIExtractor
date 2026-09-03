@@ -37,6 +37,7 @@ ghextractor [options]
 | `--until <date>` | Filter by date range (end) | |
 | `--labels <labels>` | Filter by labels (comma-separated) | |
 | `--full-backup` | Export all resources | |
+| `--include-comments` | Include issue and PR comment threads | `false` |
 
 ### Configuration Options
 
@@ -123,6 +124,15 @@ ghextractor --labels bug,enhancement
 ```
 
 Exports only items with the specified labels.
+
+### Include Comments
+
+```bash
+ghextractor --include-comments
+ghextractor --include-comments --full-backup
+```
+
+Exports issue and PR discussion threads including comments and reviews. Can also be enabled via config file (`"includeComments": true`) or environment variable (`GHEXTRACTOR_INCLUDE_COMMENTS=true`).
 
 ### Batch Processing
 
