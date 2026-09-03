@@ -22,6 +22,23 @@ export function convertPullRequest(ghPr: any): PullRequest {
     mergedAt: ghPr.mergedAt || undefined,
     labels: ghPr.labels.map((l: any) => l.name),
     url: ghPr.url,
+    comments: ghPr.comments
+      ? ghPr.comments.map((c: any) => ({
+          author: c.author?.login || 'unknown',
+          body: c.body || '',
+          createdAt: c.createdAt || c.created_at || new Date().toISOString(),
+          url: c.url || undefined,
+        }))
+      : undefined,
+    reviews: ghPr.reviews
+      ? ghPr.reviews.map((r: any) => ({
+          author: r.author?.login || 'unknown',
+          body: r.body || undefined,
+          state: r.state || 'COMMENTED',
+          submittedAt: r.submittedAt || r.submitted_at || new Date().toISOString(),
+          url: r.url || undefined,
+        }))
+      : undefined,
   };
 }
 
@@ -40,6 +57,14 @@ export function convertIssue(ghIssue: any): Issue {
     closedAt: ghIssue.closedAt || undefined,
     labels: ghIssue.labels.map((l: any) => l.name),
     url: ghIssue.url,
+    comments: ghIssue.comments
+      ? ghIssue.comments.map((c: any) => ({
+          author: c.author?.login || 'unknown',
+          body: c.body || '',
+          createdAt: c.createdAt || c.created_at || new Date().toISOString(),
+          url: c.url || undefined,
+        }))
+      : undefined,
   };
 }
 

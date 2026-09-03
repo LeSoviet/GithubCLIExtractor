@@ -101,6 +101,11 @@ export class ConfigManager {
       const n = Number(process.env.GHEXTRACTOR_CONCURRENCY);
       if (!Number.isNaN(n) && n > 0) this.config!.concurrency = n;
     }
+    if (process.env.GHEXTRACTOR_INCLUDE_COMMENTS) {
+      const v = process.env.GHEXTRACTOR_INCLUDE_COMMENTS.toLowerCase();
+      if (v === 'true' || v === '1') this.config!.includeComments = true;
+      if (v === 'false' || v === '0') this.config!.includeComments = false;
+    }
   }
 
   /**
@@ -120,6 +125,7 @@ export class ConfigManager {
       rateLimit: 1000,
       concurrency: 5,
       exportLimits: {},
+      includeComments: false,
     };
   }
 
